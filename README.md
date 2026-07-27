@@ -21,7 +21,6 @@ It's your terminal recorder like [VHS](https://github.com/charmbracelet/vhs) but
 ## Quick Start
 
 
-> TODO: rewrite with `s-vhs`:
 ```shell
 # Where should we write the GIF?
 Output demo.gif
@@ -43,30 +42,29 @@ Enter
 # Admire the output for a bit.
 Sleep 5s
 ```
+> TODO: rewrite with `s-vhs`
 
 Run it to render gif:
 [Link to gif](...)
+
+> [!NOTE]
+> See more recording scripts in [`examples/`](examples).
 
 
 ## Installation
 
 
-`s-vhs` is a bash scrip.
-So you need to care about dependencies only:
-- Install `tmux`:
+`s-vhs` is a bash script, so you only need its dependencies:
+- Install `tmux` and `asciinema`:
   ```shell
-  sudo pacman -S tmux
-  ```
-- Install `asciinema`:
-  ```shell
-  sudo pacman -S asciinema
+  sudo pacman -S tmux asciinema
   ```
 - Install `agg` -> follow [official instructions](https://github.com/asciinema/agg#building) or
   ```shell
   paru -S asciinema-agg
   ```
 
->[!note]
+> [!NOTE]
 > The provided instructions are for ArchLinux, but you can easily adapt it for your favorite distro ;)
 
 
@@ -115,4 +113,4 @@ So you need to care about dependencies only:
 
 ## License
 
-MIT
+[MIT](LICENSE)
