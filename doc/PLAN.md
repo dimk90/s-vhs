@@ -3,11 +3,13 @@
 ## v0.1.0
 
 - [ ] Implement basic recording functions:
-  - [ ] Select minimal subset of functions;
+  - [ ] Select minimal subset of functions which already implemented or easy to add;
   - [ ] Function names should be intuitive and similar to VHS.
   - [ ] Decide on using only functions or functions+variables.
-  - [ ] Redactor draft `s-vhs.sh`
+  - [ ] Refactor draft `s-vhs.sh`
+- [ ] Remove current implementation of padding functionality from `s-vhs.sh`.
 - [ ] Implement basic examples, similar to VHS:
+  - [ ] Implement minimal example for README#Quick_Start.
   - [ ] https://github.com/charmbracelet/vhs/tree/main/examples/settings
   - [ ] https://github.com/charmbracelet/vhs/tree/main/examples/commands
   - [ ] Define set of examples with available functions.
