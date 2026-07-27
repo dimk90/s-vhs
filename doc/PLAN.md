@@ -25,3 +25,8 @@
 
 - [ ] Add `SetPadding X` function.
 - [ ] Rended visualization for all available themes.
+- [ ] Add SVG and MP4 output (same `.cast`, different renderer):
+  - [ ] Animated SVG — use `termsvg`; `svg-term-cli` pulls in Node.
+  - [ ] MP4 — render with `ffmpeg`.
+  - [ ] Decide how the format is selected (`GIF`/`SVG`/`MP4` variables vs. one
+        `SetOutput demo.svg` deriving the renderer from the extension).
