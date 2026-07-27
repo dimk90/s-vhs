@@ -1,21 +1,33 @@
 # S-VHS
 
 ```
-███████╗   ██╗   ██╗██╗  ██╗███████╗
-██╔════╝   ██║   ██║██║  ██║██╔════╝
-███████╗ █ ██║   ██║███████║███████╗
-╚════██║ █ ╚██╗ ██╔╝██╔══██║╚════██║
-███████║    ╚████╔╝ ██║  ██║███████║
-╚══════╝     ╚═══╝  ╚═╝  ╚═╝╚══════╝
-● REC                    SP 0:00:00
+███████╗    ██╗   ██╗██╗  ██╗███████╗
+██╔════╝    ██║   ██║██║  ██║██╔════╝
+███████╗ ██ ██║   ██║███████║███████╗
+╚════██║ ██ ╚██╗ ██╔╝██╔══██║╚════██║
+███████║     ╚████╔╝ ██║  ██║███████║
+╚══════╝      ╚═══╝  ╚═╝  ╚═╝╚══════╝
+● REC      SUPER VHS      SP 0:00:00
 ```
 
-It's your terminal recorder like [VHS](https://github.com/charmbracelet/vhs) but superior:
-- No GIF quality issues ([#625](https://github.com/charmbracelet/vhs/issues/625), [#69](https://github.com/charmbracelet/vhs/issues/69#issuecomment-3121533232)) -> Your recording always sharp.
-- No delay drift with resolutions ([#69](https://github.com/charmbracelet/vhs/issues/69#issuecomment-3121533232)) -> 1 second is 1 second for any resolution.
-- Set number of terminal rows and cols without dancing with resolution ([#578](https://github.com/charmbracelet/vhs/issues/578)).
-- Render to animated SVG supported out-of-the-box ([#644](https://github.com/charmbracelet/vhs/discussions/644), [#109](https://github.com/charmbracelet/vhs/issues/109), [#105](https://github.com/charmbracelet/vhs/issues/105)).
-- `s-vhs` is simple wrapper around `agg`+`asciinema`+`tmux` -> No need to carry web browser with you ([#528](https://github.com/charmbracelet/vhs/issues/528), [#438](https://github.com/charmbracelet/vhs/issues/438), [#150](https://github.com/charmbracelet/vhs/issues/150), [#45](https://github.com/charmbracelet/vhs/issues/45)).
+A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superior:
+
+- **Always sharp** — no GIF quality loss
+  ([#625](https://github.com/charmbracelet/vhs/issues/625),
+  [#69](https://github.com/charmbracelet/vhs/issues/69#issuecomment-3121533232)).
+- **No timing drift** — 1 second is 1 second at any resolution
+  ([#69](https://github.com/charmbracelet/vhs/issues/69#issuecomment-3121533232)).
+- **Sized in rows and cols** — no dancing with pixel width and height
+  ([#578](https://github.com/charmbracelet/vhs/issues/578)).
+- **No browser, no Node** — just a wrapper around `tmux` + `asciinema` + `agg`
+  ([#528](https://github.com/charmbracelet/vhs/issues/528),
+  [#438](https://github.com/charmbracelet/vhs/issues/438),
+  [#150](https://github.com/charmbracelet/vhs/issues/150),
+  [#45](https://github.com/charmbracelet/vhs/issues/45)).
+- **Animated SVG output**
+  ([#644](https://github.com/charmbracelet/vhs/discussions/644),
+  [#109](https://github.com/charmbracelet/vhs/issues/109),
+  [#105](https://github.com/charmbracelet/vhs/issues/105)).
 
 
 ## Quick Start
