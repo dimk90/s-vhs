@@ -16,9 +16,17 @@
   - [ ] Add script example.
   - [ ] Add recordings scripts to `examples` folder.
   - [ ] Add rendered GIFs to README + links to `examples`.
+- [ ] Make `s-vhs.sh` compatible with macOS bash (3.2):
+  - [ ] Guard empty-array expansion under `set -u` (`"${arr[@]}"` is an
+        unbound variable error before bash 4.4 — hits `font_args` in `render`).
+  - [ ] Replace GNU-only `truncate -s` (absent on stock macOS).
+  - [ ] Check fractional `sleep` and other coreutils assumptions on BSD tools.
+  - [ ] No bash 4+ syntax is used today — keep it that way (no `declare -A`,
+        `mapfile`, `${var,,}`, `&>>`, namerefs).
 - [ ] Add advanced example with emulating mouse selection.
 - [ ] Add template for recording scrip: with all available setting (commented).
 - [ ] Publish link to the project in related VHS issues.
+- [ ] Add version number to the `s-vhs.sh`.
 
 
 ## v0.2.0
