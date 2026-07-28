@@ -1,82 +1,69 @@
 # Command Reference
 
-Mapping of every [VHS command][vhs-ref] to its `s-vhs` counterpart.
+- ✅ - Implemented — works today.
+- 🟡 - Partial — works with caveats, or only via a lower-level call.
+- 📋 - Planned — not implemented yet.
+- 🚫 - Not applicable — meaningless for the `tmux` + `asciinema` + `agg` pipeline.
 
-`s-vhs` is a Bash library, not a tape-file language: a recording script sets
-variables, sources `s-vhs.sh` and calls functions. So a VHS `Set X Y` becomes a
-variable assigned *before* sourcing, and a VHS command becomes a function call
-*after* it.
-
-Function names are **not frozen** yet (see [PLAN.md](PLAN.md)); the tables below
-list the planned VHS-like name next to the name that works today.
+| VHS                                  | s-vhs (planned)                   | Today                       | Status |
+| ------------------------------------ | --------------------------------- | --------------------------- | ------ |
+| `Output out.gif`                     | `SetOutput`                       | `GIF=`, `CAST=`             | 🟡    |
+| `Output out.txt` / `.ascii`          | `SetOutput` + `asciinema convert` | —                           | 📋    |
+| `Require prog`                       | `Require`                         | —                           | 📋    |
+| `Type "text"`                        | `Type`                            | `type_text`                 | ✅     |
+| `Ctrl+R`, `Alt+X`, `Ctrl+Shift+P`    | `Key`                             | `key C-r`, `key M-x`        | ✅     |
+| `Enter`, `Tab`, `Up`, … (named keys) | `Enter`, `Tab`, `Up`, …           | `key Enter`, `key BSpace`   | 📋    |
+| `Enter 2`, `Backspace 18` (repeat)   | `Key … <count>`                   | —                           | 📋    |
+| `ScrollUp` / `ScrollDown`            | `ScrollUp` / `ScrollDown`         | —                           | 📋    |
+| `Sleep 2`                            | `Sleep`                           | `sleep 2`                   | ✅     |
+| `Wait /regex/`                       | `Wait`                            | `wait_for`                  | 🟡    |
+| `Wait+Line /regex/`                  | `Wait` + scope argument           | —                           | 📋    |
+| `Hide`                               | `Hide`                            | `stop_recording`            | ✅     |
+| `Show`                               | `Show`                            | `record`                    | ✅     |
+| `Screenshot out.png`                 | `Screenshot`                      | —                           | 📋    |
+| `Copy` / `Paste`                     | `Copy` / `Paste`                  | —                           | 📋    |
+| `Env KEY "VAL"`                      | `Env`                             | `export KEY=VAL`            | 🟡    |
+| `Source other.tape`                  | —                                 | `source other.sh`           | ✅     |
+|                                      |                                   |                             |        |
+| `Set Shell fish`                     | `SetShell`                        | `DEMO_SHELL` (`fish`)       | ✅     |
+| `Set FontSize 40`                    | `SetFontSize`                     | `FONT_SIZE` (`28`)          | ✅     |
+| `Set FontFamily "…"`                 | `SetFontFamily`                   | `FONT_FAMILY` (agg default) | ✅     |
+| `Set Width 1200`                     | `SetCols`                         | `COLS` (`100`)              | 🟡    |
+| `Set Height 600`                     | `SetRows`                         | `ROWS` (`40`)               | 🟡    |
+| `Set LineHeight 1.8`                 | `SetLineHeight`                   | `LINE_HEIGHT` (`1.2`)       | ✅     |
+| `Set TypingSpeed 0.1`                | `SetTypingSpeed`                  | `TYPE_DELAY` (`0.1`)        | ✅     |
+| `Set Theme "…"`                      | `SetTheme`                        | `AGG_THEME` (`kanagawa`)    | 🟡    |
+| `Set Padding 20`                     | `SetPadding`                      | `render 20` argument        | 🟡    |
+| `Set Framerate 60`                   | `SetFramerate`                    | — (agg `30`)                | 📋    |
+| `Set PlaybackSpeed 2`                | `SetPlaybackSpeed`                | — (agg `1`)                 | 📋    |
+| `Set LoopOffset 5`                   | `SetLoopOffset`                   | —                           | 📋    |
+| `Set LetterSpacing 20`               | —                                 | —                           | 🚫    |
+| `Set Margin` / `MarginFill`          | —                                 | —                           | 🚫    |
+| `Set WindowBar`                      | —                                 | —                           | 🚫    |
+| `Set BorderRadius`                   | —                                 | —                           | 🚫    |
+| `Set CursorBlink`                    | —                                 | —                           | 🚫    |
+| —                                    | `SetKeyDelay`                     | `KEY_DELAY` (`0.0`)         | ✅     |
+| —                                    | `SetSession`                      | `SESSION` (`demo`)          | ✅     |
+| —                                    | `SetIdleTimeLimit`                | — (agg `5`)                 | 📋    |
+| —                                    | `SetLastFrameDuration`            | — (agg `3`)                 | 📋    |
+| —                                    | `SetLoop`                         | — (agg loops)               | 📋    |
+|                                      |                                   |                             |        |
+| —                                    | `Start`                           | `start_session`             | ✅     |
+| —                                    | `Render`                          | `render`                    | ✅     |
+| —                                    | `RunOffRecord`                    | `run_off_record`            | ✅     |
 
 [vhs-ref]: https://github.com/charmbracelet/vhs#vhs-command-reference
 
-## Legend
+> Add to final command reference: 
+> Teardown is automatic: sourcing `s-vhs.sh` installs an `EXIT` trap that kills the
+> session and the recorder, so a failed script never leaves either running.
 
-| Mark | Meaning                                                                     |
-| ---- | --------------------------------------------------------------------------- |
-| ✅   | Implemented — works today.                                                  |
-| 🟡  | Partial — works with caveats, or only via a lower-level call.               |
-| 📋  | Planned — not implemented yet.                                              |
-| 🚫  | Not applicable — meaningless for the `tmux` + `asciinema` + `agg` pipeline. |
-
-## Commands at a glance
-
-| VHS                        | s-vhs (planned)            | Today                | Status |
-| -------------------------- | -------------------------- | -------------------- | ------ |
-| `Output out.gif`           | `SetOutput`                | `GIF=`, `CAST=`      | 🟡    |
-| `Require prog`             | `Require`                  | —                    | 📋    |
-| `Set X Y`                  | see [Settings](#settings)  | variables            | 🟡    |
-| `Type "text"`              | `Type`                     | `type_text`          | ✅     |
-| `Enter`                    | `Enter`                    | `key Enter`          | 🟡    |
-| `Backspace` `Tab` `Space`  | `Backspace` `Tab` `Space`  | `key BSpace` …       | 🟡    |
-| `Up` `Down` `Left` `Right` | `Up` `Down` `Left` `Right` | `key Up` …           | 🟡    |
-| `PageUp` `PageDown`        | `PageUp` `PageDown`        | `key PPage`          | 🟡    |
-| `Ctrl+R`, `Alt+X`          | `Ctrl`, `Alt`              | `key C-r`, `key M-x` | 🟡    |
-| `ScrollUp` `ScrollDown`    | `ScrollUp` `ScrollDown`    | —                    | 📋    |
-| `Sleep 2`                  | `Sleep`                    | `sleep 2`            | ✅     |
-| `Wait /regex/`             | `Wait`                     | `wait_for`           | 🟡    |
-| `Hide`                     | `Hide`                     | `stop_recording`     | ✅     |
-| `Show`                     | `Show`                     | `record`             | ✅     |
-| `Screenshot out.png`       | `Screenshot`               | —                    | 📋    |
-| `Copy` / `Paste`           | `Copy` / `Paste`           | —                    | 📋    |
-| `Env KEY "VAL"`            | `Env`                      | `export KEY=VAL`     | ✅     |
-| `Source other.tape`        | —                          | `source other.sh`    | ✅     |
-| —                          | `Start`                    | `start_session`      | ✅     |
-| —                          | `Render`                   | `render`             | ✅     |
-| —                          | `RunHidden`                | `run_off_record`     | ✅     |
 
 ## Settings
 
 Every setting is an overridable default (`: "${NAME:=…}"`), so a recording
 script assigns it **before** `source s-vhs.sh`. Whether the `Set*` functions
 are added on top of the variables is still open ([PLAN.md](PLAN.md), v0.1.0).
-
-| VHS                       | s-vhs (planned)        | Variable today       | Default     | Status |
-| ------------------------- | ---------------------- | -------------------- | ----------- | ------ |
-| `Set Shell fish`          | `SetShell`             | `DEMO_SHELL`         | `fish`      | ✅     |
-| `Set FontSize 40`         | `SetFontSize`          | `FONT_SIZE`          | `28`        | ✅     |
-| `Set FontFamily "…"`      | `SetFontFamily`        | `FONT_FAMILY`        | agg default | ✅     |
-| `Set Width 1200`          | `SetCols`              | `COLS`               | `100`       | 🟡    |
-| `Set Height 600`          | `SetRows`              | `ROWS`               | `40`        | 🟡    |
-| `Set LineHeight 1.8`      | `SetLineHeight`        | `LINE_HEIGHT`        | `1.2`       | ✅     |
-| `Set TypingSpeed 0.1`     | `SetTypingSpeed`       | `TYPE_DELAY`         | `0.1`       | ✅     |
-| `Set Theme "…"`           | `SetTheme`             | `AGG_THEME`          | `kanagawa`  | 🟡    |
-| `Set Padding 20`          | `SetPadding`           | `render 20` argument | none        | 🟡    |
-| `Set Framerate 60`        | `SetFramerate`         | —                    | agg `30`    | 📋    |
-| `Set PlaybackSpeed 2`     | `SetPlaybackSpeed`     | —                    | agg `1`     | 📋    |
-| `Set LoopOffset 5`        | `SetLoopOffset`        | —                    | —           | 📋    |
-| `Set LetterSpacing 20`    | —                      | —                    | —           | 🚫    |
-| `Set Margin`/`MarginFill` | —                      | —                    | —           | 🚫    |
-| `Set WindowBar`           | —                      | —                    | —           | 🚫    |
-| `Set BorderRadius`        | —                      | —                    | —           | 🚫    |
-| `Set CursorBlink`         | —                      | —                    | —           | 🚫    |
-| —                         | `SetKeyDelay`          | `KEY_DELAY`          | `0.0`       | ✅     |
-| —                         | `SetSession`           | `SESSION`            | `demo`      | ✅     |
-| —                         | `SetIdleTimeLimit`     | —                    | agg `5`     | 📋    |
-| —                         | `SetLastFrameDuration` | —                    | agg `3`     | 📋    |
-| —                         | `SetLoop`              | —                    | agg loops   | 📋    |
 
 ### Width / Height → Cols / Rows 🟡
 
@@ -89,6 +76,8 @@ COLS=80
 ROWS=30
 FONT_SIZE=21
 ```
+
+> Print estimated resolution in `start_session` ('e.g. ::: N Rows x M Cols x F FontSize -> Resolution W x H') ?
 
 ### Theme 🟡
 
@@ -110,21 +99,37 @@ Implemented as an optional argument to `render`, using `magick` (preferred) or
 render 40   # 40px uniform padding
 ```
 
-Slated for removal in v0.1.0 and reintroduction as `SetPadding` in v0.2.0
-([PLAN.md](PLAN.md)) — post-processing the GIF is the wrong layer.
+> Check if there any way to avoid `magick` artifacts for GIF.
 
-### Framerate / PlaybackSpeed / LoopOffset 📋
 
-All three map onto existing `agg` flags and are cheap to add:
-`--fps-cap`, `--speed`, and `--select` (which can start the render at a time
-offset or percentage).
+### Renderer pass-through 📋
+
+Five settings are one `agg` flag each — a default plus a flag appended in
+`render`, no new logic:
+
+| Setting                | Flag                    |
+| ---------------------- | ----------------------- |
+| `SetFramerate`         | `--fps-cap`             |
+| `SetPlaybackSpeed`     | `--speed`               |
+| `SetIdleTimeLimit`     | `--idle-time-limit`     |
+| `SetLastFrameDuration` | `--last-frame-duration` |
+| `SetLoop`              | `--no-loop`             |
+
+The last three have no VHS equivalent but are already in effect through `agg`'s
+defaults, so today a script cannot change them — see the warning under
+[Sleep](#sleep-).
+
+`SetLoopOffset` is the odd one out: `agg --select 5..` *drops* the first five
+seconds, while VHS's `LoopOffset` keeps every frame and only moves where the
+loop starts. There is no cheap equivalent.
 
 ### Not applicable 🚫
 
 `LetterSpacing`, `Margin`, `MarginFill`, `WindowBar`, `BorderRadius` are
 frame decorations that `agg` does not render, and `CursorBlink` is a property of
-the recorded terminal, not of the cast. Adding them would mean post-processing
-the GIF — the same layering mistake as the current padding implementation.
+the recorded terminal, not of the cast.
+
+> Can bew added by .cast modification ?
 
 ## Output
 
@@ -136,27 +141,19 @@ CAST=doc/casts/demo.cast
 GIF=doc/images/demo.gif
 ```
 
-| VHS output                     | s-vhs                                | Status |
-| ------------------------------ | ------------------------------------ | ------ |
-| `.gif`                         | `GIF` variable, rendered by `agg`    | ✅     |
-| `.mp4`                         | planned via `ffmpeg`                 | 📋    |
-| `.webm`                        | —                                    | 📋    |
-| `.png` frame dir               | —                                    | 📋    |
-| `.ascii` / `.txt` golden files | `asciinema --output-format txt`      | 📋    |
-| —                              | `.cast` — always written, replayable | ✅     |
+| VHS output                     | s-vhs                                    | Status |
+| ------------------------------ | ---------------------------------------- | ------ |
+| `.gif`                         | `GIF` variable, rendered by `agg`        | ✅     |
+| `.mp4`                         | planned via `ffmpeg`                     | 📋    |
+| `.webm`                        | —                                        | 📋    |
+| `.png` frame dir               | —                                        | 📋    |
+| `.ascii` / `.txt` golden files | `asciinema convert -f txt` from the cast | 📋    |
+| —                              | `.cast` — always written, replayable     | ✅     |
 
 Animated SVG (`termsvg`) is planned too, and has no VHS equivalent
 ([#644](https://github.com/charmbracelet/vhs/discussions/644)). How the format
 is selected — separate `GIF`/`SVG`/`MP4` variables vs. one `SetOutput demo.svg`
 deriving the renderer from the extension — is undecided ([PLAN.md](PLAN.md)).
-
-## Require 📋
-
-No equivalent. A recording script can do it inline today:
-
-```shell
-command -v gum > /dev/null || { echo 'gum is required' >&2; exit 1; }
-```
 
 ## Type ✅
 
@@ -182,12 +179,9 @@ key Down 0.2                # pause 0.2s afterwards
 
 Differences from VHS:
 
-- No named wrappers — `Enter`, `Tab`, `Space`, `Up`, `Down`, `Left`, `Right`,
-  `Backspace`, `PageUp`, `PageDown` are all spelled as `key <tmux-name>`
-  (`BSpace`, `PPage`, `NPage`, …).
-- No repeat count (`Enter 2`, `Backspace 18`); use a loop or repeated calls.
-- The second argument is a pause *after* the press, whereas VHS's `@time` is the
-  interval *between* repeats.
+- No repeat count 📋 (`Enter 2`, `Backspace 18`); use a loop or repeated calls.
+  `tmux send-keys -N <count>` repeats natively but without a delay between
+  presses, so VHS's `Key@<time> <count>` still needs a loop.
 
 Modifiers work through tmux's own notation, so `Ctrl+R` is `key C-r`, `Alt+X` is
 `key M-x`, and `Ctrl+Alt+Shift+P` is `key C-M-S-p`. `start_session` enables
@@ -199,27 +193,13 @@ key C-r                     # VHS: Ctrl+R
 key C-c                     # VHS: Ctrl+C
 ```
 
+> Any way to have `Ctrl+R` instead of `C-r` ? Is easier to read.
+
 ### ScrollUp / ScrollDown 📋
 
 Missing. Would need tmux copy-mode (`tmux copy-mode -t "$SESSION"` plus
 `send-keys -X scroll-up`), and the scrollback is captured only if the alternate
 screen is not in use.
-
-## Sleep ✅
-
-Plain `sleep` — the recorder keeps capturing while the script sleeps.
-
-```shell
-sleep 0.5                   # VHS: Sleep 500ms
-sleep 2                     # VHS: Sleep 2
-```
-
-VHS's `ms`/`s` suffixes are not supported; use fractional seconds.
-
-> [!WARNING]
-> `agg --idle-time-limit` (default **5s**) silently caps any single pause, so a
-> `sleep 10` renders as 5 seconds. The flag is not exposed yet — see
-> `SetIdleTimeLimit` in [Settings](#settings).
 
 ## Wait 🟡
 
@@ -232,34 +212,15 @@ wait_for 'Session compacted' 30
 ```
 
 Differences from VHS:
-
 - The pattern is a **grep** pattern, not `/regex/`.
 - Only VHS's `Wait+Screen` scope: the whole visible pane is matched. `Wait+Line`
-  (last line only) and the bare `Wait` default of `/>$/` are missing.
+  (last line only) and the bare `Wait` default of `/>$/` are missing 📋 — the
+  scope is an optional argument piping `capture-pane -p` through `tail -n1`.
 - VHS's `@time` sets the poll interval; here it is fixed at `0.2s` and the
   argument is the timeout.
 
-## Hide ✅ / Show ✅
+> Is `Wait+Line` useful ?
 
-`stop_recording` detaches the recorder from the still-running session (VHS
-`Hide`); `record` (re)attaches it (VHS `Show`). The first `record` starts a
-fresh cast, later calls append to it.
-
-```shell
-start_session
-run_off_record 'go build -o example .'   # hidden setup
-record                                   # Show
-type_text './example'
-key Enter
-sleep 3
-stop_recording                           # Hide
-run_off_record 'rm example'
-render
-```
-
-`run_off_record` is a convenience with no VHS equivalent: type a command, press
-Enter and wait, with no recorder attached — a `Hide` / `Type` / `Enter` /
-`Sleep` / `Show` block collapsed into one call.
 
 ## Screenshot 📋
 
@@ -267,15 +228,18 @@ Missing. Two plausible routes: `tmux capture-pane -p -e` for a text/ANSI dump,
 or `agg --select <time>` to render a single frame out of the cast — though that
 yields a one-frame GIF, not the PNG that VHS writes.
 
+> Convert GIF to PNG/JPG via ffmpeg/magick?
+
 ## Copy / Paste 📋
 
 Missing. tmux provides the primitives — `tmux set-buffer` and
-`tmux paste-buffer -t "$SESSION"` — so this is mostly a naming decision. Note it
-would use the tmux buffer, not the system clipboard.
+`tmux paste-buffer -p -t "$SESSION"` (`-p` for bracketed paste, so TUIs see a
+real paste) — so this is mostly a naming decision. Note it would use the tmux
+buffer, not the system clipboard.
 
-## Env ✅
+## Env 🟡
 
-No dedicated function needed: exported variables are inherited by the tmux
+No dedicated function today: exported variables are inherited by the tmux
 server started in `start_session`.
 
 ```shell
@@ -290,19 +254,11 @@ key Enter
 > earlier one. `start_session` uses `tmux -f /dev/null`, which isolates config
 > but not the server environment.
 
+A planned `Env` function closes that hole by passing the pair straight to the
+session: `tmux new-session -e KEY=VAL`.
+
 ## Source ✅
 
 It's a shell script — `source common-setup.sh` is the equivalent, and full
 shell control flow (loops, conditionals, functions) comes for free
 ([#66](https://github.com/charmbracelet/vhs/issues/66)).
-
-## s-vhs-only commands
-
-| Function         | Purpose                                              |
-| ---------------- | ---------------------------------------------------- |
-| `start_session`  | Start the detached tmux session sized `COLS`×`ROWS`. |
-| `render`         | Kill the session, render the cast to GIF with `agg`. |
-| `run_off_record` | Type + run a command with no recorder attached.      |
-
-Teardown is automatic: sourcing `s-vhs.sh` installs an `EXIT` trap that kills the
-session and the recorder, so a failed script never leaves either running.
