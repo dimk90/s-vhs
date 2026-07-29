@@ -3,13 +3,9 @@
 # Shared helpers for agg + asciinema + tmux demo recordings.
 # Meant to be sourced by a recording script, not executed.
 #
-# Usage in a recording script:
-#   SESSION=my-demo
-#   CAST=doc/demo-rec/my-demo.cast
-#   GIF=doc/images/my-demo.gif
-#   source "$(dirname "$0")/vhs.sh"
-#
 
+# Stop on an unhandled command failure (-e), use of an unset variable (-u),
+# or failure within a pipeline (-o pipefail), so the EXIT trap can clean up.
 set -euo pipefail
 
 

@@ -6,9 +6,11 @@ Guidance for AI agents working in the `s-vhs` repository.
 
 `s-vhs` — a terminal recorder in the spirit of
 [VHS](https://github.com/charmbracelet/vhs), built as a thin Bash wrapper
-around `tmux` + `asciinema` + `agg`. Recordings are driven by a user-written
-shell script that sources `s-vhs.sh` and calls its functions; output is a
-`.cast` rendered to GIF (SVG/MP4 planned).
+around `tmux` + `asciinema` + output-specific renderers. Recordings are driven
+by a user-written shell script that sources `s-vhs.sh` and calls its functions.
+Every recording uses a `.cast`; it is retained when requested as an output and
+otherwise kept only temporarily while producing outputs such as GIF
+(SVG/MP4 planned).
 
 Selling points to preserve when changing behaviour: sharp output (no GIF
 quality loss), no timing drift across resolutions, terminal size in rows/cols
@@ -29,26 +31,43 @@ Status: early draft, pre-`v0.1.0`. The public function names are **not** frozen
 | `examples/`      | Empty placeholder for example recording scripts (planned). |
 
 No build system, no test suite, no CI. Verification is manual: run a recording
-script and inspect the produced GIF.
+script and inspect or replay every requested output.
 
 ## Dependencies
 
-Runtime: `bash`, `tmux`, `asciinema`, `agg`.
+Core runtime: `bash`, `tmux`, `asciinema`.
+Output-specific runtime: `agg` for GIF output.
 Dev: `shellcheck`.
 
 ## Conventions
 
-Follow the `shell-code` and `code-style` skills; `s-vhs.sh` is the reference
-implementation of them. Project-specific points:
+Follow the `shell-code` and `code-style` skills; use `s-vhs.sh` as the
+formatting reference, but do not copy draft API patterns that conflict with the
+target function-only interface below. Project-specific points:
 
 - **Sourced library, not a program.** `s-vhs.sh` has no `main`, no arg parsing,
   and must stay safe to `source`. It installs an `EXIT` trap (`_cleanup`) in the
   sourcing script's shell.
-- **Configuration via overridable defaults.** Every setting is
-  `: "${NAME:=default}"` so a recording script can set it before sourcing.
-  Required values use `: "${CAST:?message}"`. Add new settings the same way,
-  with a comment explaining the unit or the reason for the default.
-- **Sections.** `## Constants`, `## Session`, `## Input`, `## Recording`,
+- **Public configuration uses functions only.** A recording script sources
+  `s-vhs.sh` first, then configures it through `Set*` functions. Do not expose
+  setting variables or support pre-source assignments as a second API.
+- **Private backing state.** Store shared settings in namespaced internal
+  globals such as `_SVHS_ROWS`. Bash cannot make sourced globals truly private;
+  the `_SVHS_` prefix marks the boundary and avoids collisions with the caller.
+- **Do not leak backing state.** Do not export internal setting variables or
+  expose their names in user-facing documentation. Public setters are the only
+  supported way for recording scripts to modify settings.
+- **Configuration phase.** Require every `Set*` call before `Start`, and reject
+  attempts to reconfigure a session after it has started. Relax this rule for a
+  specific setting only when a concrete use case requires it.
+- **Setter validation.** Validate ordinary scalar values in the corresponding
+  setter and report invalid values immediately. Preserve deliberate pass-through
+  values, such as custom renderer themes, instead of validating against a
+  restrictive allowlist.
+- **Start validation.** Validate required overall configuration in `Start`
+  before starting tmux or the recorder. Internal defaults are initialized while
+  sourcing, with comments explaining units or non-obvious default choices.
+- **Sections.** `## Settings`, `## Session`, `## Input`, `## Recording`,
   `## Render`, `## Internal`. Keep new functions in the matching section;
   underscore-prefixed helpers go last, under `## Internal`.
 - **Docstrings.** Every function opens with the `#`-framed block including
@@ -56,8 +75,15 @@ implementation of them. Project-specific points:
 - **Comments explain why, not what** — e.g. why the cast is truncated after
   detaching, why the recorder needs a moment to attach. Preserve these when
   refactoring.
-- **State globals** `REC_PID` and `RECORDED` are module state; keep their
-  lifecycle (`record` sets, `stop_recording`/`render` clear) intact.
+- **Recorder state.** Keep the recorder PID and recorded-segment flag as
+  private `_SVHS_*` module state. Preserve their lifecycle: `Show` sets them,
+  `Hide`/`Render` clear the active PID, and the segment flag makes later `Show`
+  calls append.
+- **Outputs.** `SetOutput` is repeatable and each call adds an output. An
+  explicitly requested `.cast` is retained at that path; when no `.cast` is
+  requested, record to a temporary cast and remove it after producing the
+  requested outputs. `Render` invokes only tools needed for those outputs, so a
+  cast-only recording must not invoke `agg` or any other renderer/converter.
 - **shellcheck-clean.** Suppress only per-line, with an adjacent explanation.
 - Every VHS feature parity claim in `README.md` links the upstream issue it
   addresses; keep that link when editing such a line.

@@ -3,12 +3,17 @@
 - ✅ - Implemented — works today.
 - 🟡 - Partial — works with caveats, or only via a lower-level call.
 - 📋 - Planned — not implemented yet.
-- 🚫 - Not applicable — meaningless for the `tmux` + `asciinema` + `agg` pipeline.
+- 🚫 - Not applicable — meaningless for the `tmux` + `asciinema` + renderer pipeline.
+
+The final public API is function-only: source `s-vhs.sh`, call all `Set*`
+functions, then call `Start`. Variables shown in the **Today** column describe
+the current draft implementation only; they will become private backing state
+and are not part of the planned API.
 
 | VHS                                  | s-vhs (planned)                   | Today                              | Status |
 | ------------------------------------ | --------------------------------- | ---------------------------------- | ------ |
-| `Output out.gif`                     | `SetOutput`                       | `GIF=`, `CAST=`                    | 🟡    |
-| `Output out.txt` / `.ascii`          | `SetOutput` + `asciinema convert` | —                                  | 📋    |
+| `Output out.gif`                     | `SetOutput out.gif`               | `GIF=`, `CAST=`                    | 🟡    |
+| `Output out.txt` / `.ascii`          | `SetOutput out.txt`               | —                                  | 📋    |
 | `Require prog`                       | `Require`                         | —                                  | 📋    |
 | `Type "text"`                        | `Type`                            | `type_text`                        | ✅     |
 | `Ctrl+R`, `Alt+X`, `Ctrl+Shift+P`    | `Key`                             | `key C-r`, `key M-x`               | ✅     |
@@ -58,6 +63,7 @@
 | —                                    | `SetTitle`                        | —                                  | 📋    |
 | —                                    | `SetQuiet`                        | —                                  | 📋    |
 | —                                    | `SetOptimize`                     | —                                  | 📋    |
+| —                                    | `SetOutput out.cast`              | `CAST=`                            | 🟡    |
 |                                      |                                   |                                    |        |
 | —                                    | `Start`                           | `start_session`                    | ✅     |
 | —                                    | `Render`                          | `render`                           | ✅     |
@@ -72,45 +78,64 @@
 
 ## Settings
 
-Every setting is an overridable default (`: "${NAME:=…}"`), so a recording
-script assigns it **before** `source s-vhs.sh`. Whether the `Set*` functions
-are added on top of the variables is still open ([PLAN.md](PLAN.md), v0.1.0).
+Source `s-vhs.sh` first, configure it exclusively through `Set*` functions, and
+call every setter before `Start`. Backing variables are private implementation
+details: recording scripts must not assign, export, or depend on them.
+
+Each setter validates an ordinary scalar value immediately. `Start` then checks
+that all required configuration, including at least one output, is present
+before creating the tmux session or recorder.
+
+```shell
+source ./s-vhs.sh
+
+SetOutput demo.gif
+SetCols 80
+SetRows 30
+SetFontSize 21
+
+Start
+```
 
 ### Width / Height → Cols / Rows 🟡
 
 `s-vhs` sizes the terminal in **cells, not pixels** — the whole point of
 [#578](https://github.com/charmbracelet/vhs/issues/578). There is no pixel-size
-setting; pixel size follows from `COLS`/`ROWS` × glyph size at `FONT_SIZE`.
+setting; pixel size follows from `SetCols`/`SetRows` × the glyph size configured
+by `SetFontSize`.
 
 ```shell
-COLS=80
-ROWS=30
-FONT_SIZE=21
+SetCols 80
+SetRows 30
+SetFontSize 21
 ```
 
 > Print estimated resolution in `start_session` ('e.g. ::: N Rows x M Cols x F FontSize -> Resolution W x H') ?
 
 ### Theme 🟡
 
-`AGG_THEME` takes an `agg` theme name: `asciinema`, `dracula`, `github-dark`,
+`SetTheme` accepts an `agg` theme name: `asciinema`, `dracula`, `github-dark`,
 `github-light`, `kanagawa`, `kanagawa-dragon`, `kanagawa-light`, `monokai`,
 `nord`, `solarized-dark`, `solarized-light`, `gruvbox-dark`, `custom`.
 
 Missing vs. VHS: an inline palette (VHS accepts a JSON theme object). `agg`
 takes one as `--theme` with comma-separated hex triplets — background, default
-text, then 8 (or 16) palette colors — but `AGG_THEME` is passed through
-unvalidated, so an ad-hoc palette already works today.
+text, then 8 (or 16) palette colors. `SetTheme` deliberately passes arbitrary
+non-empty values through rather than restricting them to the named themes, so
+ad-hoc palettes remain possible.
 
 ### Font stack 🟡
 
-`render` currently passes `FONT_FAMILY` as `agg --font-family`, which per
-`agg --help` specifies "the complete font family list, **bypassing automatic
-fallbacks**". That silently drops agg's bundled Symbols Nerd Font and the whole
-emoji chain, so a recording with `FONT_FAMILY="Iosevka Term"` renders powerline
-glyphs, devicons and emoji as tofu.
+The current draft passes the configured font family as `agg --font-family`,
+which per `agg --help` specifies "the complete font family list, **bypassing
+automatic fallbacks**". That silently drops agg's bundled Symbols Nerd Font and
+the whole emoji chain, so a recording configured with
+`SetFontFamily "Iosevka Term"` renders powerline glyphs, devicons and emoji as
+tofu.
 
-The fix is to pass `--text-font-family` instead, keeping the fallbacks, and to
-expose the bypassing form under a name that says so ([PLAN.md](PLAN.md), v0.1.0):
+`SetFontFamily` must instead map to `--text-font-family`, keeping the fallbacks,
+and expose the bypassing form under a name that says so
+([PLAN.md](PLAN.md), v0.1.0):
 
 | Setting              | agg flag               | Note                                          |
 | -------------------- | ---------------------- | --------------------------------------------- |
@@ -124,7 +149,7 @@ The remaining glyph-quality knobs have no VHS equivalent:
 | Setting               | agg flag              | Default | Why it matters                                                                                        |
 | --------------------- | --------------------- | ------- | ----------------------------------------------------------------------------------------------------- |
 | `SetFontAntialiasing` | `--font-antialiasing` | `6`     | Alpha-coverage levels in glyph masks; the sharpness-vs-file-size dial (`off` = 2 levels).             |
-| `SetFontHinting`      | `--font-hinting`      | `true`  | Swash only; matters at small `FONT_SIZE`.                                                             |
+| `SetFontHinting`      | `--font-hinting`      | `true`  | Swash only; matters at small font sizes.                                                              |
 | `SetRenderer`         | `--renderer`          | `swash` | COLRv1 emoji (recent Noto Color Emoji) only render under `resvg`; swash falls back to monochrome.     |
 | `SetBoldIsBright`     | `--bold-is-bright`    | off     | agg is literal; most terminals show bold red as bright red, so demos look off next to the real thing. |
 
@@ -142,7 +167,7 @@ in [HISTORY.md](HISTORY.md) and is planned to return as `SetPadding`
 ### Renderer pass-through 📋
 
 Five settings are one `agg` flag each — a default plus a flag appended in
-`render`, no new logic:
+`Render`, no new logic:
 
 | Setting                | Flag                    |
 | ---------------------- | ----------------------- |
@@ -164,8 +189,9 @@ loop starts. There is no cheap equivalent.
 > Idle time is capped in **two** places. `asciinema rec -i <secs>` does not alter
 > the captured timing — it writes `idle_time_limit` into the cast header, which
 > `agg` then honours unless `--idle-time-limit` is given on the command line. So
-> `SetIdleTimeLimit` can be implemented at render time (tweakable after the fact)
-> or baked into the cast at record time.
+> `SetIdleTimeLimit` should be applied as a renderer flag in `Render`, rather
+> than baked into the cast at record time. Like every setter, it is still called
+> before `Start`; applying it later preserves the original cast metadata.
 
 ### Recorder metadata 📋
 
@@ -200,27 +226,37 @@ the recorded terminal, not of the cast.
 
 ## Output
 
-VHS renders one tape to many outputs; `s-vhs` always records a `.cast` and
-currently renders exactly one GIF from it. Both paths are required variables:
+`SetOutput` is repeatable: each call adds one requested output rather than
+replacing earlier calls. Every recording uses one intermediate `.cast`, shared
+by all requested output formats.
 
 ```shell
-CAST=doc/casts/demo.cast
-GIF=doc/images/demo.gif
+SetOutput doc/casts/demo.cast
+SetOutput doc/images/demo.gif
 ```
 
-| VHS output                     | s-vhs                                    | Status |
-| ------------------------------ | ---------------------------------------- | ------ |
-| `.gif`                         | `GIF` variable, rendered by `agg`        | ✅     |
-| `.mp4`                         | planned via `ffmpeg`                     | 📋    |
-| `.webm`                        | —                                        | 📋    |
-| `.png` frame dir               | —                                        | 📋    |
-| `.ascii` / `.txt` golden files | `asciinema convert -f txt` from the cast | 📋    |
-| —                              | `.cast` — always written, replayable     | ✅     |
+An explicitly requested `.cast` is retained at exactly that path and remains
+replayable with `asciinema play`. If no `.cast` output is requested, `s-vhs`
+records to a temporary cast, uses it to produce the requested outputs, and
+removes it automatically.
 
-Animated SVG (`termsvg`) is planned too, and has no VHS equivalent
-([#644](https://github.com/charmbracelet/vhs/discussions/644)). How the format
-is selected — separate `GIF`/`SVG`/`MP4` variables vs. one `SetOutput demo.svg`
-deriving the renderer from the extension — is undecided ([PLAN.md](PLAN.md)).
+`Render` first finalizes the cast and then invokes only the tools required by
+non-cast outputs. A recording that requests only a `.cast` therefore invokes no
+renderer or converter—particularly, it does not require or run `agg`.
+
+| VHS output                     | s-vhs                                              | Status |
+| ------------------------------ | -------------------------------------------------- | ------ |
+| `.gif`                         | `SetOutput out.gif`, rendered by `agg`             | 🟡    |
+| `.mp4`                         | `SetOutput out.mp4`, planned via `ffmpeg`          | 📋    |
+| `.webm`                        | `SetOutput out.webm`                               | 📋    |
+| `.png` frame dir               | `SetOutput out.png`                                | 📋    |
+| `.ascii` / `.txt` golden files | `SetOutput out.txt`, via `asciinema convert`       | 📋    |
+| —                              | `SetOutput out.cast`, retained without rendering  | 🟡    |
+| —                              | `SetOutput out.svg`, planned via `termsvg`         | 📋    |
+
+The output extension selects the renderer or converter; there are no
+format-specific public setting variables. Animated SVG (`termsvg`) has no VHS
+equivalent ([#644](https://github.com/charmbracelet/vhs/discussions/644)).
 
 ## Type ✅
 
@@ -229,7 +265,7 @@ deriving the renderer from the extension — is undecided ([PLAN.md](PLAN.md)).
 optional second argument.
 
 ```shell
-type_text '/context'        # TYPE_DELAY between keystrokes
+type_text '/context'        # delay configured by SetTypingSpeed
 type_text 'slow' 0.5        # VHS: Type@500ms "slow"
 ```
 
@@ -264,9 +300,8 @@ key C-c                     # VHS: Ctrl+C
 
 ### ScrollUp / ScrollDown 📋
 
-Missing. Would need tmux copy-mode (`tmux copy-mode -t "$SESSION"` plus
-`send-keys -X scroll-up`), and the scrollback is captured only if the alternate
-screen is not in use.
+Missing. Would need tmux copy-mode plus `send-keys -X scroll-up`, and the
+scrollback is captured only if the alternate screen is not in use.
 
 ## Wait 🟡
 
@@ -300,9 +335,9 @@ yields a one-frame GIF, not the PNG that VHS writes.
 ## Copy / Paste 📋
 
 Missing. tmux provides the primitives — `tmux set-buffer` and
-`tmux paste-buffer -p -t "$SESSION"` (`-p` for bracketed paste, so TUIs see a
-real paste) — so this is mostly a naming decision. Note it would use the tmux
-buffer, not the system clipboard.
+`tmux paste-buffer -p` (`-p` for bracketed paste, so TUIs see a real paste) — so
+this is mostly a naming decision. Note it would use the tmux buffer, not the
+system clipboard.
 
 ## Env 🟡
 
