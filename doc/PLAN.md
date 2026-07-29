@@ -2,19 +2,19 @@
 
 ## v0.1.0
 
+- [x] Remove current implementation of padding functionality from `s-vhs.sh`.
+  - [x] Save to `doc/HISTORY.md`.
+- [ ] Convert settings variable in `s-vhs.sh` to functions (as planned in [COMMANDS](doc/COMMANDS.md)).
 - [ ] Implement basic recording functions:
   - [x] Select minimal subset of functions which already implemented or easy to add;
   - [x] Function names should be intuitive and similar to VHS.
   - [x] Decide on using only functions or functions+variables.
   - [ ] Change existing variables to functions: [COMMANDS](doc/COMMANDS.md).
   - [ ] Refactor implemented `s-vhs.sh` functions to target format [COMMANDS](doc/COMMANDS.md).
-- [ ] Add tests for existing/basic functions (put to `test` folder);
-- [ ] Add version number to the `s-vhs.sh`:
+- [ ] Add version number and link to git repo to `s-vhs.sh`:
   - Check what is the best way to to keep version number inside `s-vhs.sh`.
   - Set version to `0.1.0`.
   - Add it to `doc/COMMANDS.md` if needed.
-- [ ] Remove current implementation of padding functionality from `s-vhs.sh`.
-  - Save to `doc/HISTORY.md`.
 - [ ] Fix the font fallback chain in `render`:
   - [ ] Pass `FONT_FAMILY` as agg `--text-font-family`; the current
         `--font-family` bypasses the bundled Symbols Nerd Font and emoji
@@ -30,8 +30,9 @@
   - [ ] No bash 4+ syntax is used today — keep it that way (no `declare -A`,
         `mapfile`, `${var,,}`, `&>>`, namerefs).
 - [ ] Implement minimal example for README#Quick_Start.
-  - Add nice one liner for `curl+source` remote import s-vhs from: `https://github.../v0.1.0/.../s-vhs.sh`.
-- [ ] Add check for missing dependencies: tmux, agg (if output set to GIF), ...
+  - [ ] Add nice one-liner for `curl+source` remote import s-vhs from: `https://github.../v0.1.0/.../s-vhs.sh`.
+  - [ ] Record GIF and add it to the README.
+- [ ] Add check for missing dependencies: tmux, agg (if output set to GIF), ... to session start function.
 - [ ] Implement basic examples:
   - [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:
     - https://github.com/charmbracelet/vhs/tree/main/examples/settings
@@ -42,6 +43,8 @@
   - [ ] Run recording scripts and generate GIFs, put it to `doc/images`.
 - [ ] Draft template for recording scrip: with most common settings (commented).
 - [ ] Publish to the github.
+- [ ] Update `pi-context-view` recordings + add reference to the `s-vhs`.
+
 
 ## v0.2.0
 
