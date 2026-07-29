@@ -33,7 +33,7 @@
 | `Set LineHeight 1.8`                 | `SetLineHeight`                   | `LINE_HEIGHT` (`1.2`)              | ✅     |
 | `Set TypingSpeed 0.1`                | `SetTypingSpeed`                  | `TYPE_DELAY` (`0.1`)               | ✅     |
 | `Set Theme "…"`                      | `SetTheme`                        | `AGG_THEME` (`kanagawa`)           | 🟡    |
-| `Set Padding 20`                     | `SetPadding`                      | `render 20` argument               | 🟡    |
+| `Set Padding 20`                     | `SetPadding`                      | —                                  | 📋    |
 | `Set Framerate 60`                   | `SetFramerate`                    | — (agg `30`)                       | 📋    |
 | `Set PlaybackSpeed 2`                | `SetPlaybackSpeed`                | — (agg `1`)                        | 📋    |
 | `Set LoopOffset 5`                   | `SetLoopOffset`                   | —                                  | 📋    |
@@ -128,16 +128,15 @@ The remaining glyph-quality knobs have no VHS equivalent:
 | `SetRenderer`         | `--renderer`          | `swash` | COLRv1 emoji (recent Noto Color Emoji) only render under `resvg`; swash falls back to monochrome.     |
 | `SetBoldIsBright`     | `--bold-is-bright`    | off     | agg is literal; most terminals show bold red as bright red, so demos look off next to the real thing. |
 
-### Padding 🟡
+### Padding 📋
 
-Implemented as an optional argument to `render`, using `magick` (preferred) or
-`ffmpeg` to add a border to the finished GIF:
+Missing. An earlier `render 40` argument added the border with `magick`
+(preferred) or `ffmpeg`; it was removed because re-encoding the finished GIF
+costs sharpness and an extra dependency for a cosmetic frame. The code is kept
+in [HISTORY.md](HISTORY.md) and is planned to return as `SetPadding`
+([PLAN.md](PLAN.md), v0.4.0).
 
-```shell
-render 40   # 40px uniform padding
-```
-
-> Check if there any way to avoid `magick` artifacts for GIF.
+> Check if there any way to pad without a second encode / `magick` artifacts.
 
 
 ### Renderer pass-through 📋
@@ -188,7 +187,7 @@ docs recommend a `gifsicle` pass, which would make a good opt-in `SetOptimize`:
 gifsicle --lossy=80 -k 128 -O2 -Okeep-empty demo.gif -o demo-opt.gif
 ```
 
-It is post-processing, the same layer as the padding mistake, so it must stay
+It is post-processing, the same layer as the removed padding, so it must stay
 opt-in and off by default.
 
 ### Not applicable 🚫

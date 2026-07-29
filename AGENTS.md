@@ -20,12 +20,13 @@ Status: early draft, pre-`v0.1.0`. The public function names are **not** frozen
 
 ## Layout
 
-| Path          | Purpose                                                    |
-| ------------- | ---------------------------------------------------------- |
-| `s-vhs.sh`    | The whole implementation. Sourced library, never executed. |
-| `README.md`   | User-facing docs; many sections are still `> TODO:`.       |
-| `doc/PLAN.md` | Roadmap / checklist. Update checkboxes when a task lands.  |
-| `examples/`   | Empty placeholder for example recording scripts (planned). |
+| Path             | Purpose                                                    |
+| ---------------- | ---------------------------------------------------------- |
+| `s-vhs.sh`       | The whole implementation. Sourced library, never executed. |
+| `README.md`      | User-facing docs; many sections are still `> TODO:`.       |
+| `doc/PLAN.md`    | Roadmap / checklist. Update checkboxes when a task lands.  |
+| `doc/HISTORY.md` | Verbatim archive of code removed from `s-vhs.sh`.          |
+| `examples/`      | Empty placeholder for example recording scripts (planned). |
 
 No build system, no test suite, no CI. Verification is manual: run a recording
 script and inspect the produced GIF.
@@ -33,7 +34,6 @@ script and inspect the produced GIF.
 ## Dependencies
 
 Runtime: `bash`, `tmux`, `asciinema`, `agg`.
-Optional (padding): `magick` (preferred) or `ffmpeg`.
 Dev: `shellcheck`.
 
 ## Conventions
@@ -54,7 +54,8 @@ implementation of them. Project-specific points:
 - **Docstrings.** Every function opens with the `#`-framed block including
   `Parameters:` and a real `Example:`. No exceptions, including internals.
 - **Comments explain why, not what** — e.g. why the cast is truncated after
-  detaching, why `magick` needs `-coalesce`. Preserve these when refactoring.
+  detaching, why the recorder needs a moment to attach. Preserve these when
+  refactoring.
 - **State globals** `REC_PID` and `RECORDED` are module state; keep their
   lifecycle (`record` sets, `stop_recording`/`render` clear) intact.
 - **shellcheck-clean.** Suppress only per-line, with an adjacent explanation.

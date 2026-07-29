@@ -34,11 +34,6 @@ set -euo pipefail
 # Headless recording cannot inspect the host theme; pin rendering instead.
 : "${AGG_THEME:=kanagawa}"
 
-# Set PAD_COLOR to override automatic detection from the GIF's top-left pixel.
-# PAD_FALLBACK_COLOR is used when only ffmpeg is available.
-: "${PAD_COLOR:=}"
-: "${PAD_FALLBACK_COLOR:=#121314}"
-
 # Shell to run inside the tmux session.
 : "${DEMO_SHELL:=fish}"
 
@@ -212,14 +207,9 @@ render() {
     # End the recording (killing the session detaches the recorder) and
     # render the cast to GIF with agg.
     #
-    # Parameters:
-    #   $1 - padding - (optional) - uniform pixel padding to add to the GIF.
-    #
     # Example:
-    #   render "$PADDING"
+    #   render
     #
-    local padding="${1-}"
-
     # As in stop_recording, drop the detach noise appended by the kill.
     local clean_end=
     [[ -n $REC_PID ]] && clean_end=$(wc -c < "$CAST")
@@ -241,10 +231,6 @@ render() {
         --theme "$AGG_THEME"         \
         "$CAST" "$GIF"
 
-    if [[ -n $padding ]]; then
-        _pad_gif "$padding"
-    fi
-
     printf 'Wrote %s\n' "$GIF"
 }
 
@@ -264,46 +250,6 @@ _send() {
     #   _send Enter
     #
     tmux send-keys -t "$SESSION" "$@"
-}
-
-
-_pad_gif() {
-    #
-    # Add uniform pixel padding around the rendered GIF (like VHS's
-    # Set Padding). Prefers magick, falls back to ffmpeg, and warns when
-    # neither is installed.
-    #
-    # Parameters:
-    #   $1 - pad - padding in pixels.
-    #
-    # Example:
-    #   _pad_gif 40
-    #
-    local pad="$1"
-
-    local pad_color="${PAD_COLOR:-}"
-
-    printf '::: adding %spx padding\n' "$pad"
-
-    if command -v magick &> /dev/null; then
-        if [[ -z $pad_color ]]; then
-            pad_color="#$(magick "${GIF}[0]" -format '%[hex:p{0,0}]' info:)"
-        fi
-        # Coalesce first: border on frame-diffed GIFs misplaces frames.
-        magick "$GIF" -coalesce -bordercolor "$pad_color" -border "$pad" \
-            -layers optimize "$GIF"
-    elif command -v ffmpeg &> /dev/null; then
-        local tmp="${GIF%.gif}-pad.gif"
-        pad_color="${pad_color:-$PAD_FALLBACK_COLOR}"
-        # Regenerate the palette, otherwise ffmpeg falls back to a dithered
-        # generic 256-color palette.
-        ffmpeg -loglevel error -y -i "$GIF" -filter_complex \
-            "pad=iw+2*${pad}:ih+2*${pad}:${pad}:${pad}:${pad_color/\#/0x},split[a][b];[a]palettegen[p];[b][p]paletteuse" \
-            "$tmp"
-        mv -- "$tmp" "$GIF"
-    else
-        printf 'warning: neither magick nor ffmpeg found; skipping %spx padding\n' "$pad" >&2
-    fi
 }
 
 
