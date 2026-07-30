@@ -27,8 +27,9 @@ _SVHS_LINE_HEIGHT=1.2
 # Headless recording cannot inspect the host theme; pin rendering instead.
 _SVHS_THEME='kanagawa'
 
-# Shell to run inside the tmux session.
-_SVHS_SHELL='fish'
+# Shell to run inside the tmux session;
+# Bash is safe default - present everywhere.
+_SVHS_SHELL='bash'
 
 # Delays are in seconds.
 _SVHS_TYPING_SPEED=0.1

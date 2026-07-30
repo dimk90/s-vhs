@@ -9,8 +9,8 @@
 - [x] Decide on using only functions or functions+variables.
 - [x] Change existing variables to functions: [COMMANDS](doc/COMMANDS.md).
 - [x] Decision about <time> and <repetition> argument.
-- [ ] Implement minimal example for README#Quick_Start.
-  - [ ] Add it to `example`.
+- [x] Implement minimal example for README#Quick_Start.
+  - [x] Add it to `example`.
 - [ ] Refactor implemented `s-vhs.sh` functions to target format [COMMANDS](doc/COMMANDS.md).
 - [ ] Add version number and link to git repo to `s-vhs.sh`:
   - Check what is the best way to to keep version number inside `s-vhs.sh`.
@@ -73,3 +73,17 @@
 - [ ] Rended visualization for all available themes.
 - [ ] MP4 output (same `.cast`, different renderer):
   - [ ] MP4 — render with `ffmpeg`?
+
+
+## Undecided
+
+- [ ] Decide on isolating the recorded shell from the user's rc files
+      (`bash --norc`, `fish --no-config`, ...):
+  - The session inherits `~/.bashrc`, so a recording shows the author's prompt
+    (starship, git status, ...) and aliases — it is not reproducible on another
+    machine, and a demo GIF leaks unrelated prompt content.
+  - Against: VHS behaves the same way, and a dotfiles/prompt demo *wants* the
+    real config; a bare `--norc` prompt (`bash-5.3$`) looks worse by default.
+  - Options: keep inheriting, add a `SetShell 'bash --norc'` recipe to the docs
+    only, or add an explicit setting (e.g. `SetCleanShell`) that maps to the
+    right flag per shell.

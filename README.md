@@ -33,34 +33,54 @@ A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superi
 ## Quick Start
 
 
-```shell
-# Where should we write the GIF?
-Output demo.gif
+A recording is a plain shell script that sources `s-vhs.sh`:
 
-# Set up a 1200x600 terminal with 46px font.
-Set FontSize 46
-Set Width 1200
-Set Height 600
+```shell
+#!/usr/bin/env bash
+
+source ./s-vhs.sh
+
+# Where should we write the GIF?
+SetOutput 'demo.gif'
+
+# Set up an 80x20 terminal with a 28px font.
+SetCols 80
+SetRows 20
+SetFontSize 28
+
+# Start the terminal, then the recorder.
+start_session
+record
 
 # Type a command in the terminal.
-Type "echo 'Welcome to VHS!'"
+type_text "echo 'Welcome to S-VHS!'"
 
 # Pause for dramatic effect...
-Sleep 500ms
+sleep 0.5
 
 # Run the command by pressing enter.
-Enter
+key Enter
 
 # Admire the output for a bit.
-Sleep 5s
-```
-> TODO: rewrite with `s-vhs`
+sleep 5
 
-Run it to render gif:
-[Link to gif](...)
+# Stop recording and write every requested output.
+render
+```
+
+Run it to render the GIF:
+
+```shell
+chmod +x demo.rec.sh
+./demo.rec.sh
+```
+
+> TODO: render this script and embed the GIF here.
 
 > [!NOTE]
-> See more recording scripts in [`examples/`](examples).
+> A runnable copy lives in
+> [`examples/quick-start.rec.sh`](examples/quick-start.rec.sh); see
+> [`examples/`](examples) for more recording scripts.
 
 
 ## Installation
