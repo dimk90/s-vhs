@@ -9,39 +9,289 @@
 set -euo pipefail
 
 
-## Constants
+## Settings
 
 
-# Any of the constants below may be overridden before sourcing.
+_SVHS_SESSION='demo'
+_SVHS_OUTPUTS=()
 
-: "${SESSION:=demo}"
-: "${CAST:?set CAST to the .cast output path before sourcing vhs.sh}"
-: "${GIF:?set GIF to the .gif output path before sourcing vhs.sh}"
+# Terminal geometry is in cells, not pixels; pixel size is approximately cells
+# multiplied by the font size.
+_SVHS_COLS=100
+_SVHS_ROWS=40
 
-# Terminal geometry is in cells, not pixels; pixel size ~= cells x glyph size
-# at FONT_SIZE.
-: "${COLS:=100}"
-: "${ROWS:=40}"
-
-# Leave FONT_FAMILY empty to use agg's built-in default fonts.
-: "${FONT_FAMILY:=}"
-: "${FONT_SIZE:=28}"
-: "${LINE_HEIGHT:=1.2}"
+# An empty family lets agg use its built-in default fonts.
+_SVHS_FONT_FAMILY=''
+_SVHS_FONT_SIZE=28
+_SVHS_LINE_HEIGHT=1.2
 # Headless recording cannot inspect the host theme; pin rendering instead.
-: "${AGG_THEME:=kanagawa}"
+_SVHS_THEME='kanagawa'
 
 # Shell to run inside the tmux session.
-: "${DEMO_SHELL:=fish}"
+_SVHS_SHELL='fish'
 
-# Default delay between simulated keystrokes (VHS TypingSpeed).
-: "${TYPE_DELAY:=0.1}"
-# Default pause after a key press.
-: "${KEY_DELAY:=0.0}"
+# Delays are in seconds.
+_SVHS_TYPING_SPEED=0.1
+_SVHS_KEY_DELAY=0.0
 
-# Recorder state: PID of the backgrounded asciinema process, and a flag set
-# once the first segment is captured so later record calls append.
-REC_PID=
-RECORDED=
+# Session and recorder lifecycle state.
+_SVHS_STARTED=0
+_SVHS_CAST=''
+_SVHS_TEMP_CAST=''
+_SVHS_REC_PID=''
+_SVHS_RECORDED=''
+
+
+SetOutput() {
+    #
+    # Add a cast or GIF output for the recording.
+    #
+    # Parameters:
+    #   $1 - output - path ending in .cast or .gif.
+    #
+    # Example:
+    #   SetOutput 'demo.gif' || exit 1
+    #
+    local output="${1-}"
+
+    _require_configuration_phase 'SetOutput' || return 1
+
+    case "$output" in
+        *.cast|*.gif) ;;
+        '')
+            printf 'SetOutput: output path must not be empty\n' >&2
+            return 1
+            ;;
+        *)
+            printf 'SetOutput: unsupported output extension: %s\n' "$output" >&2
+            return 1
+            ;;
+    esac
+
+    _SVHS_OUTPUTS+=("$output")
+}
+
+
+SetSession() {
+    #
+    # Set the tmux session name used for the recording.
+    #
+    # Parameters:
+    #   $1 - session - non-empty tmux session name.
+    #
+    # Example:
+    #   SetSession 'demo' || exit 1
+    #
+    local session="${1-}"
+
+    _require_configuration_phase 'SetSession' || return 1
+    if [[ -z $session ]]; then
+        printf 'SetSession: session name must not be empty\n' >&2
+        return 1
+    fi
+
+    _SVHS_SESSION="$session"
+}
+
+
+SetCols() {
+    #
+    # Set the terminal width in character cells.
+    #
+    # Parameters:
+    #   $1 - cols - positive integer column count.
+    #
+    # Example:
+    #   SetCols 80 || exit 1
+    #
+    local cols="${1-}"
+
+    _require_configuration_phase 'SetCols' || return 1
+    if ! _is_positive_integer "$cols"; then
+        printf 'SetCols: expected a positive integer, got: %s\n' "$cols" >&2
+        return 1
+    fi
+
+    _SVHS_COLS="$cols"
+}
+
+
+SetRows() {
+    #
+    # Set the terminal height in character cells.
+    #
+    # Parameters:
+    #   $1 - rows - positive integer row count.
+    #
+    # Example:
+    #   SetRows 30 || exit 1
+    #
+    local rows="${1-}"
+
+    _require_configuration_phase 'SetRows' || return 1
+    if ! _is_positive_integer "$rows"; then
+        printf 'SetRows: expected a positive integer, got: %s\n' "$rows" >&2
+        return 1
+    fi
+
+    _SVHS_ROWS="$rows"
+}
+
+
+SetFontFamily() {
+    #
+    # Set the font family used to render text.
+    #
+    # Parameters:
+    #   $1 - font_family - non-empty font family name.
+    #
+    # Example:
+    #   SetFontFamily 'Iosevka Term' || exit 1
+    #
+    local font_family="${1-}"
+
+    _require_configuration_phase 'SetFontFamily' || return 1
+    if [[ -z $font_family ]]; then
+        printf 'SetFontFamily: font family must not be empty\n' >&2
+        return 1
+    fi
+
+    _SVHS_FONT_FAMILY="$font_family"
+}
+
+
+SetFontSize() {
+    #
+    # Set the rendered font size in pixels.
+    #
+    # Parameters:
+    #   $1 - font_size - positive integer pixel size.
+    #
+    # Example:
+    #   SetFontSize 28 || exit 1
+    #
+    local font_size="${1-}"
+
+    _require_configuration_phase 'SetFontSize' || return 1
+    if ! _is_positive_integer "$font_size"; then
+        printf 'SetFontSize: expected a positive integer, got: %s\n' "$font_size" >&2
+        return 1
+    fi
+
+    _SVHS_FONT_SIZE="$font_size"
+}
+
+
+SetLineHeight() {
+    #
+    # Set the renderer's line-height multiplier.
+    #
+    # Parameters:
+    #   $1 - line_height - positive number.
+    #
+    # Example:
+    #   SetLineHeight 1.2 || exit 1
+    #
+    local line_height="${1-}"
+
+    _require_configuration_phase 'SetLineHeight' || return 1
+    if ! _is_positive_number "$line_height"; then
+        printf 'SetLineHeight: expected a positive number, got: %s\n' "$line_height" >&2
+        return 1
+    fi
+
+    _SVHS_LINE_HEIGHT="$line_height"
+}
+
+
+SetTheme() {
+    #
+    # Set an agg theme name or custom palette value.
+    #
+    # Parameters:
+    #   $1 - theme - non-empty value passed to agg --theme.
+    #
+    # Example:
+    #   SetTheme 'kanagawa' || exit 1
+    #
+    local theme="${1-}"
+
+    _require_configuration_phase 'SetTheme' || return 1
+    if [[ -z $theme ]]; then
+        printf 'SetTheme: theme must not be empty\n' >&2
+        return 1
+    fi
+
+    _SVHS_THEME="$theme"
+}
+
+
+SetShell() {
+    #
+    # Set the shell command run inside the tmux session.
+    #
+    # Parameters:
+    #   $1 - shell - non-empty shell command.
+    #
+    # Example:
+    #   SetShell 'fish' || exit 1
+    #
+    local shell="${1-}"
+
+    _require_configuration_phase 'SetShell' || return 1
+    if [[ -z $shell ]]; then
+        printf 'SetShell: shell command must not be empty\n' >&2
+        return 1
+    fi
+
+    _SVHS_SHELL="$shell"
+}
+
+
+SetTypingSpeed() {
+    #
+    # Set the default delay between typed characters in seconds.
+    #
+    # Parameters:
+    #   $1 - typing_speed - non-negative number of seconds.
+    #
+    # Example:
+    #   SetTypingSpeed 0.1 || exit 1
+    #
+    local typing_speed="${1-}"
+
+    _require_configuration_phase 'SetTypingSpeed' || return 1
+    if ! _is_nonnegative_number "$typing_speed"; then
+        printf 'SetTypingSpeed: expected a non-negative number, got: %s\n' \
+            "$typing_speed" >&2
+        return 1
+    fi
+
+    _SVHS_TYPING_SPEED="$typing_speed"
+}
+
+
+SetKeyDelay() {
+    #
+    # Set the default pause after a key press in seconds.
+    #
+    # Parameters:
+    #   $1 - key_delay - non-negative number of seconds.
+    #
+    # Example:
+    #   SetKeyDelay 0.1 || exit 1
+    #
+    local key_delay="${1-}"
+
+    _require_configuration_phase 'SetKeyDelay' || return 1
+    if ! _is_nonnegative_number "$key_delay"; then
+        printf 'SetKeyDelay: expected a non-negative number, got: %s\n' \
+            "$key_delay" >&2
+        return 1
+    fi
+
+    _SVHS_KEY_DELAY="$key_delay"
+}
 
 
 ## Session
@@ -49,16 +299,32 @@ RECORDED=
 
 start_session() {
     #
-    # Start a fresh detached tmux session sized COLSxROWS running DEMO_SHELL,
-    # isolated from personal tmux config (no status bar).
+    # Start a fresh detached tmux session with the configured geometry and
+    # shell, isolated from personal tmux config and without a status bar.
+    #
+    # Parameters:
+    #   None.
     #
     # Example:
-    #   start_session
+    #   start_session || exit 1
     #
-    tmux -f /dev/null new-session -d -s "$SESSION" -x "$COLS" -y "$ROWS" "$DEMO_SHELL"
+    if [[ $_SVHS_STARTED == 1 ]]; then
+        printf 'start_session: session has already started\n' >&2
+        return 1
+    fi
+    if ((${#_SVHS_OUTPUTS[@]} == 0)); then
+        printf 'start_session: configure at least one output with SetOutput\n' >&2
+        return 1
+    fi
+
+    _prepare_cast || return 1
+
+    tmux -f /dev/null new-session -d -s "$_SVHS_SESSION" \
+        -x "$_SVHS_COLS" -y "$_SVHS_ROWS" "$_SVHS_SHELL"
+    _SVHS_STARTED=1
     tmux set -g extended-keys on
     tmux set -g extended-keys-format csi-u
-    tmux set-option -t "$SESSION" status off
+    tmux set-option -t "$_SVHS_SESSION" status off
 }
 
 
@@ -91,13 +357,13 @@ key() {
     #
     # Parameters:
     #   $1 - key_name - tmux key name (e.g., 'Enter', 'Down').
-    #   $2 - pause - (optional) - seconds to sleep after (default: KEY_DELAY).
+    #   $2 - pause - (optional) - seconds to sleep after (default: SetKeyDelay).
     #
     # Example:
     #   key Down 0.2
     #
     local key_name="$1"
-    local pause="${2:-$KEY_DELAY}"
+    local pause="${2:-$_SVHS_KEY_DELAY}"
 
     _send "$key_name"
     sleep "$pause"
@@ -110,13 +376,13 @@ type_text() {
     #
     # Parameters:
     #   $1 - text - text to type.
-    #   $2 - delay - (optional) - seconds between keystrokes (default: TYPE_DELAY).
+    #   $2 - delay - (optional) - seconds between keystrokes (default: SetTypingSpeed).
     #
     # Example:
     #   type_text '/context'
     #
     local text="$1"
-    local delay="${2:-$TYPE_DELAY}"
+    local delay="${2:-$_SVHS_TYPING_SPEED}"
     local idx
 
     for ((idx = 0; idx < ${#text}; idx++)); do
@@ -140,10 +406,9 @@ wait_for() {
     #
     local pattern="$1"
     local timeout="${2:-15}"
-
     local deadline=$((SECONDS + timeout))
 
-    until tmux capture-pane -p -t "$SESSION" | grep -q "$pattern"; do
+    until tmux capture-pane -p -t "$_SVHS_SESSION" | grep -q "$pattern"; do
         if ((SECONDS >= deadline)); then
             printf 'timeout waiting for: %s\n' "$pattern" >&2
             return 1
@@ -161,17 +426,23 @@ record() {
     # Start (or resume) recording the session; the first call records fresh,
     # later calls append to the same cast (VHS Show).
     #
-    # Example:
-    #   record
+    # Parameters:
+    #   None.
     #
+    # Example:
+    #   record || exit 1
+    #
+    local attach_command
+    printf -v attach_command 'tmux attach -t %q' "$_SVHS_SESSION"
+
     # Expands to nothing on the first call; must stay unquoted so an empty
     # value adds no argument.
     # shellcheck disable=SC2086
-    asciinema rec --headless --overwrite ${RECORDED:+--append} \
-                  --window-size "${COLS}x${ROWS}"              \
-                  -c "tmux attach -t $SESSION" "$CAST" &
-    REC_PID=$!
-    RECORDED=1
+    asciinema rec --headless --overwrite ${_SVHS_RECORDED:+--append} \
+                  --window-size "${_SVHS_COLS}x${_SVHS_ROWS}"      \
+                  -c "$attach_command" "$_SVHS_CAST" &
+    _SVHS_REC_PID=$!
+    _SVHS_RECORDED=1
     sleep 1 # let the recorder attach
 }
 
@@ -180,18 +451,22 @@ stop_recording() {
     #
     # Stop recording without disturbing the session (VHS Hide).
     #
-    # Example:
-    #   stop_recording
+    # Parameters:
+    #   None.
     #
+    # Example:
+    #   stop_recording || exit 1
+    #
+    local clean_end
+
     # Detaching appends terminal-reset noise to the cast; remember the clean
     # size first and truncate back to it.
-    local clean_end
-    clean_end=$(wc -c < "$CAST")
+    clean_end=$(wc -c < "$_SVHS_CAST")
 
-    tmux detach-client -s "$SESSION"
-    wait "$REC_PID"
-    truncate -s "$clean_end" -- "$CAST"
-    REC_PID=
+    tmux detach-client -s "$_SVHS_SESSION"
+    wait "$_SVHS_REC_PID"
+    truncate -s "$clean_end" -- "$_SVHS_CAST"
+    _SVHS_REC_PID=''
 }
 
 
@@ -200,38 +475,172 @@ stop_recording() {
 
 render() {
     #
-    # End the recording (killing the session detaches the recorder) and
-    # render the cast to GIF with agg.
+    # End the recording, retain requested casts, and render requested GIFs.
+    #
+    # Parameters:
+    #   None.
     #
     # Example:
-    #   render
+    #   render || exit 1
     #
-    # As in stop_recording, drop the detach noise appended by the kill.
-    local clean_end=
-    [[ -n $REC_PID ]] && clean_end=$(wc -c < "$CAST")
-
-    tmux kill-session -t "$SESSION"
-
-    if [[ -n $REC_PID ]]; then
-        wait "$REC_PID"
-        truncate -s "$clean_end" -- "$CAST"
-    fi
-    REC_PID=
-
+    local clean_end=''
+    local output
     local font_args=()
-    [[ -n $FONT_FAMILY ]] && font_args+=(--font-family "$FONT_FAMILY")
 
-    agg "${font_args[@]}"            \
-        --font-size "$FONT_SIZE"     \
-        --line-height "$LINE_HEIGHT" \
-        --theme "$AGG_THEME"         \
-        "$CAST" "$GIF"
+    # As in stop_recording, drop the detach noise appended by the kill.
+    [[ -n $_SVHS_REC_PID ]] && clean_end=$(wc -c < "$_SVHS_CAST")
 
-    printf 'Wrote %s\n' "$GIF"
+    tmux kill-session -t "$_SVHS_SESSION"
+
+    if [[ -n $_SVHS_REC_PID ]]; then
+        wait "$_SVHS_REC_PID"
+        truncate -s "$clean_end" -- "$_SVHS_CAST"
+    fi
+    _SVHS_REC_PID=''
+
+    [[ -n $_SVHS_FONT_FAMILY ]] && \
+        font_args+=(--font-family "$_SVHS_FONT_FAMILY")
+
+    for output in "${_SVHS_OUTPUTS[@]}"; do
+        case "$output" in
+            *.cast)
+                if [[ $output != "$_SVHS_CAST" ]]; then
+                    cp -- "$_SVHS_CAST" "$output"
+                fi
+                ;;
+            *.gif)
+                agg "${font_args[@]}"                    \
+                    --font-size "$_SVHS_FONT_SIZE"       \
+                    --line-height "$_SVHS_LINE_HEIGHT"   \
+                    --theme "$_SVHS_THEME"               \
+                    "$_SVHS_CAST" "$output"
+                ;;
+        esac
+
+        printf 'Wrote %s\n' "$output"
+    done
+
+    if [[ -n $_SVHS_TEMP_CAST ]]; then
+        rm -f -- "$_SVHS_TEMP_CAST"
+        _SVHS_TEMP_CAST=''
+    fi
+    _SVHS_CAST=''
 }
 
 
 ## Internal
+
+
+# Bash cannot hide functions from a sourcing script; the leading underscore
+# marks implementation details that are not part of the public API.
+
+_require_configuration_phase() {
+    #
+    # Reject a setting change after the tmux session has started.
+    #
+    # Parameters:
+    #   $1 - setter - public setter name used in the error message.
+    #
+    # Example:
+    #   _require_configuration_phase 'SetRows' || exit 1
+    #
+    local setter="$1"
+
+    if [[ $_SVHS_STARTED == 1 ]]; then
+        printf '%s: settings cannot change after the session starts\n' \
+            "$setter" >&2
+        return 1
+    fi
+}
+
+
+_is_positive_integer() {
+    #
+    # Return success when a value is an integer greater than zero.
+    #
+    # Parameters:
+    #   $1 - value - value to test.
+    #
+    # Example:
+    #   _is_positive_integer '80' || exit 1
+    #
+    local value="$1"
+
+    if [[ $value =~ ^[1-9][0-9]*$ ]]; then
+        return 0
+    fi
+    return 1
+}
+
+
+_is_nonnegative_number() {
+    #
+    # Return success when a value is a decimal number greater than or equal to zero.
+    #
+    # Parameters:
+    #   $1 - value - value to test.
+    #
+    # Example:
+    #   _is_nonnegative_number '0.1' || exit 1
+    #
+    local value="$1"
+
+    if [[ $value =~ ^([0-9]+([.][0-9]*)?|[.][0-9]+)$ ]]; then
+        return 0
+    fi
+    return 1
+}
+
+
+_is_positive_number() {
+    #
+    # Return success when a value is a decimal number greater than zero.
+    #
+    # Parameters:
+    #   $1 - value - value to test.
+    #
+    # Example:
+    #   _is_positive_number '1.2' || exit 1
+    #
+    local value="$1"
+
+    if _is_nonnegative_number "$value" && [[ $value =~ [1-9] ]]; then
+        return 0
+    fi
+    return 1
+}
+
+
+_prepare_cast() {
+    #
+    # Select a requested cast path or create a temporary renderer input.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _prepare_cast || exit 1
+    #
+    local output
+    local temporary_cast
+
+    _SVHS_CAST=''
+    for output in "${_SVHS_OUTPUTS[@]}"; do
+        if [[ $output == *.cast ]]; then
+            _SVHS_CAST="$output"
+            break
+        fi
+    done
+
+    if [[ -z $_SVHS_CAST ]]; then
+        if ! temporary_cast=$(mktemp); then
+            printf 'start_session: failed to create a temporary cast\n' >&2
+            return 1
+        fi
+        _SVHS_CAST="$temporary_cast"
+        _SVHS_TEMP_CAST="$temporary_cast"
+    fi
+}
 
 
 _send() {
@@ -245,18 +654,27 @@ _send() {
     #   _send -l 'ls'
     #   _send Enter
     #
-    tmux send-keys -t "$SESSION" "$@"
+    tmux send-keys -t "$_SVHS_SESSION" "$@"
 }
 
 
 _cleanup() {
     #
     # Kill the demo session and recorder on exit; safe to call when neither
-    # is alive.
+    # is alive, and remove an unrequested temporary cast.
     #
-    tmux kill-session -t "$SESSION" 2> /dev/null || true
-    if [[ -n $REC_PID ]] && kill -0 "$REC_PID" 2> /dev/null; then
-        kill "$REC_PID" 2> /dev/null || true
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _cleanup
+    #
+    tmux kill-session -t "$_SVHS_SESSION" 2> /dev/null || true
+    if [[ -n $_SVHS_REC_PID ]] && kill -0 "$_SVHS_REC_PID" 2> /dev/null; then
+        kill "$_SVHS_REC_PID" 2> /dev/null || true
+    fi
+    if [[ -n $_SVHS_TEMP_CAST ]]; then
+        rm -f -- "$_SVHS_TEMP_CAST"
     fi
 }
 

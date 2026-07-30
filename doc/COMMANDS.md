@@ -5,14 +5,13 @@
 - 📋 - Planned — not implemented yet.
 - 🚫 - Not applicable — meaningless for the `tmux` + `asciinema` + renderer pipeline.
 
-The final public API is function-only: source `s-vhs.sh`, call all `Set*`
-functions, then call `Start`. Variables shown in the **Today** column describe
-the current draft implementation only; they will become private backing state
-and are not part of the planned API.
+The public configuration API is function-only: source `s-vhs.sh`, call all
+`Set*` functions, then start the session. Settings shown in the **Today** column
+are implemented now; the remaining command names still describe the target API.
 
 | VHS                                  | s-vhs (planned)                   | Today                              | Status |
 | ------------------------------------ | --------------------------------- | ---------------------------------- | ------ |
-| `Output out.gif`                     | `SetOutput out.gif`               | `GIF=`, `CAST=`                    | 🟡    |
+| `Output out.gif`                     | `SetOutput out.gif`               | `SetOutput out.gif`                | ✅     |
 | `Output out.txt` / `.ascii`          | `SetOutput out.txt`               | —                                  | 📋    |
 | `Require prog`                       | `Require`                         | —                                  | 📋    |
 | `Type "text"`                        | `Type`                            | `type_text`                        | ✅     |
@@ -30,14 +29,14 @@ and are not part of the planned API.
 | `Env KEY "VAL"`                      | `Env`                             | `export KEY=VAL`                   | 🟡    |
 | `Source other.tape`                  | —                                 | `source other.sh`                  | ✅     |
 |                                      |                                   |                                    |        |
-| `Set Shell fish`                     | `SetShell`                        | `DEMO_SHELL` (`fish`)              | ✅     |
-| `Set FontSize 40`                    | `SetFontSize`                     | `FONT_SIZE` (`28`)                 | ✅     |
-| `Set FontFamily "…"`                 | `SetFontFamily`                   | `FONT_FAMILY` (bypasses fallbacks) | 🟡    |
-| `Set Width 1200`                     | `SetCols`                         | `COLS` (`100`)                     | 🟡    |
-| `Set Height 600`                     | `SetRows`                         | `ROWS` (`40`)                      | 🟡    |
-| `Set LineHeight 1.8`                 | `SetLineHeight`                   | `LINE_HEIGHT` (`1.2`)              | ✅     |
-| `Set TypingSpeed 0.1`                | `SetTypingSpeed`                  | `TYPE_DELAY` (`0.1`)               | ✅     |
-| `Set Theme "…"`                      | `SetTheme`                        | `AGG_THEME` (`kanagawa`)           | 🟡    |
+| `Set Shell fish`                     | `SetShell`                        | `SetShell` (`fish`)                | ✅     |
+| `Set FontSize 40`                    | `SetFontSize`                     | `SetFontSize` (`28`)               | ✅     |
+| `Set FontFamily "…"`                 | `SetFontFamily`                   | `SetFontFamily` (exact)            | 🟡    |
+| `Set Width 1200`                     | `SetCols`                         | `SetCols` (`100`)                  | ✅     |
+| `Set Height 600`                     | `SetRows`                         | `SetRows` (`40`)                   | ✅     |
+| `Set LineHeight 1.8`                 | `SetLineHeight`                   | `SetLineHeight` (`1.2`)            | ✅     |
+| `Set TypingSpeed 0.1`                | `SetTypingSpeed`                  | `SetTypingSpeed` (`0.1`)           | ✅     |
+| `Set Theme "…"`                      | `SetTheme`                        | `SetTheme` (`kanagawa`)            | 🟡    |
 | `Set Padding 20`                     | `SetPadding`                      | —                                  | 📋    |
 | `Set Framerate 60`                   | `SetFramerate`                    | — (agg `30`)                       | 📋    |
 | `Set PlaybackSpeed 2`                | `SetPlaybackSpeed`                | — (agg `1`)                        | 📋    |
@@ -48,13 +47,13 @@ and are not part of the planned API.
 | `Set BorderRadius`                   | —                                 | —                                  | 🚫    |
 | `Set CursorBlink`                    | —                                 | —                                  | 🚫    |
 |                                      |                                   |                                    |        |
-| —                                    | `SetKeyDelay`                     | `KEY_DELAY` (`0.0`)                | ✅     |
-| —                                    | `SetSession`                      | `SESSION` (`demo`)                 | ✅     |
+| —                                    | `SetKeyDelay`                     | `SetKeyDelay` (`0.0`)              | ✅     |
+| —                                    | `SetSession`                      | `SetSession` (`demo`)              | ✅     |
 | —                                    | `SetIdleTimeLimit`                | — (agg `5`)                        | 📋    |
 | —                                    | `SetLastFrameDuration`            | — (agg `3`)                        | 📋    |
 | —                                    | `SetLoop`                         | — (agg loops)                      | 📋    |
 | —                                    | `SetEmojiFontFamily`              | — (agg default chain)              | 📋    |
-| —                                    | `SetFontFamilyExact`              | — (today's `FONT_FAMILY`)          | 📋    |
+| —                                    | `SetFontFamilyExact`              | —                                  | 📋    |
 | —                                    | `SetFontDir`                      | —                                  | 📋    |
 | —                                    | `SetFontAntialiasing`             | — (agg `6`)                        | 📋    |
 | —                                    | `SetFontHinting`                  | — (agg `true`)                     | 📋    |
@@ -63,7 +62,7 @@ and are not part of the planned API.
 | —                                    | `SetTitle`                        | —                                  | 📋    |
 | —                                    | `SetQuiet`                        | —                                  | 📋    |
 | —                                    | `SetOptimize`                     | —                                  | 📋    |
-| —                                    | `SetOutput out.cast`              | `CAST=`                            | 🟡    |
+| —                                    | `SetOutput out.cast`              | `SetOutput out.cast`               | ✅     |
 |                                      |                                   |                                    |        |
 | —                                    | `Start`                           | `start_session`                    | ✅     |
 | —                                    | `Render`                          | `render`                           | ✅     |
@@ -97,7 +96,7 @@ SetFontSize 21
 Start
 ```
 
-### Width / Height → Cols / Rows 🟡
+### Width / Height → Cols / Rows ✅
 
 `s-vhs` sizes the terminal in **cells, not pixels** — the whole point of
 [#578](https://github.com/charmbracelet/vhs/issues/578). There is no pixel-size
@@ -246,12 +245,12 @@ renderer or converter—particularly, it does not require or run `agg`.
 
 | VHS output                     | s-vhs                                              | Status |
 | ------------------------------ | -------------------------------------------------- | ------ |
-| `.gif`                         | `SetOutput out.gif`, rendered by `agg`             | 🟡    |
+| `.gif`                         | `SetOutput out.gif`, rendered by `agg`             | ✅     |
 | `.mp4`                         | `SetOutput out.mp4`, planned via `ffmpeg`          | 📋    |
 | `.webm`                        | `SetOutput out.webm`                               | 📋    |
 | `.png` frame dir               | `SetOutput out.png`                                | 📋    |
 | `.ascii` / `.txt` golden files | `SetOutput out.txt`, via `asciinema convert`       | 📋    |
-| —                              | `SetOutput out.cast`, retained without rendering  | 🟡    |
+| —                              | `SetOutput out.cast`, retained without rendering  | ✅     |
 | —                              | `SetOutput out.svg`, planned via `termsvg`         | 📋    |
 
 The output extension selects the renderer or converter; there are no

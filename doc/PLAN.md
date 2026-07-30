@@ -4,25 +4,25 @@
 
 - [x] Remove current implementation of padding functionality from `s-vhs.sh`.
   - [x] Save to `doc/HISTORY.md`.
-- [ ] Convert settings variable in `s-vhs.sh` to functions (as planned in [COMMANDS](doc/COMMANDS.md)).
-- [ ] Implement basic recording functions:
-  - [x] Select minimal subset of functions which already implemented or easy to add;
-  - [x] Function names should be intuitive and similar to VHS.
-  - [x] Decide on using only functions or functions+variables.
-  - [ ] Change existing variables to functions: [COMMANDS](doc/COMMANDS.md).
-  - [ ] Refactor implemented `s-vhs.sh` functions to target format [COMMANDS](doc/COMMANDS.md).
+- [x] Select minimal subset of functions which already implemented or easy to add;
+- [x] Function names should be intuitive and similar to VHS.
+- [x] Decide on using only functions or functions+variables.
+- [x] Change existing variables to functions: [COMMANDS](doc/COMMANDS.md).
+- [ ] Decision about <time> and <repetition> argument.
+- [ ] Refactor implemented `s-vhs.sh` functions to target format [COMMANDS](doc/COMMANDS.md).
 - [ ] Add version number and link to git repo to `s-vhs.sh`:
   - Check what is the best way to to keep version number inside `s-vhs.sh`.
   - Set version to `0.1.0`.
   - Add it to `doc/COMMANDS.md` if needed.
 - [ ] Fix the font fallback chain in `render`:
-  - [ ] Pass `FONT_FAMILY` as agg `--text-font-family`; the current
+  - [ ] Pass the `SetFontFamily` value as agg `--text-font-family`; the current
         `--font-family` bypasses the bundled Symbols Nerd Font and emoji
         fallbacks, so Nerd Font glyphs and emoji render as tofu.
   - [ ] Keep the bypassing form as a separate opt-in setting
         (`SetFontFamilyExact`), see [COMMANDS](doc/COMMANDS.md#font-stack-).
   - [ ] Generate `test` to confirm the glyphs are back.
 - [ ] Make `s-vhs.sh` compatible with macOS bash (3.2):
+  - [ ] Check if it's really important for macOS users.
   - [ ] Guard empty-array expansion under `set -u` (`"${arr[@]}"` is an
         unbound variable error before bash 4.4 — hits `font_args` in `render`).
   - [ ] Replace GNU-only `truncate -s` (absent on stock macOS).
