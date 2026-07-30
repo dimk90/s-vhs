@@ -532,9 +532,6 @@ render() {
 ## Internal
 
 
-# Bash cannot hide functions from a sourcing script; the leading underscore
-# marks implementation details that are not part of the public API.
-
 _require_configuration_phase() {
     #
     # Reject a setting change after the tmux session has started.
@@ -567,10 +564,8 @@ _is_positive_integer() {
     #
     local value="$1"
 
-    if [[ $value =~ ^[1-9][0-9]*$ ]]; then
-        return 0
-    fi
-    return 1
+    [[ $value =~ ^[1-9][0-9]*$ ]] || return 1
+    return 0
 }
 
 
@@ -586,10 +581,8 @@ _is_nonnegative_number() {
     #
     local value="$1"
 
-    if [[ $value =~ ^([0-9]+([.][0-9]*)?|[.][0-9]+)$ ]]; then
-        return 0
-    fi
-    return 1
+    [[ $value =~ ^([0-9]+([.][0-9]*)?|[.][0-9]+)$ ]] || return 1
+    return 0
 }
 
 
@@ -605,10 +598,8 @@ _is_positive_number() {
     #
     local value="$1"
 
-    if _is_nonnegative_number "$value" && [[ $value =~ [1-9] ]]; then
-        return 0
-    fi
-    return 1
+    _is_nonnegative_number "$value" && [[ $value =~ [1-9] ]] || return 1
+    return 0
 }
 
 
