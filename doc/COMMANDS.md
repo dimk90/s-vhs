@@ -9,64 +9,64 @@ The public configuration API is function-only: source `s-vhs.sh`, call all
 `Set*` functions, then start the session. Settings shown in the **Today** column
 are implemented now; the remaining command names still describe the target API.
 
-| VHS                                  | s-vhs (planned)                   | Today                              | Status |
-| ------------------------------------ | --------------------------------- | ---------------------------------- | ------ |
-| `Output out.gif`                     | `SetOutput out.gif`               | `SetOutput out.gif`                | ✅     |
-| `Output out.txt` / `.ascii`          | `SetOutput out.txt`               | —                                  | 📋    |
-| `Require prog`                       | `Require`                         | —                                  | 📋    |
-| `Type "text"`                        | `Type`                            | `type_text`                        | ✅     |
-| `Ctrl+R`, `Alt+X`, `Ctrl+Shift+P`    | `Key`                             | `key C-r`, `key M-x`               | ✅     |
-| `Enter`, `Tab`, `Up`, … (named keys) | `Enter`, `Tab`, `Up`, …           | `key Enter`, `key BSpace`          | 📋    |
-| `Enter 2`, `Backspace 18` (repeat)   | `Key … <count>`                   | —                                  | 📋    |
-| `ScrollUp` / `ScrollDown`            | `ScrollUp` / `ScrollDown`         | —                                  | 📋    |
-| `Sleep 2`                            | `Sleep`                           | `sleep 2`                          | ✅     |
-| `Wait /regex/`                       | `Wait`                            | `wait_for`                         | 🟡    |
-| `Wait+Line /regex/`                  | `Wait` + scope argument           | —                                  | 📋    |
-| `Hide`                               | `Hide`                            | `stop_recording`                   | ✅     |
-| `Show`                               | `Show`                            | `record`                           | ✅     |
-| `Screenshot out.png`                 | `Screenshot`                      | —                                  | 📋    |
-| `Copy` / `Paste`                     | `Copy` / `Paste`                  | —                                  | 📋    |
-| `Env KEY "VAL"`                      | `Env`                             | `export KEY=VAL`                   | 🟡    |
-| `Source other.tape`                  | —                                 | `source other.sh`                  | ✅     |
-|                                      |                                   |                                    |        |
-| `Set Shell fish`                     | `SetShell`                        | `SetShell` (`fish`)                | ✅     |
-| `Set FontSize 40`                    | `SetFontSize`                     | `SetFontSize` (`28`)               | ✅     |
-| `Set FontFamily "…"`                 | `SetFontFamily`                   | `SetFontFamily` (exact)            | 🟡    |
-| `Set Width 1200`                     | `SetCols`                         | `SetCols` (`100`)                  | ✅     |
-| `Set Height 600`                     | `SetRows`                         | `SetRows` (`40`)                   | ✅     |
-| `Set LineHeight 1.8`                 | `SetLineHeight`                   | `SetLineHeight` (`1.2`)            | ✅     |
-| `Set TypingSpeed 0.1`                | `SetTypingSpeed`                  | `SetTypingSpeed` (`0.1`)           | ✅     |
-| `Set Theme "…"`                      | `SetTheme`                        | `SetTheme` (`kanagawa`)            | 🟡    |
-| `Set Padding 20`                     | `SetPadding`                      | —                                  | 📋    |
-| `Set Framerate 60`                   | `SetFramerate`                    | — (agg `30`)                       | 📋    |
-| `Set PlaybackSpeed 2`                | `SetPlaybackSpeed`                | — (agg `1`)                        | 📋    |
-| `Set LoopOffset 5`                   | `SetLoopOffset`                   | —                                  | 📋    |
-| `Set LetterSpacing 20`               | —                                 | —                                  | 🚫    |
-| `Set Margin` / `MarginFill`          | —                                 | —                                  | 🚫    |
-| `Set WindowBar`                      | —                                 | —                                  | 🚫    |
-| `Set BorderRadius`                   | —                                 | —                                  | 🚫    |
-| `Set CursorBlink`                    | —                                 | —                                  | 🚫    |
-|                                      |                                   |                                    |        |
-| —                                    | `SetKeyDelay`                     | `SetKeyDelay` (`0.0`)              | ✅     |
-| —                                    | `SetSession`                      | `SetSession` (`demo`)              | ✅     |
-| —                                    | `SetIdleTimeLimit`                | — (agg `5`)                        | 📋    |
-| —                                    | `SetLastFrameDuration`            | — (agg `3`)                        | 📋    |
-| —                                    | `SetLoop`                         | — (agg loops)                      | 📋    |
-| —                                    | `SetEmojiFontFamily`              | — (agg default chain)              | 📋    |
-| —                                    | `SetFontFamilyExact`              | —                                  | 📋    |
-| —                                    | `SetFontDir`                      | —                                  | 📋    |
-| —                                    | `SetFontAntialiasing`             | — (agg `6`)                        | 📋    |
-| —                                    | `SetFontHinting`                  | — (agg `true`)                     | 📋    |
-| —                                    | `SetRenderer`                     | — (agg `swash`)                    | 📋    |
-| —                                    | `SetBoldIsBright`                 | — (agg off)                        | 📋    |
-| —                                    | `SetTitle`                        | —                                  | 📋    |
-| —                                    | `SetQuiet`                        | —                                  | 📋    |
-| —                                    | `SetOptimize`                     | —                                  | 📋    |
-| —                                    | `SetOutput out.cast`              | `SetOutput out.cast`               | ✅     |
-|                                      |                                   |                                    |        |
-| —                                    | `Start`                           | `start_session`                    | ✅     |
-| —                                    | `Render`                          | `render`                           | ✅     |
-| —                                    | `RunOffRecord`                    | `run_off_record`                   | ✅     |
+| VHS                                  | s-vhs (planned)                 | Today                     | Status      |
+| ------------------------------------ | ------------------------------- | ------------------------- | ----------- |
+| `Output out.gif`                     | `SetOutput out.gif`             | `SetOutput out.gif`       | ✅          |
+| `Output out.txt` / `.ascii`          | `SetOutput out.txt`             | —                         | 📋         |
+| `Require prog`                       | `Require`                       | —                         | 📋         |
+| `Type "text"`                        | `Type <text> [<delay>]`         | `type_text`               | ✅          |
+| `Ctrl+R`, `Alt+X`, `Ctrl+Shift+P`    | `Key <key> [<count>] [<delay>]` | `key C-r`, `key M-x`      | ✅          |
+| `Enter`, `Tab`, `Up`, … (named keys) | `Enter`, `Tab`, `Up`, …         | `key Enter`, `key BSpace` | 📋         |
+| `Enter 2`, `Backspace 18` (repeat)   | `Enter [<count>] [<time>]`, ... | —                         | 📋         |
+| `ScrollUp` / `ScrollDown`            | `ScrollUp` / `ScrollDown`       | —                         | 📋         |
+| `Sleep 2`                            | `Sleep`                         | `sleep 2`                 | ✅          |
+| `Wait /regex/`                       | `Wait`                          | `wait_for`                | 🟡         |
+| `Wait+Line /regex/`                  | `Wait` + scope argument         | —                         | 📋 Useful? |
+| `Hide`                               | `Hide`                          | `stop_recording`          | ✅          |
+| `Show`                               | `Show`                          | `record`                  | ✅          |
+| `Screenshot out.png`                 | `Screenshot`                    | —                         | 📋         |
+| `Copy` / `Paste`                     | `Copy` / `Paste`                | —                         | 📋         |
+| `Env KEY "VAL"`                      | `Env`                           | `export KEY=VAL`          | 🟡         |
+| `Source other.tape`                  | —                               | `source other.sh`         | ✅          |
+|                                      |                                 |                           |             |
+| `Set Shell fish`                     | `SetShell`                      | `SetShell` (`fish`)       | ✅          |
+| `Set FontSize 40`                    | `SetFontSize`                   | `SetFontSize` (`28`)      | ✅          |
+| `Set FontFamily "…"`                 | `SetFontFamily`                 | `SetFontFamily` (exact)   | 🟡         |
+| `Set Width 1200`                     | `SetCols`                       | `SetCols` (`100`)         | ✅          |
+| `Set Height 600`                     | `SetRows`                       | `SetRows` (`40`)          | ✅          |
+| `Set LineHeight 1.8`                 | `SetLineHeight`                 | `SetLineHeight` (`1.2`)   | ✅          |
+| `Set TypingSpeed 0.1`                | `SetTypingSpeed`                | `SetTypingSpeed` (`0.1`)  | ✅          |
+| `Set Theme "…"`                      | `SetTheme`                      | `SetTheme` (`kanagawa`)   | 🟡         |
+| `Set Padding 20`                     | `SetPadding`                    | —                         | 📋         |
+| `Set Framerate 60`                   | `SetFramerate`                  | — (agg `30`)              | 📋         |
+| `Set PlaybackSpeed 2`                | `SetPlaybackSpeed`              | — (agg `1`)               | 📋         |
+| `Set LoopOffset 5`                   | `SetLoopOffset`                 | —                         | 📋         |
+| `Set LetterSpacing 20`               | —                               | —                         | 🚫         |
+| `Set Margin` / `MarginFill`          | —                               | —                         | 🚫         |
+| `Set WindowBar`                      | —                               | —                         | 🚫         |
+| `Set BorderRadius`                   | —                               | —                         | 🚫         |
+| `Set CursorBlink`                    | —                               | —                         | 🚫         |
+|                                      |                                 |                           |             |
+| —                                    | `SetKeyDelay`                   | `SetKeyDelay` (`0.0`)     | ✅          |
+| —                                    | `SetSession`                    | `SetSession` (`demo`)     | ✅          |
+| —                                    | `SetIdleTimeLimit`              | — (agg `5`)               | 📋         |
+| —                                    | `SetLastFrameDuration`          | — (agg `3`)               | 📋         |
+| —                                    | `SetLoop`                       | — (agg loops)             | 📋         |
+| —                                    | `SetEmojiFontFamily`            | — (agg default chain)     | 📋         |
+| —                                    | `SetFontFamilyExact`            | —                         | 📋         |
+| —                                    | `SetFontDir`                    | —                         | 📋         |
+| —                                    | `SetFontAntialiasing`           | — (agg `6`)               | 📋         |
+| —                                    | `SetFontHinting`                | — (agg `true`)            | 📋         |
+| —                                    | `SetRenderer`                   | — (agg `swash`)           | 📋         |
+| —                                    | `SetBoldIsBright`               | — (agg off)               | 📋         |
+| —                                    | `SetTitle`                      | —                         | 📋         |
+| —                                    | `SetQuiet`                      | —                         | 📋         |
+| —                                    | `SetOptimize`                   | —                         | 📋         |
+| —                                    | `SetOutput out.cast`            | `SetOutput out.cast`      | ✅          |
+|                                      |                                 |                           |             |
+| —                                    | `Start`                         | `start_session`           | ✅          |
+| —                                    | `Render`                        | `render`                  | ✅          |
+| —                                    | `RunOffRecord`                  | `run_off_record`          | ✅          |
 
 [vhs-ref]: https://github.com/charmbracelet/vhs#vhs-command-reference
 
@@ -243,15 +243,15 @@ removes it automatically.
 non-cast outputs. A recording that requests only a `.cast` therefore invokes no
 renderer or converter—particularly, it does not require or run `agg`.
 
-| VHS output                     | s-vhs                                              | Status |
-| ------------------------------ | -------------------------------------------------- | ------ |
-| `.gif`                         | `SetOutput out.gif`, rendered by `agg`             | ✅     |
-| `.mp4`                         | `SetOutput out.mp4`, planned via `ffmpeg`          | 📋    |
-| `.webm`                        | `SetOutput out.webm`                               | 📋    |
-| `.png` frame dir               | `SetOutput out.png`                                | 📋    |
-| `.ascii` / `.txt` golden files | `SetOutput out.txt`, via `asciinema convert`       | 📋    |
-| —                              | `SetOutput out.cast`, retained without rendering  | ✅     |
-| —                              | `SetOutput out.svg`, planned via `termsvg`         | 📋    |
+| VHS output                     | s-vhs                                            | Status |
+| ------------------------------ | ------------------------------------------------ | ------ |
+| `.gif`                         | `SetOutput out.gif`, rendered by `agg`           | ✅     |
+| `.mp4`                         | `SetOutput out.mp4`, planned via `ffmpeg`        | 📋    |
+| `.webm`                        | `SetOutput out.webm`                             | 📋    |
+| `.png` frame dir               | `SetOutput out.png`                              | 📋    |
+| `.ascii` / `.txt` golden files | `SetOutput out.txt`, via `asciinema convert`     | 📋    |
+| —                              | `SetOutput out.cast`, retained without rendering | ✅     |
+| —                              | `SetOutput out.svg`, planned via `termsvg`       | 📋    |
 
 The output extension selects the renderer or converter; there are no
 format-specific public setting variables. Animated SVG (`termsvg`) has no VHS
