@@ -32,7 +32,7 @@ _SVHS_THEME='kanagawa'
 _SVHS_SHELL='bash'
 
 # Delays are in seconds.
-_SVHS_TYPING_SPEED=0.1
+_SVHS_TYPING_SPEED=0.07
 _SVHS_KEY_DELAY=0.0
 
 # Session and recorder lifecycle state.
