@@ -18,7 +18,8 @@
   - [x] Keep the bypassing form as a separate opt-in setting
         (`SetFontFamilyExact`), see [COMMANDS](doc/COMMANDS.md#font-stack-).
   - [x] Generate `test` to confirm the glyphs are back.
-- [ ] Refactor implemented `s-vhs.sh` functions to target format [COMMANDS](doc/COMMANDS.md).
+- [x] Refactor implemented `s-vhs.sh` functions to target format [COMMANDS](doc/COMMANDS.md).
+  - [x] Add repeat count to `Key <key> [<count>] [<delay>]`.
 - [ ] Fix TODOs in the `s-vhs.sh`.
 - [ ] Add `_svhs_` prefix to private functions.
 - [ ] Add version number, copyright and git repo link to `s-vhs.sh` header:
@@ -62,6 +63,11 @@
 
 ## v0.2.0
 
+  - [ ] Fix `Show` after `Hide`: the second `Show` passes `--append` next to the
+        always-present `--overwrite`, and asciinema rejects that combination
+        (`error: the argument '--overwrite' cannot be used with '--append'`), so
+        a multi-segment recording dies at the second `Show`.
+    - [ ] Mark the Show/Hide row in [COMMANDS](doc/COMMANDS.md) 🟡 until fixed.
   - [ ] Make list of planned function which are easy to implement:
     - [ ] function ...
     - [ ] ...

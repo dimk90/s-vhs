@@ -351,7 +351,7 @@ SetKeyDelay() {
 ## Session
 
 
-start_session() {
+Start() {
     #
     # Start a fresh detached tmux session with the configured geometry and
     # shell, isolated from personal tmux config and without a status bar.
@@ -360,14 +360,14 @@ start_session() {
     #   None.
     #
     # Example:
-    #   start_session || exit 1
+    #   Start || exit 1
     #
     if [[ $_SVHS_STARTED == 1 ]]; then
-        printf 'start_session: session has already started\n' >&2
+        printf 'Start: session has already started\n' >&2
         return 1
     fi
     if ((${#_SVHS_OUTPUTS[@]} == 0)); then
-        printf 'start_session: configure at least one output with SetOutput\n' >&2
+        printf 'Start: configure at least one output with SetOutput\n' >&2
         return 1
     fi
 
@@ -386,7 +386,7 @@ start_session() {
 ## Input
 
 
-run_off_record() {
+RunOffRecord() {
     #
     # Run a command in the session while no recorder is attached.
     #
@@ -394,8 +394,8 @@ run_off_record() {
     #   $1 - command_line - command line to type and execute.
     #   $2 - settle - (optional) - seconds to wait afterwards (default: 2).
     #
-    # Example:
-    #   run_off_record 'pi --no-extensions' 5
+    # Example: # TODO: more intuitive example
+    #   RunOffRecord 'pi --no-extensions' 5
     #
     local command_line="$1"
     local settle="${2:-2}"
@@ -406,26 +406,38 @@ run_off_record() {
 }
 
 
-key() {
+Key() {
     #
-    # Press one named key, then pause.
+    # Press one named key, optionally repeating it, pausing after each press.
     #
     # Parameters:
     #   $1 - key_name - tmux key name (e.g., 'Enter', 'Down').
-    #   $2 - pause - (optional) - seconds to sleep after (default: SetKeyDelay).
+    #   $2 - count - (optional) - number of presses (default: 1).
+    #   $3 - delay - (optional) - seconds to sleep after each press
+    #        (default: SetKeyDelay).
     #
     # Example:
-    #   key Down 0.2
+    #   Key Down 3 0.2
     #
     local key_name="$1"
-    local pause="${2:-$_SVHS_KEY_DELAY}"
+    local count="${2:-1}"
+    local delay="${3:-$_SVHS_KEY_DELAY}"
+    local press
 
-    _send "$key_name"
-    sleep "$pause"
+    if ! _is_positive_integer "$count"; then
+        printf 'Key: expected a positive integer count, got: %s\n' "$count" >&2
+        return 1
+    fi
+
+    # tmux send-keys -N repeats natively, but without a delay between presses
+    for ((press = 0; press < count; press++)); do
+        _send "$key_name"
+        sleep "$delay"
+    done
 }
 
 
-type_text() {
+Type() {
     #
     # Type text one character at a time, like VHS's TypingSpeed.
     #
@@ -433,8 +445,8 @@ type_text() {
     #   $1 - text - text to type.
     #   $2 - delay - (optional) - seconds between keystrokes (default: SetTypingSpeed).
     #
-    # Example:
-    #   type_text '/context'
+    # Example: # TODO: more intuitive example
+    #   Type '/context'
     #
     local text="$1"
     local delay="${2:-$_SVHS_TYPING_SPEED}"
@@ -447,7 +459,7 @@ type_text() {
 }
 
 
-wait_for() {
+Wait() {
     #
     # Poll the visible pane until a pattern appears, instead of guessing
     # sleeps. Return 1 on timeout.
@@ -456,8 +468,8 @@ wait_for() {
     #   $1 - pattern - grep pattern to wait for.
     #   $2 - timeout - (optional) - seconds before giving up (default: 15).
     #
-    # Example:
-    #   wait_for 'Context Usage' 30
+    # Example: # TODO: more intuitive example
+    #   Wait 'Context Usage' 30
     #
     local pattern="$1"
     local timeout="${2:-15}"
@@ -476,7 +488,7 @@ wait_for() {
 ## Recording
 
 
-record() {
+Show() {
     #
     # Start (or resume) recording the session; the first call records fresh,
     # later calls append to the same cast (VHS Show).
@@ -485,7 +497,7 @@ record() {
     #   None.
     #
     # Example:
-    #   record || exit 1
+    #   Show || exit 1
     #
     local attach_command
     printf -v attach_command 'tmux attach -t %q' "$_SVHS_SESSION"
@@ -502,7 +514,7 @@ record() {
 }
 
 
-stop_recording() {
+Hide() {
     #
     # Stop recording without disturbing the session (VHS Hide).
     #
@@ -510,7 +522,7 @@ stop_recording() {
     #   None.
     #
     # Example:
-    #   stop_recording || exit 1
+    #   Hide || exit 1
     #
     local clean_end
 
@@ -529,7 +541,7 @@ stop_recording() {
 ## Render
 
 
-render() {
+Render() {
     #
     # End the recording, retain requested casts, and render requested GIFs.
     #
@@ -537,13 +549,13 @@ render() {
     #   None.
     #
     # Example:
-    #   render || exit 1
+    #   Render || exit 1
     #
     local clean_end=''
     local output
     local font_args=()
 
-    # As in stop_recording, drop the detach noise appended by the kill
+    # As in Hide, drop the detach noise appended by the kill
     [[ -n $_SVHS_REC_PID ]] && clean_end=$(wc -c < "$_SVHS_CAST")
 
     tmux kill-session -t "$_SVHS_SESSION"
@@ -680,7 +692,7 @@ _prepare_cast() {
 
     if [[ -z $_SVHS_CAST ]]; then
         if ! temporary_cast=$(mktemp); then
-            printf 'start_session: failed to create a temporary cast\n' >&2
+            printf 'Start: failed to create a temporary cast\n' >&2
             return 1
         fi
         _SVHS_CAST="$temporary_cast"

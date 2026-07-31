@@ -49,26 +49,26 @@ SetRows 20
 SetFontSize 34
 
 # Start the terminal, then the recorder.
-start_session
-record
+Start
+Show
 
 # Type a command in the terminal
-type_text "echo 'Welcome to S-VHS!"
+Type "echo 'Welcome to S-VHS!"
 sleep 1 # Pause for dramatic effect...
-type_text " Stay awhile and listen...'"
+Type " Stay awhile and listen...'"
 sleep 1
 
 # Pause for dramatic effect...
 sleep 0.5
 
 # Run the command by pressing enter.
-key Enter
+Key Enter
 
 # Admire the output for a bit.
 sleep 5
 
 # Stop recording and write every requested output.
-render
+Render
 ```
 
 Run it to render the GIF:

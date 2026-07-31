@@ -14,16 +14,16 @@ are implemented now; the remaining command names still describe the target API.
 | `Output out.gif`                     | `SetOutput out.gif`             | `SetOutput out.gif`       | ✅          |
 | `Output out.txt` / `.ascii`          | `SetOutput out.txt`             | —                         | 📋         |
 | `Require prog`                       | `Require`                       | —                         | 📋         |
-| `Type "text"`                        | `Type <text> [<delay>]`         | `type_text`               | ✅          |
-| `Ctrl+R`, `Alt+X`, `Ctrl+Shift+P`    | `Key <key> [<count>] [<delay>]` | `key C-r`, `key M-x`      | ✅          |
-| `Enter`, `Tab`, `Up`, … (named keys) | `Enter`, `Tab`, `Up`, …         | `key Enter`, `key BSpace` | 📋         |
-| `Enter 2`, `Backspace 18` (repeat)   | `Enter [<count>] [<time>]`, ... | —                         | 📋         |
+| `Type "text"`                        | `Type <text> [<delay>]`         | `Type`                    | ✅          |
+| `Ctrl+R`, `Alt+X`, `Ctrl+Shift+P`    | `Key <key> [<count>] [<delay>]` | `Key C-r`, `Key M-x`      | ✅          |
+| `Enter`, `Tab`, `Up`, … (named keys) | `Enter`, `Tab`, `Up`, …         | `Key Enter`, `Key BSpace` | 📋         |
+| `Enter 2`, `Backspace 18` (repeat)   | `Enter [<count>] [<time>]`, ... | `Key BSpace 18`           | 🟡         |
 | `ScrollUp` / `ScrollDown`            | `ScrollUp` / `ScrollDown`       | —                         | 📋         |
 | `Sleep 2`                            | `Sleep`                         | `sleep 2`                 | ✅          |
-| `Wait /regex/`                       | `Wait`                          | `wait_for`                | 🟡         |
+| `Wait /regex/`                       | `Wait`                          | `Wait`                    | 🟡         |
 | `Wait+Line /regex/`                  | `Wait` + scope argument         | —                         | 📋 Useful? |
-| `Hide`                               | `Hide`                          | `stop_recording`          | ✅          |
-| `Show`                               | `Show`                          | `record`                  | ✅          |
+| `Hide`                               | `Hide`                          | `Hide`                    | ✅          |
+| `Show`                               | `Show`                          | `Show`                    | ✅          |
 | `Screenshot out.png`                 | `Screenshot`                    | —                         | 📋         |
 | `Copy` / `Paste`                     | `Copy` / `Paste`                | —                         | 📋         |
 | `Env KEY "VAL"`                      | `Env`                           | `export KEY=VAL`          | 🟡         |
@@ -35,7 +35,7 @@ are implemented now; the remaining command names still describe the target API.
 | `Set Width 1200`                     | `SetCols`                       | `SetCols` (`100`)         | ✅          |
 | `Set Height 600`                     | `SetRows`                       | `SetRows` (`40`)          | ✅          |
 | `Set LineHeight 1.8`                 | `SetLineHeight`                 | `SetLineHeight` (`1.2`)   | ✅          |
-| `Set TypingSpeed 0.1`                | `SetTypingSpeed`                | `SetTypingSpeed` (`0.1`)  | ✅          |
+| `Set TypingSpeed 0.1`                | `SetTypingSpeed`                | `SetTypingSpeed` (`0.07`) | ✅          |
 | `Set Theme "…"`                      | `SetTheme`                      | `SetTheme` (`kanagawa`)   | 🟡         |
 | `Set Padding 20`                     | `SetPadding`                    | —                         | 📋         |
 | `Set Framerate 60`                   | `SetFramerate`                  | — (agg `30`)              | 📋         |
@@ -64,9 +64,9 @@ are implemented now; the remaining command names still describe the target API.
 | —                                    | `SetOptimize`                   | —                         | 📋         |
 | —                                    | `SetOutput out.cast`            | `SetOutput out.cast`      | ✅          |
 |                                      |                                 |                           |             |
-| —                                    | `Start`                         | `start_session`           | ✅          |
-| —                                    | `Render`                        | `render`                  | ✅          |
-| —                                    | `RunOffRecord`                  | `run_off_record`          | ✅          |
+| —                                    | `Start`                         | `Start`                   | ✅          |
+| —                                    | `Render`                        | `Render`                  | ✅          |
+| —                                    | `RunOffRecord`                  | `RunOffRecord`            | ✅          |
 
 [vhs-ref]: https://github.com/charmbracelet/vhs#vhs-command-reference
 
@@ -109,7 +109,7 @@ SetRows 30
 SetFontSize 21
 ```
 
-> Print estimated resolution in `start_session` ('e.g. ::: N Rows x M Cols x F FontSize -> Resolution W x H') ?
+> Print estimated resolution in `Start` ('e.g. ::: N Rows x M Cols x F FontSize -> Resolution W x H') ?
 
 ### Theme 🟡
 
@@ -160,7 +160,7 @@ The remaining glyph-quality knobs have no VHS equivalent:
 
 ### Padding 📋
 
-Missing. An earlier `render 40` argument added the border with `magick`
+Missing. An earlier `Render 40` argument added the border with `magick`
 (preferred) or `ffmpeg`; it was removed because re-encoding the finished GIF
 costs sharpness and an extra dependency for a cosmetic frame. The code is kept
 in [HISTORY.md](HISTORY.md) and is planned to return as `SetPadding`
@@ -265,40 +265,42 @@ equivalent ([#644](https://github.com/charmbracelet/vhs/discussions/644)).
 
 ## Type ✅
 
-`type_text` types character by character with a delay, exactly like VHS's
+`Type` types character by character with a delay, exactly like VHS's
 `Type` + `Set TypingSpeed`. VHS's per-command `Type@500ms` override is the
 optional second argument.
 
 ```shell
-type_text '/context'        # delay configured by SetTypingSpeed
-type_text 'slow' 0.5        # VHS: Type@500ms "slow"
+Type '/context'             # delay configured by SetTypingSpeed
+Type 'slow' 0.5             # VHS: Type@500ms "slow"
 ```
 
 Quoting is plain shell quoting; no backtick escaping as in VHS.
 
 ## Keys 🟡
 
-One generic `key` function takes a **tmux key name** and an optional pause:
+One generic `Key` function takes a **tmux key name**, an optional repeat count,
+and an optional pause after each press:
 
 ```shell
-key Enter
-key Down 0.2                # pause 0.2s afterwards
+Key Enter
+Key Down 3                  # VHS: Down 3
+Key Down 3 0.2              # VHS: Down@200ms 3
 ```
 
 Differences from VHS:
 
-- No repeat count 📋 (`Enter 2`, `Backspace 18`); use a loop or repeated calls.
-  `tmux send-keys -N <count>` repeats natively but without a delay between
-  presses, so VHS's `Key@<time> <count>` still needs a loop.
+- Named keys are arguments, not commands 📋 — `Key Enter`, not `Enter`.
+- The repeat count is a loop rather than `tmux send-keys -N <count>`, which
+  repeats natively but without a delay between presses.
 
-Modifiers work through tmux's own notation, so `Ctrl+R` is `key C-r`, `Alt+X` is
-`key M-x`, and `Ctrl+Alt+Shift+P` is `key C-M-S-p`. `start_session` enables
+Modifiers work through tmux's own notation, so `Ctrl+R` is `Key C-r`, `Alt+X` is
+`Key M-x`, and `Ctrl+Alt+Shift+P` is `Key C-M-S-p`. `Start` enables
 `extended-keys` with `csi-u` format, so apps that read CSI-u sequences receive
 the modified keys correctly.
 
 ```shell
-key C-r                     # VHS: Ctrl+R
-key C-c                     # VHS: Ctrl+C
+Key C-r                     # VHS: Ctrl+R
+Key C-c                     # VHS: Ctrl+C
 ```
 
 > Any way to have `Ctrl+R` instead of `C-r` ? Is easier to read.
@@ -310,12 +312,12 @@ scrollback is captured only if the alternate screen is not in use.
 
 ## Wait 🟡
 
-`wait_for` polls `tmux capture-pane` until a pattern appears, failing after a
+`Wait` polls `tmux capture-pane` until a pattern appears, failing after a
 timeout instead of guessing sleeps.
 
 ```shell
-wait_for 'Context Usage'        # default timeout: 15s
-wait_for 'Session compacted' 30
+Wait 'Context Usage'        # default timeout: 15s
+Wait 'Session compacted' 30
 ```
 
 Differences from VHS:
@@ -347,18 +349,18 @@ system clipboard.
 ## Env 🟡
 
 No dedicated function today: exported variables are inherited by the tmux
-server started in `start_session`.
+server started in `Start`.
 
 ```shell
 export HELLO=WORLD
-start_session
-type_text 'echo $HELLO'
-key Enter
+Start
+Type 'echo $HELLO'
+Key Enter
 ```
 
 > [!WARNING]
 > tmux reuses a running server, so a session may inherit the environment of an
-> earlier one. `start_session` uses `tmux -f /dev/null`, which isolates config
+> earlier one. `Start` uses `tmux -f /dev/null`, which isolates config
 > but not the server environment.
 
 A planned `Env` function closes that hole by passing the pair straight to the
