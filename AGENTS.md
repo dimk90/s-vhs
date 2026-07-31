@@ -22,13 +22,15 @@ Status: early draft, pre-`v0.1.0`. The public function names are **not** frozen
 
 ## Layout
 
-| Path             | Purpose                                                    |
-| ---------------- | ---------------------------------------------------------- |
-| `s-vhs.sh`       | The whole implementation. Sourced library, never executed. |
-| `README.md`      | User-facing docs; many sections are still `> TODO:`.       |
-| `doc/PLAN.md`    | Roadmap / checklist. Update checkboxes when a task lands.  |
-| `doc/HISTORY.md` | Verbatim archive of code removed from `s-vhs.sh`.          |
-| `examples/`      | Empty placeholder for example recording scripts (planned). |
+| Path               | Purpose                                                       |
+| ------------------ | ------------------------------------------------------------- |
+| `s-vhs.sh`         | The whole implementation. Sourced library, never executed.    |
+| `README.md`        | User-facing docs; many sections are still `> TODO:`.          |
+| `doc/REFERENCE.md` | Reference of every command implemented today. Keep in sync.   |
+| `doc/COMMANDS.md`  | VHS parity table and target API design notes.                 |
+| `doc/PLAN.md`      | Roadmap / checklist. Update checkboxes when a task lands.     |
+| `doc/HISTORY.md`   | Verbatim archive of code removed from `s-vhs.sh`.             |
+| `examples/`        | Example recording scripts and their rendered output.          |
 
 No build system, no test suite, no CI. Verification is manual: run a recording
 script and inspect or replay every requested output.
@@ -84,6 +86,12 @@ target function-only interface below. Project-specific points:
   requested, record to a temporary cast and remove it after producing the
   requested outputs. `Render` invokes only tools needed for those outputs, so a
   cast-only recording must not invoke `agg` or any other renderer/converter.
+- **Reference is part of the change.** Every added, removed, renamed, or
+  behaviour-changed public command must be reflected in
+  [`doc/REFERENCE.md`](doc/REFERENCE.md) in the same change — including its
+  signature, default value, and section (`## Settings` or `## Commands`).
+  `doc/REFERENCE.md` documents the current implementation; `doc/COMMANDS.md`
+  tracks VHS parity and the planned API.
 - **shellcheck-clean.** Suppress only per-line, with an adjacent explanation.
 - Every VHS feature parity claim in `README.md` links the upstream issue it
   addresses; keep that link when editing such a line.

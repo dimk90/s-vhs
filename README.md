@@ -141,7 +141,7 @@ chmod +x demo.rec.sh && demo.rec.sh
 
 ## Command Reference
 
-> TODO: https://github.com/charmbracelet/vhs#vhs-command-reference
+See [REFERENCE.md](doc/REFERENCE.md) for description of all `s-vhs` commands.
 
 ## License
 

@@ -1,4 +1,4 @@
-# Command Reference
+# Commands
 
 - ✅ - Implemented — works today.
 - 🟡 - Partial — works with caveats, or only via a lower-level call.
@@ -146,8 +146,8 @@ SetFontFamilyExact 'JetBrainsMono Nerd Font Mono'   # this list and nothing else
 | -------------------- | ---------------------- | ------ | ------------------------------------------- |
 | `SetFontFamily`      | `--text-font-family`   | ✅     | Keeps Nerd Font + emoji fallbacks.          |
 | `SetFontFamilyExact` | `--font-family`        | ✅     | No fallbacks, opt-in only.                  |
-| `SetEmojiFontFamily` | `--emoji-font-family`  | 📋     | Narrow or replace the emoji chain.          |
-| `SetFontDir`         | `--font-dir` (repeats) | 📋     | Repo-local fonts — reproducible CI renders. |
+| `SetEmojiFontFamily` | `--emoji-font-family`  | 📋    | Narrow or replace the emoji chain.          |
+| `SetFontDir`         | `--font-dir` (repeats) | 📋    | Repo-local fonts — reproducible CI renders. |
 
 The remaining glyph-quality knobs have no VHS equivalent:
 
