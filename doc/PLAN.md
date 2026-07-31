@@ -11,12 +11,6 @@
 - [x] Decision about <time> and <repetition> argument.
 - [x] Implement minimal example for README#Quick_Start.
   - [x] Add it to `example`.
-- [ ] Refactor implemented `s-vhs.sh` functions to target format [COMMANDS](doc/COMMANDS.md).
-- [ ] Add `_svhs_` prefix to private functions.
-- [ ] Add version number, copyright and git repo link to `s-vhs.sh` header:
-  - Check what is the best way to to keep version number inside `s-vhs.sh`.
-  - Set version to `0.1.0`.
-  - Add it to `doc/COMMANDS.md` if needed.
 - [ ] Fix the font fallback chain in `render`:
   - [ ] Pass the `SetFontFamily` value as agg `--text-font-family`; the current
         `--font-family` bypasses the bundled Symbols Nerd Font and emoji
@@ -24,6 +18,14 @@
   - [ ] Keep the bypassing form as a separate opt-in setting
         (`SetFontFamilyExact`), see [COMMANDS](doc/COMMANDS.md#font-stack-).
   - [ ] Generate `test` to confirm the glyphs are back.
+- [ ] Refactor implemented `s-vhs.sh` functions to target format [COMMANDS](doc/COMMANDS.md).
+- [ ] Fix TODOs in the `s-vhs.sh`.
+- [ ] Add `_svhs_` prefix to private functions.
+- [ ] Fix default font problem: `Error: no faces matching font family options`.
+- [ ] Add version number, copyright and git repo link to `s-vhs.sh` header:
+  - Check what is the best way to to keep version number inside `s-vhs.sh`.
+  - Set version to `0.1.0`.
+  - Add it to `doc/COMMANDS.md` if needed.
 - [ ] Make `s-vhs.sh` compatible with macOS bash (3.2):
   - [ ] Check if it's really important for macOS users.
   - [ ] Guard empty-array expansion under `set -u` (`"${arr[@]}"` is an
@@ -32,6 +34,16 @@
   - [ ] Check fractional `sleep` and other coreutils assumptions on BSD tools.
   - [ ] No bash 4+ syntax is used today — keep it that way (no `declare -A`,
         `mapfile`, `${var,,}`, `&>>`, namerefs).
+- [ ] Decide on isolating the recorded shell from the user's rc files
+      (`bash --norc`, `fish --no-config`, ...):
+  - The session inherits `~/.bashrc`, so a recording shows the author's prompt
+    (starship, git status, ...) and aliases — it is not reproducible on another
+    machine, and a demo GIF leaks unrelated prompt content.
+  - Against: VHS behaves the same way, and a dotfiles/prompt demo *wants* the
+    real config; a bare `--norc` prompt (`bash-5.3$`) looks worse by default.
+  - Options: keep inheriting, add a `SetShell 'bash --norc'` recipe to the docs
+    only, or add an explicit setting (e.g. `SetCleanShell`) that maps to the
+    right flag per shell.
 - [ ] Improve examples:
   - [ ] Add nice one-liner for `curl+source` remote import s-vhs from: `https://github.../v0.1.0/.../s-vhs.sh`.
   - [ ] Record GIF and add it to the README.
@@ -74,17 +86,3 @@
 - [ ] Rended visualization for all available themes.
 - [ ] MP4 output (same `.cast`, different renderer):
   - [ ] MP4 — render with `ffmpeg`?
-
-
-## Undecided
-
-- [ ] Decide on isolating the recorded shell from the user's rc files
-      (`bash --norc`, `fish --no-config`, ...):
-  - The session inherits `~/.bashrc`, so a recording shows the author's prompt
-    (starship, git status, ...) and aliases — it is not reproducible on another
-    machine, and a demo GIF leaks unrelated prompt content.
-  - Against: VHS behaves the same way, and a dotfiles/prompt demo *wants* the
-    real config; a bare `--norc` prompt (`bash-5.3$`) looks worse by default.
-  - Options: keep inheriting, add a `SetShell 'bash --norc'` recipe to the docs
-    only, or add an explicit setting (e.g. `SetCleanShell`) that maps to the
-    right flag per shell.

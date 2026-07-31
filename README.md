@@ -44,9 +44,9 @@ source ./s-vhs.sh
 SetOutput 'demo.gif'
 
 # Set up an 80x20 terminal with a 28px font.
-SetCols 80
+SetCols 40
 SetRows 20
-SetFontSize 28
+SetFontSize 34
 
 # Start the terminal, then the recorder.
 start_session
@@ -71,16 +71,13 @@ render
 Run it to render the GIF:
 
 ```shell
-chmod +x demo.rec.sh
-./demo.rec.sh
+chmod +x demo.rec.sh && demo.rec.sh
 ```
 
-> TODO: render this script and embed the GIF here.
+<img src="examples/images/quick-start.gif" width=400>
 
 > [!NOTE]
-> A runnable copy lives in
-> [`examples/quick-start.rec.sh`](examples/quick-start.rec.sh); see
-> [`examples/`](examples) for more recording scripts.
+> See [`examples/`](examples) for more recording scripts.
 
 
 ## Installation

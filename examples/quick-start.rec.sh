@@ -1,23 +1,22 @@
 #!/usr/bin/env bash
 #
 # Minimal s-vhs recording: type a command, run it, admire the output.
-#
 # Writes demo.gif into the current directory.
 #
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
 # The script may run from any directory, so resolve the library from its path.
-# shellcheck source=s-vhs.sh
 source "$SCRIPT_DIR/../s-vhs.sh"
 
 # Where should we write the GIF?
-SetOutput 'demo.gif'
+SetOutput 'examples/images/quick-start.gif'
 
 # Set up an 80x20 terminal with a 28px font.
-SetCols 80
+SetCols 40
 SetRows 20
-SetFontSize 28
+SetFontSize 34
+SetFontFamily 'Iosevka Term'
 
 # Start the terminal, then the recorder.
 start_session
