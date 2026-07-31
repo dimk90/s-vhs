@@ -52,8 +52,11 @@ SetFontSize 34
 start_session
 record
 
-# Type a command in the terminal.
-type_text "echo 'Welcome to S-VHS!'"
+# Type a command in the terminal
+type_text "echo 'Welcome to S-VHS!"
+sleep 1 # Pause for dramatic effect...
+type_text " Stay awhile and listen...'"
+sleep 1
 
 # Pause for dramatic effect...
 sleep 0.5
@@ -74,7 +77,7 @@ Run it to render the GIF:
 chmod +x demo.rec.sh && demo.rec.sh
 ```
 
-<img src="examples/images/quick-start.gif" width=400>
+<img src="examples/images/quick-start.gif" width=700>
 
 > [!NOTE]
 > See [`examples/`](examples) for more recording scripts.
