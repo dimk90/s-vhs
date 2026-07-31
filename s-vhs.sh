@@ -31,18 +31,18 @@ _SVHS_FONT_FAMILY_EXACT=''
 _SVHS_FONT_SIZE=28
 _SVHS_LINE_HEIGHT=1.2
 
-# Headless recording cannot inspect the host theme; pin rendering instead.
+# Headless recording cannot inspect the host theme; pin rendering instead
 _SVHS_THEME='kanagawa'
 
 # Shell to run inside the tmux session;
-# Bash is safe default - present everywhere.
+# Bash is safe default - present everywhere
 _SVHS_SHELL='bash'
 
-# Delays are in seconds.
+# Delays are in seconds
 _SVHS_TYPING_SPEED=0.07
 _SVHS_KEY_DELAY=0.0
 
-# Session and recorder lifecycle state.
+# Session and recorder lifecycle state
 _SVHS_STARTED=0
 _SVHS_CAST=''
 _SVHS_TEMP_CAST=''
@@ -169,7 +169,7 @@ SetFontFamily() {
         return 1
     fi
     # agg rejects both font family flags at once, so catch the clash here
-    # rather than after the whole recording is done.
+    # rather than after the whole recording is done
     if [[ -n $_SVHS_FONT_FAMILY_EXACT ]]; then
         printf 'SetFontFamily: cannot be combined with SetFontFamilyExact\n' >&2
         return 1
@@ -491,8 +491,7 @@ record() {
     printf -v attach_command 'tmux attach -t %q' "$_SVHS_SESSION"
 
     # Expands to nothing on the first call; must stay unquoted so an empty
-    # value adds no argument.
-    # shellcheck disable=SC2086
+    # value adds no argument
     asciinema rec --headless --overwrite ${_SVHS_RECORDED:+--append} \
                   --window-size "${_SVHS_COLS}x${_SVHS_ROWS}"      \
                   -c "$attach_command" "$_SVHS_CAST" & # TODO: remove &?
@@ -516,7 +515,7 @@ stop_recording() {
     local clean_end
 
     # Detaching appends terminal-reset noise to the cast; remember the clean
-    # size first and truncate back to it.
+    # size first and truncate back to it
     clean_end=$(wc -c < "$_SVHS_CAST")
 
     tmux detach-client -s "$_SVHS_SESSION"
@@ -544,7 +543,7 @@ render() {
     local output
     local font_args=()
 
-    # As in stop_recording, drop the detach noise appended by the kill.
+    # As in stop_recording, drop the detach noise appended by the kill
     [[ -n $_SVHS_REC_PID ]] && clean_end=$(wc -c < "$_SVHS_CAST")
 
     tmux kill-session -t "$_SVHS_SESSION"
