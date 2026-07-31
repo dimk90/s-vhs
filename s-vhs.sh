@@ -86,6 +86,7 @@ SetSession() {
     local session="${1-}"
 
     _require_configuration_phase 'SetSession' || return 1
+
     if [[ -z $session ]]; then
         printf 'SetSession: session name must not be empty\n' >&2
         return 1
@@ -108,6 +109,7 @@ SetCols() {
     local cols="${1-}"
 
     _require_configuration_phase 'SetCols' || return 1
+
     if ! _is_positive_integer "$cols"; then
         printf 'SetCols: expected a positive integer, got: %s\n' "$cols" >&2
         return 1
@@ -130,6 +132,7 @@ SetRows() {
     local rows="${1-}"
 
     _require_configuration_phase 'SetRows' || return 1
+
     if ! _is_positive_integer "$rows"; then
         printf 'SetRows: expected a positive integer, got: %s\n' "$rows" >&2
         return 1
@@ -152,6 +155,7 @@ SetFontFamily() {
     local font_family="${1-}"
 
     _require_configuration_phase 'SetFontFamily' || return 1
+
     if [[ -z $font_family ]]; then
         printf 'SetFontFamily: font family must not be empty\n' >&2
         return 1
@@ -174,6 +178,7 @@ SetFontSize() {
     local font_size="${1-}"
 
     _require_configuration_phase 'SetFontSize' || return 1
+
     if ! _is_positive_integer "$font_size"; then
         printf 'SetFontSize: expected a positive integer, got: %s\n' "$font_size" >&2
         return 1
@@ -196,6 +201,7 @@ SetLineHeight() {
     local line_height="${1-}"
 
     _require_configuration_phase 'SetLineHeight' || return 1
+
     if ! _is_positive_number "$line_height"; then
         printf 'SetLineHeight: expected a positive number, got: %s\n' "$line_height" >&2
         return 1
@@ -218,6 +224,7 @@ SetTheme() {
     local theme="${1-}"
 
     _require_configuration_phase 'SetTheme' || return 1
+
     if [[ -z $theme ]]; then
         printf 'SetTheme: theme must not be empty\n' >&2
         return 1
@@ -240,6 +247,7 @@ SetShell() {
     local shell="${1-}"
 
     _require_configuration_phase 'SetShell' || return 1
+
     if [[ -z $shell ]]; then
         printf 'SetShell: shell command must not be empty\n' >&2
         return 1
@@ -262,6 +270,7 @@ SetTypingSpeed() {
     local typing_speed="${1-}"
 
     _require_configuration_phase 'SetTypingSpeed' || return 1
+
     if ! _is_nonnegative_number "$typing_speed"; then
         printf 'SetTypingSpeed: expected a non-negative number, got: %s\n' \
             "$typing_speed" >&2
@@ -285,6 +294,7 @@ SetKeyDelay() {
     local key_delay="${1-}"
 
     _require_configuration_phase 'SetKeyDelay' || return 1
+
     if ! _is_nonnegative_number "$key_delay"; then
         printf 'SetKeyDelay: expected a non-negative number, got: %s\n' \
             "$key_delay" >&2
@@ -323,8 +333,9 @@ start_session() {
     tmux -f /dev/null new-session -d -s "$_SVHS_SESSION" \
         -x "$_SVHS_COLS" -y "$_SVHS_ROWS" "$_SVHS_SHELL"
     _SVHS_STARTED=1
-    tmux set -g extended-keys on
-    tmux set -g extended-keys-format csi-u
+
+    tmux set -g extended-keys on # TODO: add comment with descriptions
+    tmux set -g extended-keys-format csi-u # TODO: add comment with descriptions
     tmux set-option -t "$_SVHS_SESSION" status off
 }
 
@@ -414,7 +425,7 @@ wait_for() {
             printf 'timeout waiting for: %s\n' "$pattern" >&2
             return 1
         fi
-        sleep 0.2
+        sleep 0.2 # TODO: add cont for that
     done
 }
 
@@ -441,9 +452,10 @@ record() {
     # shellcheck disable=SC2086
     asciinema rec --headless --overwrite ${_SVHS_RECORDED:+--append} \
                   --window-size "${_SVHS_COLS}x${_SVHS_ROWS}"      \
-                  -c "$attach_command" "$_SVHS_CAST" &
+                  -c "$attach_command" "$_SVHS_CAST" & # TODO: remove &?
     _SVHS_REC_PID=$!
     _SVHS_RECORDED=1
+    # TODO: any better way to wait for it?
     sleep 1 # let the recorder attach
 }
 
@@ -466,6 +478,7 @@ stop_recording() {
 
     tmux detach-client -s "$_SVHS_SESSION"
     wait "$_SVHS_REC_PID"
+
     truncate -s "$clean_end" -- "$_SVHS_CAST"
     _SVHS_REC_PID=''
 }
@@ -499,8 +512,7 @@ render() {
     fi
     _SVHS_REC_PID=''
 
-    [[ -n $_SVHS_FONT_FAMILY ]] && \
-        font_args+=(--font-family "$_SVHS_FONT_FAMILY")
+    [[ -n $_SVHS_FONT_FAMILY ]] && font_args+=(--font-family "$_SVHS_FONT_FAMILY")
 
     for output in "${_SVHS_OUTPUTS[@]}"; do
         case "$output" in
@@ -545,8 +557,7 @@ _require_configuration_phase() {
     local setter="$1"
 
     if [[ $_SVHS_STARTED == 1 ]]; then
-        printf '%s: settings cannot change after the session starts\n' \
-            "$setter" >&2
+        printf '%s: settings cannot change after the session starts\n' "$setter" >&2
         return 1
     fi
 }

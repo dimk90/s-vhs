@@ -12,7 +12,8 @@
 - [x] Implement minimal example for README#Quick_Start.
   - [x] Add it to `example`.
 - [ ] Refactor implemented `s-vhs.sh` functions to target format [COMMANDS](doc/COMMANDS.md).
-- [ ] Add version number and link to git repo to `s-vhs.sh`:
+- [ ] Add `_svhs_` prefix to private functions.
+- [ ] Add version number, copyright and git repo link to `s-vhs.sh` header:
   - Check what is the best way to to keep version number inside `s-vhs.sh`.
   - Set version to `0.1.0`.
   - Add it to `doc/COMMANDS.md` if needed.
