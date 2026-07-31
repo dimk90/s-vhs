@@ -31,7 +31,7 @@ are implemented now; the remaining command names still describe the target API.
 |                                      |                                 |                           |             |
 | `Set Shell fish`                     | `SetShell`                      | `SetShell` (`fish`)       | ✅          |
 | `Set FontSize 40`                    | `SetFontSize`                   | `SetFontSize` (`28`)      | ✅          |
-| `Set FontFamily "…"`                 | `SetFontFamily`                 | `SetFontFamily` (exact)   | 🟡         |
+| `Set FontFamily "…"`                 | `SetFontFamily`                 | `SetFontFamily` (chain)   | ✅          |
 | `Set Width 1200`                     | `SetCols`                       | `SetCols` (`100`)         | ✅          |
 | `Set Height 600`                     | `SetRows`                       | `SetRows` (`40`)          | ✅          |
 | `Set LineHeight 1.8`                 | `SetLineHeight`                 | `SetLineHeight` (`1.2`)   | ✅          |
@@ -53,7 +53,7 @@ are implemented now; the remaining command names still describe the target API.
 | —                                    | `SetLastFrameDuration`          | — (agg `3`)               | 📋         |
 | —                                    | `SetLoop`                       | — (agg loops)             | 📋         |
 | —                                    | `SetEmojiFontFamily`            | — (agg default chain)     | 📋         |
-| —                                    | `SetFontFamilyExact`            | —                         | 📋         |
+| —                                    | `SetFontFamilyExact`            | `SetFontFamilyExact`      | ✅          |
 | —                                    | `SetFontDir`                    | —                         | 📋         |
 | —                                    | `SetFontAntialiasing`           | — (agg `6`)               | 📋         |
 | —                                    | `SetFontHinting`                | — (agg `true`)            | 📋         |
@@ -125,23 +125,29 @@ ad-hoc palettes remain possible.
 
 ### Font stack 🟡
 
-The current draft passes the configured font family as `agg --font-family`,
-which per `agg --help` specifies "the complete font family list, **bypassing
-automatic fallbacks**". That silently drops agg's bundled Symbols Nerd Font and
-the whole emoji chain, so a recording configured with
-`SetFontFamily "Iosevka Term"` renders powerline glyphs, devicons and emoji as
-tofu.
+`SetFontFamily` names the text font only: it maps to `agg --text-font-family`,
+so agg keeps appending its automatic fallbacks — the bundled Symbols Nerd Font
+for powerline glyphs and devicons, plus the emoji chain. `SetFontFamily
+"Iosevka Term"` therefore still renders Nerd Font symbols and emoji that the
+family itself does not contain.
 
-`SetFontFamily` must instead map to `--text-font-family`, keeping the fallbacks,
-and expose the bypassing form under a name that says so
-([PLAN.md](PLAN.md), v0.1.0):
+`SetFontFamilyExact` maps to `--font-family`, which per `agg --help` specifies
+"the complete font family list, **bypassing automatic fallbacks**"; anything
+missing from the listed families renders as tofu. agg refuses both flags in one
+invocation, so the two setters are mutually exclusive — the second one called
+fails immediately.
 
-| Setting              | agg flag               | Note                                          |
-| -------------------- | ---------------------- | --------------------------------------------- |
-| `SetFontFamily`      | `--text-font-family`   | Keeps Nerd Font + emoji fallbacks.            |
-| `SetEmojiFontFamily` | `--emoji-font-family`  | Narrow or replace the emoji chain.            |
-| `SetFontFamilyExact` | `--font-family`        | Today's behaviour; no fallbacks, opt-in only. |
-| `SetFontDir`         | `--font-dir` (repeats) | Repo-local fonts — reproducible CI renders.   |
+```shell
+SetFontFamily 'Iosevka Term'                    # + Symbols Nerd Font, emoji
+SetFontFamilyExact 'JetBrainsMono Nerd Font Mono'   # this list and nothing else
+```
+
+| Setting              | agg flag               | Status | Note                                        |
+| -------------------- | ---------------------- | ------ | ------------------------------------------- |
+| `SetFontFamily`      | `--text-font-family`   | ✅     | Keeps Nerd Font + emoji fallbacks.          |
+| `SetFontFamilyExact` | `--font-family`        | ✅     | No fallbacks, opt-in only.                  |
+| `SetEmojiFontFamily` | `--emoji-font-family`  | 📋     | Narrow or replace the emoji chain.          |
+| `SetFontDir`         | `--font-dir` (repeats) | 📋     | Repo-local fonts — reproducible CI renders. |
 
 The remaining glyph-quality knobs have no VHS equivalent:
 

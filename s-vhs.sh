@@ -15,15 +15,22 @@ set -euo pipefail
 _SVHS_SESSION='demo'
 _SVHS_OUTPUTS=()
 
-# Terminal geometry is in cells, not pixels; pixel size is approximately cells
-# multiplied by the font size.
+# Terminal geometry is in cells, not pixels
 _SVHS_COLS=100
 _SVHS_ROWS=40
 
-# An empty family lets agg use its built-in default fonts.
+# Empty families let agg use its built-in default fonts.
+# The plain family is rendered through agg's text-font slot,
+# which keeps the bundled Symbols Nerd Font and emoji fallbacks
 _SVHS_FONT_FAMILY=''
+
+# The exact one replaces the whole chain - no fallbacks to other fonts
+_SVHS_FONT_FAMILY_EXACT=''
+
+# Font size define output resolution ~ COLS*ROWS*FONT_SIZE
 _SVHS_FONT_SIZE=28
 _SVHS_LINE_HEIGHT=1.2
+
 # Headless recording cannot inspect the host theme; pin rendering instead.
 _SVHS_THEME='kanagawa'
 
@@ -144,7 +151,8 @@ SetRows() {
 
 SetFontFamily() {
     #
-    # Set the font family used to render text.
+    # Set the font family used to render text, keeping the renderer's Nerd
+    # Font and emoji fallbacks.
     #
     # Parameters:
     #   $1 - font_family - non-empty font family name.
@@ -160,8 +168,43 @@ SetFontFamily() {
         printf 'SetFontFamily: font family must not be empty\n' >&2
         return 1
     fi
+    # agg rejects both font family flags at once, so catch the clash here
+    # rather than after the whole recording is done.
+    if [[ -n $_SVHS_FONT_FAMILY_EXACT ]]; then
+        printf 'SetFontFamily: cannot be combined with SetFontFamilyExact\n' >&2
+        return 1
+    fi
 
     _SVHS_FONT_FAMILY="$font_family"
+}
+
+
+SetFontFamilyExact() {
+    #
+    # Set the complete font family list, bypassing the renderer's Nerd Font
+    # and emoji fallbacks; glyphs missing from the list render as tofu.
+    #
+    # Parameters:
+    #   $1 - font_family - non-empty comma-separated family list, starting
+    #        with a monospace text font.
+    #
+    # Example:
+    #   SetFontFamilyExact 'Iosevka Term,Noto Color Emoji' || exit 1
+    #
+    local font_family="${1-}"
+
+    _require_configuration_phase 'SetFontFamilyExact' || return 1
+
+    if [[ -z $font_family ]]; then
+        printf 'SetFontFamilyExact: font family must not be empty\n' >&2
+        return 1
+    fi
+    if [[ -n $_SVHS_FONT_FAMILY ]]; then
+        printf 'SetFontFamilyExact: cannot be combined with SetFontFamily\n' >&2
+        return 1
+    fi
+
+    _SVHS_FONT_FAMILY_EXACT="$font_family"
 }
 
 
@@ -512,7 +555,8 @@ render() {
     fi
     _SVHS_REC_PID=''
 
-    [[ -n $_SVHS_FONT_FAMILY ]] && font_args+=(--font-family "$_SVHS_FONT_FAMILY")
+    [[ -n $_SVHS_FONT_FAMILY ]] && font_args+=(--text-font-family "$_SVHS_FONT_FAMILY")
+    [[ -n $_SVHS_FONT_FAMILY_EXACT ]] && font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
 
     for output in "${_SVHS_OUTPUTS[@]}"; do
         case "$output" in

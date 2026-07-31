@@ -11,17 +11,16 @@
 - [x] Decision about <time> and <repetition> argument.
 - [x] Implement minimal example for README#Quick_Start.
   - [x] Add it to `example`.
-- [ ] Fix the font fallback chain in `render`:
-  - [ ] Pass the `SetFontFamily` value as agg `--text-font-family`; the current
+- [x] Fix the font fallback chain in `render`:
+  - [x] Pass the `SetFontFamily` value as agg `--text-font-family`; the current
         `--font-family` bypasses the bundled Symbols Nerd Font and emoji
         fallbacks, so Nerd Font glyphs and emoji render as tofu.
-  - [ ] Keep the bypassing form as a separate opt-in setting
+  - [x] Keep the bypassing form as a separate opt-in setting
         (`SetFontFamilyExact`), see [COMMANDS](doc/COMMANDS.md#font-stack-).
-  - [ ] Generate `test` to confirm the glyphs are back.
+  - [x] Generate `test` to confirm the glyphs are back.
 - [ ] Refactor implemented `s-vhs.sh` functions to target format [COMMANDS](doc/COMMANDS.md).
 - [ ] Fix TODOs in the `s-vhs.sh`.
 - [ ] Add `_svhs_` prefix to private functions.
-- [ ] Fix default font problem: `Error: no faces matching font family options`.
 - [ ] Add version number, copyright and git repo link to `s-vhs.sh` header:
   - Check what is the best way to to keep version number inside `s-vhs.sh`.
   - Set version to `0.1.0`.
@@ -82,6 +81,17 @@
 
 ## v0.4.0
 
+- [ ] Fix default font problem: `Error: no faces matching font family options`.
+  - `agg` bundles only the symbol and emoji fallbacks; the primary monospace
+    text font must resolve from the system, so a host without any of agg's
+    default families (`JetBrains Mono`, `Fira Code`, `SF Mono`, `Menlo`,
+    `Consolas`, `DejaVu Sans Mono`, `Liberation Mono`) fails before rendering.
+  - [ ] When the font family is unset, check whether one of agg's default
+        families is available in the system; if so, pass nothing and keep agg's
+        own chain.
+  - [ ] If none is available, set the font to the first available monospace
+        font. Skip bitmap-only faces (`.otb`, `.pcf`) — agg cannot use them,
+        e.g. `Terminus` fails the same way as a missing font.
 - [ ] Add `SetPadding X` function.
 - [ ] Rended visualization for all available themes.
 - [ ] MP4 output (same `.cast`, different renderer):
