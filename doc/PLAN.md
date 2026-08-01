@@ -45,6 +45,18 @@
 - [x] Add check for missing dependencies: tmux, agg (if output set to GIF), ... to session start function.
   - [x] `Start` checks `tmux` and `asciinema` always, `agg` only when a `.gif`
         output is requested, so a cast-only recording needs no renderer.
+- [x] Draft template for recording script: with most common settings (commented).
+      A bare starting point: one active `SetOutput`, the common settings
+      commented out with their defaults, minimal body.
+  - [x] Add it to README;
+  - [x] Scaffold it with `svhs_new <path>`, like `vhs new demo.tape`. The
+        heredoc in `s-vhs.sh` is the source of truth — the README block is the
+        only other copy, `examples/` keeps none.
+  - [x] Reach it without sourcing: executing `s-vhs.sh` dispatches its only
+        subcommand (`s-vhs.sh new demo.rec.sh`), which also works piped
+        (`curl … | bash -s -- new demo.rec.sh`) for v0.2.0 remote import.
+        The `EXIT` trap moved to the sourced path — scaffolding must not kill
+        a tmux session that happens to share the default name.
 - [ ] Implement basic examples:
   - [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:
     - https://github.com/charmbracelet/vhs/tree/main/examples/settings
@@ -53,7 +65,6 @@
   - [ ] Ask me to mark examples to implement.
   - [ ] Write/Implement recording scripts for examples and put to `examples`.
   - [ ] Run recording scripts and generate GIFs, put it to `examples/images`.
-- [ ] Draft template for recording scrip: with most common settings (commented).
 - [ ] Publish to the github.
 - [ ] Update `pi-context-view` recordings + add reference to the `s-vhs`.
 
@@ -63,6 +74,13 @@
 - [ ] Remote import:
   - [ ] Add example with nice one-liner for `curl+source` remote import s-vhs from: `https://github.../v0.1.0/.../s-vhs.sh`.
   - [ ] Add it to the README -> "Remote Import".
+  - [ ] Scaffold without a local copy:
+        `curl -fsSL https://.../v0.1.0/.../s-vhs.sh | bash -s -- new demo.rec.sh`.
+        Works already — piped input leaves `BASH_SOURCE` unset, which the
+        executed-mode guard treats as execution.
+  - [ ] Decide which import line that scaffold writes: the template's
+        `source ./s-vhs.sh` assumes a local copy the remote user does not have,
+        so it should probably emit the pinned `curl+source` one-liner instead.
 - [ ] Fix `Show` after `Hide`: the second `Show` passes `--append` next to the
       always-present `--overwrite`, and asciinema rejects that combination
       (`error: the argument '--overwrite' cannot be used with '--append'`), so
@@ -82,6 +100,31 @@
       `extended-keys` and `extended-keys-format` are server options, so the
       current `tmux set -g` in `Start` also changes them on the user's own
       running tmux server.
+  - [ ] Every tmux call takes the socket, `_svhs_cleanup` included — a cleanup
+        left on the default socket kills the user's own session when it shares
+        the configured name, which is also why the `EXIT` trap is installed on
+        the sourced path only.
+  - [ ] Fixes config inheritance too: `tmux -f /dev/null` applies only when the
+        server is *created*, so a recording that joins an already running server
+        silently inherits the user's `tmux.conf`. The s-vhs server still stays
+        shared between recordings, environment included (see the `Env` warning
+        in [COMMANDS](COMMANDS.md#env-)).
+- [ ] Stop `_svhs_cleanup` from killing a session it did not create: it runs
+      `tmux kill-session -t "$_SVHS_SESSION"` unconditionally, so any exit
+      before `Start` — a failed setter, a duplicate-session `Start`, or merely
+      sourcing `s-vhs.sh` — kills the user's own session of that name.
+      Reproduced: with a `demo` session alive, a default-named recording prints
+      `duplicate session: demo`, exits 1, and takes the existing session down.
+  - [ ] Guard the handler with `_SVHS_STARTED`.
+  - [ ] Retires the trap placement: once cleanup is guarded, the `EXIT` trap no
+        longer has to be restricted to the sourced path. The executed-mode guard
+        stays — it is the `new` entry point, unrelated to tmux.
+  - [ ] Report the collision in `Start` and point at `SetSession`, instead of
+        letting tmux's `duplicate session: demo` through.
+- [ ] Make the default session name unique (e.g. `s-vhs-$$`), so two recordings
+      run in parallel without `SetSession`. The name is invisible with the
+      status bar off, and `SetSession` stays for attaching by name. Verified:
+      parallel recordings already work as soon as the names differ.
 - [ ] Make list of planned function which are easy to implement:
   - [ ] function ...
   - [ ] ...

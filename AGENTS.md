@@ -45,9 +45,14 @@ Dev: `shellcheck`.
 
 Follow the `shell-code` and `code-style` skills. Project-specific points:
 
-- **Sourced library, not a program.** `s-vhs.sh` has no `main`, no arg parsing,
-  and must stay safe to `source`. It installs an `EXIT` trap (`_svhs_cleanup`)
-  in the sourcing script's shell.
+- **Sourced library with one subcommand.** `s-vhs.sh` must stay safe to
+  `source`: sourcing only defines functions and installs an `EXIT` trap
+  (`_svhs_cleanup`) in the sourcing script's shell. Executing it
+  (`s-vhs.sh new demo.rec.sh`, including the piped
+  `curl … | bash -s -- new …`) scaffolds a recording script and exits; that is
+  the only subcommand. Do not grow it into a CLI or add a general `main`.
+  Dispatch detects execution, never `$1` — a sourced library inherits the
+  positional parameters of the script that sourced it.
 - **Bash 3.2 compatible.** macOS still ships bash 3.2.57 as `/bin/bash`, so no
   bash 4+ syntax (`declare -A`, `mapfile`, `${var,,}`, `&>>`, namerefs), guard
   every empty-array expansion (`${arr[@]+"${arr[@]}"}`), and use only utilities
@@ -66,9 +71,9 @@ Follow the `shell-code` and `code-style` skills. Project-specific points:
 - **Start validation.** Validate required overall configuration in `Start`
   before starting tmux or the recorder. Initialize internal defaults while
   sourcing.
-- **Sections.** `## Version`, `## Settings`, `## Session`, `## Input`,
-  `## Recording`, `## Render`, `## Internal`. Keep new functions in the
-  matching section.
+- **Sections.** `## Version`, `## Template`, `## Settings`, `## Session`,
+  `## Input`, `## Recording`, `## Render`, `## Internal`. Keep new functions in
+  the matching section.
 - **Version.** The literal in `svhs_version` (`## Version`) is the only place
   the version number is written; bump it on release.
 - **Naming tiers.** VHS-like CamelCase (`Type`, `SetRows`) is reserved for
@@ -83,6 +88,11 @@ Follow the `shell-code` and `code-style` skills. Project-specific points:
   requested, record to a temporary cast and remove it after producing the
   requested outputs. `Render` invokes only tools needed for those outputs, so a
   cast-only recording must not invoke `agg` or any other renderer/converter.
+- **Template.** The scaffold written by `svhs_new` is a bare starting point, not
+  an example: an active `SetOutput`, the common settings commented out with
+  their defaults, and a minimal body. Its heredoc in `s-vhs.sh` is the source of
+  truth; the only other copy is the README block, which must be updated in the
+  same change. Do not add a third one under `examples/`.
 - **Reference is part of the change.** Every added, removed, renamed, or
   behaviour-changed public command must be reflected in
   [`doc/REFERENCE.md`](doc/REFERENCE.md) in the same change — including its

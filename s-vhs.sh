@@ -1,7 +1,8 @@
 #!/bin/bash
 #
 # s-vhs — shared helpers for agg + asciinema + tmux demo recordings.
-# Meant to be sourced by a recording script, not executed.
+# Meant to be sourced by a recording script; executing it only scaffolds one:
+# `s-vhs.sh new demo.rec.sh`.
 #
 # Requires:  bash 3.2+ — the version macOS still ships as /bin/bash.
 # Homepage:  https://github.com/dimk90/s-vhs
@@ -19,6 +20,65 @@ set -euo pipefail
 
 svhs_version() {
     printf '%s\n' '0.1.0'
+}
+
+
+## Template
+
+
+svhs_new() {
+    #
+    # Write a starting-point recording script, ready to run and edit.
+    #
+    # Parameters:
+    #   $1 - path - file to create; an existing file is never overwritten.
+    #
+    # Example:
+    #   svhs_new 'demo.rec.sh' || exit 1
+    #
+    local path="${1-}"
+
+    if [[ -z $path ]]; then
+        printf 'svhs_new: target path must not be empty\n' >&2
+        return 1
+    fi
+    if [[ -e $path ]]; then
+        printf 'svhs_new: refusing to overwrite: %s\n' "$path" >&2
+        return 1
+    fi
+
+    # A quoted delimiter keeps the body literal, so the template's own
+    # expansions and comments survive verbatim
+    cat > "$path" <<'TEMPLATE'
+#!/usr/bin/env bash
+#
+# s-vhs recording template — a starting point.
+# Uncomment the settings you need; the values shown are the defaults.
+#
+
+source ./s-vhs.sh
+
+SetOutput 'demo.gif'
+
+# SetCols 100
+# SetRows 40
+# SetFontSize 28
+# SetFontFamily 'JetBrains Mono'
+# SetTheme 'kanagawa'
+# SetTypingSpeed 0.07
+
+Start
+Show
+
+Type 'echo "Hello from s-vhs"'
+Key Enter
+sleep 3
+
+Render
+TEMPLATE
+
+    chmod +x "$path"
+    printf 'Wrote %s\n' "$path"
 }
 
 
@@ -866,7 +926,27 @@ _svhs_cleanup() {
 }
 
 
+# Executed rather than sourced, so this is the scaffolding call: either as a
+# file (`s-vhs.sh new demo.rec.sh`) or piped, which leaves BASH_SOURCE unset
+# (`curl -fsSL … | bash -s -- new demo.rec.sh`). A sourced library, in
+# contrast, is $0 of its caller. The subcommand is deliberately the only one:
+# s-vhs is a library, not a CLI.
+#
+# Dispatch cannot look at $1 alone — a sourced script inherits the positional
+# parameters of the recording script that sourced it.
+if [[ -z ${BASH_SOURCE[0]-} || ${BASH_SOURCE[0]} == "$0" ]]; then
+    if [[ ${1-} != 'new' ]]; then
+        printf 'usage: s-vhs.sh new <path>\n' >&2
+        exit 1
+    fi
+
+    svhs_new "${2-}" || exit 1
+    exit 0
+fi
+
 # Installed in the sourcing script's shell, so any exit — including a
 # set -e failure mid-recording — tears down the tmux session and recorder
-# instead of leaving them running in the background.
+# instead of leaving them running in the background. Scaffolding starts
+# neither, and the handler would kill a session that happens to share the
+# default name, so the trap belongs to the sourced path only.
 trap _svhs_cleanup EXIT

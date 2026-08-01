@@ -47,6 +47,12 @@ Every command implemented in `s-vhs.sh`.
 
 ## Utility
 
-| Function       | Description                                 |
-| -------------- | ------------------------------------------- |
-| `svhs_version` | Print the version of the sourced `s-vhs.sh` |
+| Function            | Description                                       |
+| ------------------- | ------------------------------------------------- |
+| `svhs_version`      | Print the version of the sourced `s-vhs.sh`       |
+| `svhs_new <path>`   | Write a starting-point recording script to `path` |
+
+> [!NOTE]
+> `svhs_new` never overwrites an existing file. It is also reachable without
+> sourcing, as the only subcommand of an executed `s-vhs.sh`:
+> `s-vhs.sh new demo.rec.sh`.
