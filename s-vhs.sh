@@ -42,6 +42,10 @@ _SVHS_SHELL='bash'
 _SVHS_TYPING_SPEED=0.07
 _SVHS_KEY_DELAY=0.0
 
+# How often tmux is polled, and how long the recorder may take to attach
+_SVHS_POLL_INTERVAL=0.2
+_SVHS_ATTACH_TIMEOUT=5
+
 # Session and recorder lifecycle state
 _SVHS_STARTED=0
 _SVHS_CAST=''
@@ -377,8 +381,12 @@ Start() {
         -x "$_SVHS_COLS" -y "$_SVHS_ROWS" "$_SVHS_SHELL"
     _SVHS_STARTED=1
 
-    tmux set -g extended-keys on # TODO: add comment with descriptions
-    tmux set -g extended-keys-format csi-u # TODO: add comment with descriptions
+    # Report modified keys (C-Enter, S-Enter, C-S-<key>) instead of folding
+    # them into their plain form, so a recording can drive TUIs that bind them
+    tmux set -g extended-keys on
+    # Encode them as CSI u (^[[65;6u), the form modern TUIs parse, instead of
+    # xterm's older modifyOtherKeys sequences
+    tmux set -g extended-keys-format csi-u
     tmux set-option -t "$_SVHS_SESSION" status off
 }
 
@@ -394,8 +402,8 @@ RunOffRecord() {
     #   $1 - command_line - command line to type and execute.
     #   $2 - settle - (optional) - seconds to wait afterwards (default: 2).
     #
-    # Example: # TODO: more intuitive example
-    #   RunOffRecord 'pi --no-extensions' 5
+    # Example:
+    #   RunOffRecord 'cd ~/project' 1
     #
     local command_line="$1"
     local settle="${2:-2}"
@@ -445,8 +453,8 @@ Type() {
     #   $1 - text - text to type.
     #   $2 - delay - (optional) - seconds between keystrokes (default: SetTypingSpeed).
     #
-    # Example: # TODO: more intuitive example
-    #   Type '/context'
+    # Example:
+    #   Type 'ls -la'
     #
     local text="$1"
     local delay="${2:-$_SVHS_TYPING_SPEED}"
@@ -468,8 +476,8 @@ Wait() {
     #   $1 - pattern - grep pattern to wait for.
     #   $2 - timeout - (optional) - seconds before giving up (default: 15).
     #
-    # Example: # TODO: more intuitive example
-    #   Wait 'Context Usage' 30
+    # Example:
+    #   Wait 'build succeeded' 30
     #
     local pattern="$1"
     local timeout="${2:-15}"
@@ -480,7 +488,7 @@ Wait() {
             printf 'timeout waiting for: %s\n' "$pattern" >&2
             return 1
         fi
-        sleep 0.2 # TODO: add cont for that
+        sleep "$_SVHS_POLL_INTERVAL"
     done
 }
 
@@ -502,15 +510,19 @@ Show() {
     local attach_command
     printf -v attach_command 'tmux attach -t %q' "$_SVHS_SESSION"
 
-    # Expands to nothing on the first call; must stay unquoted so an empty
-    # value adds no argument
+    # asciinema holds the foreground for the whole segment while the script
+    # keeps driving the session, so it runs in the background and its PID is
+    # kept for Hide and Render to stop it
+    #
+    # --append expands to nothing on the first call; it must stay unquoted so
+    # an empty value adds no argument
     asciinema rec --headless --overwrite ${_SVHS_RECORDED:+--append} \
                   --window-size "${_SVHS_COLS}x${_SVHS_ROWS}"      \
-                  -c "$attach_command" "$_SVHS_CAST" & # TODO: remove &?
+                  -c "$attach_command" "$_SVHS_CAST" &
     _SVHS_REC_PID=$!
     _SVHS_RECORDED=1
-    # TODO: any better way to wait for it?
-    sleep 1 # let the recorder attach
+
+    _svhs_wait_for_client || return 1
 }
 
 
@@ -702,6 +714,33 @@ _svhs_prepare_cast() {
         _SVHS_CAST="$temporary_cast"
         _SVHS_TEMP_CAST="$temporary_cast"
     fi
+}
+
+
+_svhs_wait_for_client() {
+    #
+    # Wait until the recorder's tmux client is attached, so the segment is
+    # captured from its first frame instead of starting with idle time.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_wait_for_client || return 1
+    #
+    local deadline=$((SECONDS + _SVHS_ATTACH_TIMEOUT))
+
+    until [[ -n $(tmux list-clients -t "$_SVHS_SESSION" 2> /dev/null) ]]; do
+        if ! kill -0 "$_SVHS_REC_PID" 2> /dev/null; then
+            printf 'Show: the recorder exited before attaching\n' >&2
+            return 1
+        fi
+        if ((SECONDS >= deadline)); then
+            printf 'Show: timeout waiting for the recorder to attach\n' >&2
+            return 1
+        fi
+        sleep "$_SVHS_POLL_INTERVAL"
+    done
 }
 
 

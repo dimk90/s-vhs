@@ -21,7 +21,7 @@
 - [x] Refactor implemented `s-vhs.sh` functions to target format [COMMANDS](doc/COMMANDS.md).
   - [x] Add repeat count to `Key <key> [<count>] [<delay>]`.
 - [x] Add `_svhs_` prefix to private functions.
-- [ ] Fix TODOs in the `s-vhs.sh`.
+- [x] Fix TODOs in the `s-vhs.sh`.
 - [ ] Add version number, copyright and git repo link to `s-vhs.sh` header:
   - Check what is the best way to to keep version number inside `s-vhs.sh`.
   - Set version to `0.1.0`.
@@ -63,25 +63,29 @@
 
 ## v0.2.0
 
-  - [ ] Fix `Show` after `Hide`: the second `Show` passes `--append` next to the
-        always-present `--overwrite`, and asciinema rejects that combination
-        (`error: the argument '--overwrite' cannot be used with '--append'`), so
-        a multi-segment recording dies at the second `Show`.
-    - [ ] Mark the Show/Hide row in [COMMANDS](doc/COMMANDS.md) 🟡 until fixed.
-  - [ ] Make list of planned function which are easy to implement:
-    - [ ] function ...
-    - [ ] ...
-  - [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:
-    - https://github.com/charmbracelet/vhs/tree/main/examples/settings
-    - https://github.com/charmbracelet/vhs/tree/main/examples/commands
+- [ ] Fix `Show` after `Hide`: the second `Show` passes `--append` next to the
+      always-present `--overwrite`, and asciinema rejects that combination
+      (`error: the argument '--overwrite' cannot be used with '--append'`), so
+      a multi-segment recording dies at the second `Show`.
+  - [ ] Mark the Show/Hide row in [COMMANDS](doc/COMMANDS.md) 🟡 until fixed.
+- [ ] Use a dedicated tmux socket (`tmux -L s-vhs ...`) for the recording session:
+      `extended-keys` and `extended-keys-format` are server options, so the
+      current `tmux set -g` in `Start` also changes them on the user's own
+      running tmux server.
+- [ ] Make list of planned function which are easy to implement:
+  - [ ] function ...
+  - [ ] ...
+- [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:
+  - https://github.com/charmbracelet/vhs/tree/main/examples/settings
+  - https://github.com/charmbracelet/vhs/tree/main/examples/commands
 
 
 ## v0.3.0
 
-  - [ ] Implement animated SVG output format.
-  - [ ] Write advanced example with emulating mouse selection.
-    - [ ] Add new commands to [COMMANDS](doc/COMMANDS.md) if possible: e.g `Highlight`.
-    - [ ] Add feature + issue ref (https://github.com/charmbracelet/vhs/issues/66) to README;
+- [ ] Implement animated SVG output format.
+- [ ] Write advanced example with emulating mouse selection.
+  - [ ] Add new commands to [COMMANDS](doc/COMMANDS.md) if possible: e.g `Highlight`.
+  - [ ] Add feature + issue ref (https://github.com/charmbracelet/vhs/issues/66) to README;
 - [ ] Publish link in the related VHS issues.
 
 
