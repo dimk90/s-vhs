@@ -23,66 +23,7 @@ svhs_version() {
 }
 
 
-## Template
-
-
-svhs_new() {
-    #
-    # Write a starting-point recording script, ready to run and edit.
-    #
-    # Parameters:
-    #   $1 - path - file to create; an existing file is never overwritten.
-    #
-    # Example:
-    #   svhs_new 'demo.rec.sh' || exit 1
-    #
-    local path="${1-}"
-
-    if [[ -z $path ]]; then
-        printf 'svhs_new: target path must not be empty\n' >&2
-        return 1
-    fi
-    if [[ -e $path ]]; then
-        printf 'svhs_new: refusing to overwrite: %s\n' "$path" >&2
-        return 1
-    fi
-
-    # A quoted delimiter keeps the body literal, so the template's own
-    # expansions and comments survive verbatim
-    cat > "$path" <<'TEMPLATE'
-#!/usr/bin/env bash
-#
-# s-vhs recording template — a starting point.
-# Uncomment the settings you need; the values shown are the defaults.
-#
-
-source ./s-vhs.sh
-
-SetOutput 'demo.gif'
-
-# SetCols 100
-# SetRows 40
-# SetFontSize 28
-# SetFontFamily 'JetBrains Mono'
-# SetTheme 'kanagawa'
-# SetTypingSpeed 0.07
-
-Start
-Show
-
-Type 'echo "Hello from s-vhs"'
-Key Enter
-sleep 3
-
-Render
-TEMPLATE
-
-    chmod +x "$path"
-    printf 'Wrote %s\n' "$path"
-}
-
-
-## Settings
+## Settings / Defaults
 
 
 _SVHS_SESSION='demo'
@@ -125,6 +66,35 @@ _SVHS_CAST=''
 _SVHS_TEMP_CAST=''
 _SVHS_REC_PID=''
 _SVHS_RECORDED=''
+
+
+## Template
+
+
+_SVHS_TEMPLATE=$(cat <<'TEMPLATE'
+#!/usr/bin/env bash
+
+source ./s-vhs.sh
+
+SetOutput 'demo.gif'
+
+# SetCols 100
+# SetRows 40
+# SetFontSize 28
+# SetFontFamily 'JetBrains Mono'
+# SetTheme 'kanagawa'
+# SetTypingSpeed 0.07
+
+Start
+Show
+
+Type 'echo "Hello from s-vhs"'
+Key Enter
+sleep 3
+
+Render
+TEMPLATE
+)
 
 
 SetOutput() {
@@ -926,6 +896,40 @@ _svhs_cleanup() {
 }
 
 
+## CLI
+
+
+_svhs_new() {
+    #
+    # Write an executable recording script template to a path, or print it.
+    #
+    # Parameters:
+    #   $1 - path - (optional) - executable file to create; an existing file
+    #        is never overwritten. Without it the script goes to stdout.
+    #
+    # Example:
+    #   _svhs_new 'demo.rec.sh' || exit 1
+    #   _svhs_new > 'demo.rec.sh'
+    #
+    local path="${1-}"
+
+    if [[ -n $path && -e $path ]]; then
+        printf 's-vhs.sh new: refusing to overwrite: %s\n' "$path" >&2
+        return 1
+    fi
+
+    if [[ -z $path ]]; then
+        printf '%s\n' "$_SVHS_TEMPLATE"
+        return 0
+    fi
+
+    printf '%s\n' "$_SVHS_TEMPLATE" > "$path"
+    chmod +x "$path"
+    # stdout is the template itself in the pathless mode, so status goes to stderr
+    printf 'Wrote %s\n' "$path" >&2
+}
+
+
 # Executed rather than sourced, so this is the scaffolding call: either as a
 # file (`s-vhs.sh new demo.rec.sh`) or piped, which leaves BASH_SOURCE unset
 # (`curl -fsSL … | bash -s -- new demo.rec.sh`). A sourced library, in
@@ -936,11 +940,11 @@ _svhs_cleanup() {
 # parameters of the recording script that sourced it.
 if [[ -z ${BASH_SOURCE[0]-} || ${BASH_SOURCE[0]} == "$0" ]]; then
     if [[ ${1-} != 'new' ]]; then
-        printf 'usage: s-vhs.sh new <path>\n' >&2
+        printf 'usage: s-vhs.sh new [path]\n' >&2
         exit 1
     fi
 
-    svhs_new "${2-}" || exit 1
+    _svhs_new "${2-}" || exit 1
     exit 0
 fi
 

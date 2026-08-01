@@ -88,7 +88,7 @@ Follow the `shell-code` and `code-style` skills. Project-specific points:
   requested, record to a temporary cast and remove it after producing the
   requested outputs. `Render` invokes only tools needed for those outputs, so a
   cast-only recording must not invoke `agg` or any other renderer/converter.
-- **Template.** The scaffold written by `svhs_new` is a bare starting point, not
+- **Template.** The scaffold written by `_svhs_new` is a bare starting point, not
   an example: an active `SetOutput`, the common settings commented out with
   their defaults, and a minimal body. Its heredoc in `s-vhs.sh` is the source of
   truth; the only other copy is the README block, which must be updated in the

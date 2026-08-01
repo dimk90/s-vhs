@@ -29,7 +29,7 @@ A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superi
 ## Quick Start
 
 
-A recording is a plain shell script `demo.rec.sh` that sources `s-vhs.sh`:
+A recording is a plain shell script that sources `s-vhs.sh`:
 
 ```shell
 #!/usr/bin/env bash
@@ -131,21 +131,18 @@ You should see a new file called `demo.gif` (or whatever you named the Output) i
 
 ### Recording Template
 
-Scaffold a starting point next to `s-vhs.sh`, then replace the body with your
-own demo:
+Start your new recording from the bundled template:
 
 ```shell
 ./s-vhs.sh new demo.rec.sh
 ```
+> The file is created executable, and an existing one is never overwritten. Drop
+> the path to print the template instead: `./s-vhs.sh new > demo.rec.sh`.
 
 It writes:
 
 ```shell
 #!/usr/bin/env bash
-#
-# s-vhs recording template — a starting point.
-# Uncomment the settings you need; the values shown are the defaults.
-#
 
 source ./s-vhs.sh
 

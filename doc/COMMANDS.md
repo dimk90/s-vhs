@@ -68,7 +68,7 @@ are implemented now; the remaining command names still describe the target API.
 | —                                    | `Render`                        | `Render`                  | ✅          |
 | —                                    | `RunOffRecord`                  | `RunOffRecord`            | ✅          |
 | `vhs --version` (CLI)                | `svhs_version`                  | `svhs_version`            | ✅          |
-| `vhs new demo.tape` (CLI)            | `svhs_new`                      | `svhs_new`                | ✅          |
+| `vhs new demo.tape` (CLI)            | `s-vhs.sh new`                  | `s-vhs.sh new`            | ✅          |
 
 [vhs-ref]: https://github.com/charmbracelet/vhs#vhs-command-reference
 

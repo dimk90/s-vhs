@@ -45,14 +45,9 @@ Every command implemented in `s-vhs.sh`.
 > `SetTypingSpeed` for `Type` and to `SetKeyDelay` for `Key`, which sleeps that
 > long after every one of its `[count]` presses (default: `1`).
 
-## Utility
+## Utility & CLI
 
-| Function            | Description                                       |
-| ------------------- | ------------------------------------------------- |
-| `svhs_version`      | Print the version of the sourced `s-vhs.sh`       |
-| `svhs_new <path>`   | Write a starting-point recording script to `path` |
-
-> [!NOTE]
-> `svhs_new` never overwrites an existing file. It is also reachable without
-> sourcing, as the only subcommand of an executed `s-vhs.sh`:
-> `s-vhs.sh new demo.rec.sh`.
+| Command               | Description                                                                                          |
+| --------------------- | ---------------------------------------------------------------------------------------------------- |
+| `svhs_version`        | Print the version of the sourced `s-vhs.sh`                                                          |
+| `s-vhs.sh new [path]` | Write an executable starting-point recording script to `path` or to stdout if `path` is not provided |

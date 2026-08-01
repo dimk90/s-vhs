@@ -49,7 +49,7 @@
       A bare starting point: one active `SetOutput`, the common settings
       commented out with their defaults, minimal body.
   - [x] Add it to README;
-  - [x] Scaffold it with `svhs_new <path>`, like `vhs new demo.tape`. The
+  - [x] Scaffold it with `s-vhs.sh new [path]`, like `vhs new demo.tape`. The
         heredoc in `s-vhs.sh` is the source of truth — the README block is the
         only other copy, `examples/` keeps none.
   - [x] Reach it without sourcing: executing `s-vhs.sh` dispatches its only
@@ -147,6 +147,7 @@
   - [ ] Add new commands to [COMMANDS](doc/COMMANDS.md) if possible: e.g `Highlight`.
   - [ ] Add feature + issue ref (https://github.com/charmbracelet/vhs/issues/66) to README;
 - [ ] Publish link in the related VHS issues.
+- [ ] Update template (`s-vhs new`) with common settings (if any new).
 
 
 ## v0.4.0
