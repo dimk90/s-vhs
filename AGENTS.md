@@ -48,6 +48,10 @@ Follow the `shell-code` and `code-style` skills. Project-specific points:
 - **Sourced library, not a program.** `s-vhs.sh` has no `main`, no arg parsing,
   and must stay safe to `source`. It installs an `EXIT` trap (`_svhs_cleanup`)
   in the sourcing script's shell.
+- **Bash 3.2 compatible.** macOS still ships bash 3.2.57 as `/bin/bash`, so no
+  bash 4+ syntax (`declare -A`, `mapfile`, `${var,,}`, `&>>`, namerefs), guard
+  every empty-array expansion (`${arr[@]+"${arr[@]}"}`), and use only utilities
+  and flags present in the BSD userland too (`head -c`, not `truncate -s`).
 - **Public configuration uses functions only.** A recording script sources
   `s-vhs.sh` first, then configures it through `Set*` functions. Do not expose
   or document setting variables, or support pre-source assignments as a second

@@ -28,27 +28,23 @@
         rather than a VHS-like command name.
   - [x] Set version to `0.1.0`.
   - [x] Add it to `doc/COMMANDS.md` and `doc/REFERENCE.md` if needed.
-- [ ] Make `s-vhs.sh` compatible with macOS bash (3.2):
-  - [ ] Check if it's really important for macOS users.
-  - [ ] Guard empty-array expansion under `set -u` (`"${arr[@]}"` is an
+- [x] Make `s-vhs.sh` compatible with macOS bash (3.2):
+  - [x] Check if it's really important for macOS users. Is 3.2 version still common?
+        Yes — every macOS release still ships 3.2.57 as `/bin/bash`; zsh only
+        replaced it as the default login shell. Full 3.2 support it is.
+  - [x] Guard empty-array expansion under `set -u` (`"${arr[@]}"` is an
         unbound variable error before bash 4.4 — hits `font_args` in `render`).
-  - [ ] Replace GNU-only `truncate -s` (absent on stock macOS).
-  - [ ] Check fractional `sleep` and other coreutils assumptions on BSD tools.
-  - [ ] No bash 4+ syntax is used today — keep it that way (no `declare -A`,
-        `mapfile`, `${var,,}`, `&>>`, namerefs).
-- [ ] Decide on isolating the recorded shell from the user's rc files
-      (`bash --norc`, `fish --no-config`, ...):
-  - The session inherits `~/.bashrc`, so a recording shows the author's prompt
-    (starship, git status, ...) and aliases — it is not reproducible on another
-    machine, and a demo GIF leaks unrelated prompt content.
-  - Against: VHS behaves the same way, and a dotfiles/prompt demo *wants* the
-    real config; a bare `--norc` prompt (`bash-5.3$`) looks worse by default.
-  - Options: keep inheriting, add a `SetShell 'bash --norc'` recipe to the docs
-    only, or add an explicit setting (e.g. `SetCleanShell`) that maps to the
-    right flag per shell.
+        Also affected the empty-output check in `Start`.
+  - [x] Replace GNU-only `truncate -s` (absent on stock macOS).
+        Now `_svhs_truncate`, built on `head -c` plus a replacing `mv`.
+  - [x] Check fractional `sleep` and other coreutils assumptions on BSD tools.
+        Nothing else to fix: macOS `sleep` takes any `strtod` value, and a bare
+        `mktemp` behaves as `mktemp -t tmp` there.
+  - [x] No bash 4+ syntax is used today — keep it that way (no `declare -A`,
+        `mapfile`, `${var,,}`, `&>>`, namerefs). Recorded in `AGENTS.md`.
 - [ ] Improve examples:
-  - [ ] Add nice one-liner for `curl+source` remote import s-vhs from: `https://github.../v0.1.0/.../s-vhs.sh`.
-  - [ ] Record GIF and add it to the README.
+  - [ ] Add example with nice one-liner for `curl+source` remote import s-vhs from: `https://github.../v0.1.0/.../s-vhs.sh`.
+  - [ ] Add it to the README -> "Remote Import".
 - [ ] Add check for missing dependencies: tmux, agg (if output set to GIF), ... to session start function.
 - [ ] Implement basic examples:
   - [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:
@@ -57,7 +53,7 @@
   - [ ] Create table of examples (name + description + checkbox for planned) and put to `doc`.
   - [ ] Ask me to mark examples to implement.
   - [ ] Write/Implement recording scripts for examples and put to `examples`.
-  - [ ] Run recording scripts and generate GIFs, put it to `doc/images`.
+  - [ ] Run recording scripts and generate GIFs, put it to `examples/images`.
 - [ ] Draft template for recording scrip: with most common settings (commented).
 - [ ] Publish to the github.
 - [ ] Update `pi-context-view` recordings + add reference to the `s-vhs`.
@@ -70,6 +66,16 @@
       (`error: the argument '--overwrite' cannot be used with '--append'`), so
       a multi-segment recording dies at the second `Show`.
   - [ ] Mark the Show/Hide row in [COMMANDS](doc/COMMANDS.md) 🟡 until fixed.
+- [ ] Decide on isolating the recorded shell from the user's rc files
+      (`bash --norc`, `fish --no-config`, ...):
+  - The session inherits `~/.bashrc`, so a recording shows the author's prompt
+    (starship, git status, ...) and aliases — it is not reproducible on another
+    machine, and a demo GIF leaks unrelated prompt content.
+  - Against: VHS behaves the same way, and a dotfiles/prompt demo *wants* the
+    real config; a bare `--norc` prompt (`bash-5.3$`) looks worse by default.
+  - Options: keep inheriting, add a `SetShell 'bash --norc'` recipe to the docs
+    only, or add an explicit setting (e.g. `SetCleanShell`) that maps to the
+    right flag per shell.
 - [ ] Use a dedicated tmux socket (`tmux -L s-vhs ...`) for the recording session:
       `extended-keys` and `extended-keys-format` are server options, so the
       current `tmux set -g` in `Start` also changes them on the user's own
@@ -85,6 +91,13 @@
 ## v0.3.0
 
 - [ ] Implement animated SVG output format.
+  - [ ] Update readme header with one more bullet:
+    ```Markdown
+    - **Animated SVG output**
+      ([#644](https://github.com/charmbracelet/vhs/discussions/644),
+      [#109](https://github.com/charmbracelet/vhs/issues/109),
+      [#105](https://github.com/charmbracelet/vhs/issues/105)).
+    ```
 - [ ] Write advanced example with emulating mouse selection.
   - [ ] Add new commands to [COMMANDS](doc/COMMANDS.md) if possible: e.g `Highlight`.
   - [ ] Add feature + issue ref (https://github.com/charmbracelet/vhs/issues/66) to README;

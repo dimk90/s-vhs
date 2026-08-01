@@ -12,9 +12,9 @@ source "$SCRIPT_DIR/../s-vhs.sh"
 # Where should we write the GIF?
 SetOutput "$SCRIPT_DIR/images/quick-start.gif"
 
-# Set up an 80x20 terminal with a 28px font
-SetCols 80
-SetRows 20
+# Set up an 60x8 terminal with a 34px font
+SetCols 60
+SetRows 8
 SetFontSize 34
 SetFontFamily 'Iosevka Term'
 

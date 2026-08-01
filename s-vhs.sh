@@ -3,6 +3,7 @@
 # s-vhs — shared helpers for agg + asciinema + tmux demo recordings.
 # Meant to be sourced by a recording script, not executed.
 #
+# Requires:  bash 3.2+ — the version macOS still ships as /bin/bash.
 # Homepage:  https://github.com/dimk90/s-vhs
 # License:   MIT
 # Copyright: (c) 2026 Dmitry Makarov
@@ -382,7 +383,9 @@ Start() {
         printf 'Start: session has already started\n' >&2
         return 1
     fi
-    if ((${#_SVHS_OUTPUTS[@]} == 0)); then
+    # bash 3.2 (stock macOS) treats an empty array as unset, so ${#...[@]}
+    # would abort under set -u before this check can report the real problem
+    if [[ -z ${_SVHS_OUTPUTS[*]-} ]]; then
         printf 'Start: configure at least one output with SetOutput\n' >&2
         return 1
     fi
@@ -557,7 +560,7 @@ Hide() {
     tmux detach-client -s "$_SVHS_SESSION"
     wait "$_SVHS_REC_PID"
 
-    truncate -s "$clean_end" -- "$_SVHS_CAST"
+    _svhs_truncate "$_SVHS_CAST" "$clean_end"
     _SVHS_REC_PID=''
 }
 
@@ -586,7 +589,7 @@ Render() {
 
     if [[ -n $_SVHS_REC_PID ]]; then
         wait "$_SVHS_REC_PID"
-        truncate -s "$clean_end" -- "$_SVHS_CAST"
+        _svhs_truncate "$_SVHS_CAST" "$clean_end"
     fi
     _SVHS_REC_PID=''
 
@@ -601,10 +604,12 @@ Render() {
                 fi
                 ;;
             *.gif)
-                agg "${font_args[@]}"                    \
-                    --font-size "$_SVHS_FONT_SIZE"       \
-                    --line-height "$_SVHS_LINE_HEIGHT"   \
-                    --theme "$_SVHS_THEME"               \
+                # bash 3.2 (stock macOS) rejects an empty array under set -u,
+                # so expand font_args only when a font family was configured
+                agg ${font_args[@]+"${font_args[@]}"}  \
+                    --font-size "$_SVHS_FONT_SIZE"     \
+                    --line-height "$_SVHS_LINE_HEIGHT" \
+                    --theme "$_SVHS_THEME"             \
                     "$_SVHS_CAST" "$output"
                 ;;
         esac
@@ -726,6 +731,28 @@ _svhs_prepare_cast() {
         _SVHS_CAST="$temporary_cast"
         _SVHS_TEMP_CAST="$temporary_cast"
     fi
+}
+
+
+_svhs_truncate() {
+    #
+    # Shrink a file to its leading bytes. Replaces GNU `truncate -s`, which is
+    # absent from the stock macOS userland.
+    #
+    # Parameters:
+    #   $1 - path - file to shrink.
+    #   $2 - size - number of leading bytes to keep.
+    #
+    # Example:
+    #   _svhs_truncate 'demo.cast' 4096 || return 1
+    #
+    local path="$1"
+    local size="$2"
+    # written next to the cast, so the replacing move stays within one
+    # filesystem and cannot fail halfway across devices
+    local shortened="$path.tmp"
+
+    head -c "$size" < "$path" > "$shortened" && mv -- "$shortened" "$path"
 }
 
 

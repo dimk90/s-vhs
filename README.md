@@ -24,10 +24,6 @@ A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superi
   [#438](https://github.com/charmbracelet/vhs/issues/438),
   [#150](https://github.com/charmbracelet/vhs/issues/150),
   [#45](https://github.com/charmbracelet/vhs/issues/45)).
-- **Animated SVG output**
-  ([#644](https://github.com/charmbracelet/vhs/discussions/644),
-  [#109](https://github.com/charmbracelet/vhs/issues/109),
-  [#105](https://github.com/charmbracelet/vhs/issues/105)).
 
 
 ## Quick Start
@@ -43,9 +39,9 @@ source ./s-vhs.sh
 # Where should we write the GIF?
 SetOutput 'demo.gif'
 
-# Set up an 80x20 terminal with a 28px font.
-SetCols 40
-SetRows 20
+# Set up an 60x8 terminal with a 34px font.
+SetCols 60
+SetRows 8
 SetFontSize 34
 
 # Start the terminal, then the recorder.
@@ -72,15 +68,12 @@ Render
 ```
 
 Run it to render the GIF:
-
 ```shell
 chmod +x demo.rec.sh && demo.rec.sh
 ```
 
+You should see a new file called `demo.gif` (or whatever you named the Output) in the directory:
 <img src="examples/images/quick-start.gif" width=700>
-
-> [!NOTE]
-> See [`examples/`](examples) for more recording scripts.
 
 
 ## Installation
@@ -99,8 +92,16 @@ chmod +x demo.rec.sh && demo.rec.sh
 > [!NOTE]
 > The provided instructions are for ArchLinux, but you can easily adapt it for your favorite distro ;)
 
+> [!NOTE]
+> `s-vhs` targets bash 3.2, the version macOS still ships as `/bin/bash`, 
+> so recording scripts run on a stock Mac without installing a newer bash.
+
 
 ## Examples
+
+> [!NOTE]
+> See [`examples/`](examples) for more recording scripts.
+
 
 > TODO:
 
