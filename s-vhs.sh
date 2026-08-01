@@ -1,12 +1,24 @@
 #!/bin/bash
 #
-# Shared helpers for agg + asciinema + tmux demo recordings.
+# s-vhs — shared helpers for agg + asciinema + tmux demo recordings.
 # Meant to be sourced by a recording script, not executed.
+#
+# Homepage:  https://github.com/dimk90/s-vhs
+# License:   MIT
+# Copyright: (c) 2026 Dmitry Makarov
 #
 
 # Stop on an unhandled command failure (-e), use of an unset variable (-u),
 # or failure within a pipeline (-o pipefail), so the EXIT trap can clean up.
 set -euo pipefail
+
+
+## Version
+
+
+svhs_version() {
+    printf '%s\n' '0.1.0'
+}
 
 
 ## Settings

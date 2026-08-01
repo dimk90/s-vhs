@@ -22,10 +22,12 @@
   - [x] Add repeat count to `Key <key> [<count>] [<delay>]`.
 - [x] Add `_svhs_` prefix to private functions.
 - [x] Fix TODOs in the `s-vhs.sh`.
-- [ ] Add version number, copyright and git repo link to `s-vhs.sh` header:
-  - Check what is the best way to to keep version number inside `s-vhs.sh`.
-  - Set version to `0.1.0`.
-  - Add it to `doc/COMMANDS.md` and `doc/REFERENCE.md` if needed.
+- [x] Add version number, copyright and git repo link to `s-vhs.sh` header:
+  - [x] Check what is the best way to to keep version number inside `s-vhs.sh`.
+        Kept as a literal in `svhs_version` (`## Version` section); prefixed
+        rather than a VHS-like command name.
+  - [x] Set version to `0.1.0`.
+  - [x] Add it to `doc/COMMANDS.md` and `doc/REFERENCE.md` if needed.
 - [ ] Make `s-vhs.sh` compatible with macOS bash (3.2):
   - [ ] Check if it's really important for macOS users.
   - [ ] Guard empty-array expansion under `set -u` (`"${arr[@]}"` is an

@@ -62,8 +62,15 @@ Follow the `shell-code` and `code-style` skills. Project-specific points:
 - **Start validation.** Validate required overall configuration in `Start`
   before starting tmux or the recorder. Initialize internal defaults while
   sourcing.
-- **Sections.** `## Settings`, `## Session`, `## Input`, `## Recording`,
-  `## Render`, `## Internal`. Keep new functions in the matching section.
+- **Sections.** `## Version`, `## Settings`, `## Session`, `## Input`,
+  `## Recording`, `## Render`, `## Internal`. Keep new functions in the
+  matching section.
+- **Version.** The literal in `svhs_version` (`## Version`) is the only place
+  the version number is written; bump it on release.
+- **Naming tiers.** VHS-like CamelCase (`Type`, `SetRows`) is reserved for
+  recording commands and setters. Public helpers that are not part of that
+  vocabulary use the `svhs_` prefix (`svhs_version`); private functions and
+  module state use `_svhs_` / `_SVHS_`.
 - **Recorder state.** Preserve its lifecycle: `Show` stores the recorder PID
   and marks the first recorded segment, `Hide`/`Render` clear the active PID,
   and later `Show` calls append.
@@ -75,9 +82,15 @@ Follow the `shell-code` and `code-style` skills. Project-specific points:
 - **Reference is part of the change.** Every added, removed, renamed, or
   behaviour-changed public command must be reflected in
   [`doc/REFERENCE.md`](doc/REFERENCE.md) in the same change — including its
-  signature, default value, and section (`## Settings` or `## Commands`).
-  `doc/REFERENCE.md` documents the current implementation; `doc/COMMANDS.md`
-  tracks VHS parity and the planned API.
+  signature, default value, and section (`## Settings`, `## Core`,
+  `## Utility`). `doc/REFERENCE.md` documents the current implementation;
+  `doc/COMMANDS.md` tracks VHS parity and the planned API.
+- **Reference stays lean.** `doc/REFERENCE.md` is a lookup table, not a guide:
+  a one-line description per command, plus a short note only for a rule that
+  does not fit a table cell. No rationale, no design or naming justifications,
+  no examples, no repetition of what a row already says, no section prose.
+  Such text belongs in `README.md`, `doc/COMMANDS.md`, or here. Prefer cutting
+  words over adding them; keep headings short.
 - Every VHS feature parity claim in `README.md` links the upstream issue it
   addresses; keep that link when editing such a line.
 
