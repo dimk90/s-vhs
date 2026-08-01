@@ -43,22 +43,15 @@ Dev: `shellcheck`.
 
 ## Conventions
 
-Follow the `shell-code` and `code-style` skills; use `s-vhs.sh` as the
-formatting reference, but do not copy draft API patterns that conflict with the
-target function-only interface below. Project-specific points:
+Follow the `shell-code` and `code-style` skills. Project-specific points:
 
 - **Sourced library, not a program.** `s-vhs.sh` has no `main`, no arg parsing,
-  and must stay safe to `source`. It installs an `EXIT` trap (`_cleanup`) in the
-  sourcing script's shell.
+  and must stay safe to `source`. It installs an `EXIT` trap (`_svhs_cleanup`)
+  in the sourcing script's shell.
 - **Public configuration uses functions only.** A recording script sources
   `s-vhs.sh` first, then configures it through `Set*` functions. Do not expose
-  setting variables or support pre-source assignments as a second API.
-- **Private backing state.** Store shared settings in namespaced internal
-  globals such as `_SVHS_ROWS`. Bash cannot make sourced globals truly private;
-  the `_SVHS_` prefix marks the boundary and avoids collisions with the caller.
-- **Do not leak backing state.** Do not export internal setting variables or
-  expose their names in user-facing documentation. Public setters are the only
-  supported way for recording scripts to modify settings.
+  or document setting variables, or support pre-source assignments as a second
+  API. Public setters are the only supported way to modify settings.
 - **Configuration phase.** Require every `Set*` call before `Start`, and reject
   attempts to reconfigure a session after it has started. Relax this rule for a
   specific setting only when a concrete use case requires it.
@@ -67,20 +60,13 @@ target function-only interface below. Project-specific points:
   values, such as custom renderer themes, instead of validating against a
   restrictive allowlist.
 - **Start validation.** Validate required overall configuration in `Start`
-  before starting tmux or the recorder. Internal defaults are initialized while
-  sourcing, with comments explaining units or non-obvious default choices.
+  before starting tmux or the recorder. Initialize internal defaults while
+  sourcing.
 - **Sections.** `## Settings`, `## Session`, `## Input`, `## Recording`,
-  `## Render`, `## Internal`. Keep new functions in the matching section;
-  underscore-prefixed helpers go last, under `## Internal`.
-- **Docstrings.** Every function opens with the `#`-framed block including
-  `Parameters:` and a real `Example:`. No exceptions, including internals.
-- **Comments explain why, not what** — e.g. why the cast is truncated after
-  detaching, why the recorder needs a moment to attach. Preserve these when
-  refactoring.
-- **Recorder state.** Keep the recorder PID and recorded-segment flag as
-  private `_SVHS_*` module state. Preserve their lifecycle: `Show` sets them,
-  `Hide`/`Render` clear the active PID, and the segment flag makes later `Show`
-  calls append.
+  `## Render`, `## Internal`. Keep new functions in the matching section.
+- **Recorder state.** Preserve its lifecycle: `Show` stores the recorder PID
+  and marks the first recorded segment, `Hide`/`Render` clear the active PID,
+  and later `Show` calls append.
 - **Outputs.** `SetOutput` is repeatable and each call adds an output. An
   explicitly requested `.cast` is retained at that path; when no `.cast` is
   requested, record to a temporary cast and remove it after producing the
@@ -92,7 +78,6 @@ target function-only interface below. Project-specific points:
   signature, default value, and section (`## Settings` or `## Commands`).
   `doc/REFERENCE.md` documents the current implementation; `doc/COMMANDS.md`
   tracks VHS parity and the planned API.
-- **shellcheck-clean.** Suppress only per-line, with an adjacent explanation.
 - Every VHS feature parity claim in `README.md` links the upstream issue it
   addresses; keep that link when editing such a line.
 

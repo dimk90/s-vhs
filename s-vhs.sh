@@ -62,7 +62,7 @@ SetOutput() {
     #
     local output="${1-}"
 
-    _require_configuration_phase 'SetOutput' || return 1
+    _svhs_require_configuration_phase 'SetOutput' || return 1
 
     case "$output" in
         *.cast|*.gif) ;;
@@ -92,7 +92,7 @@ SetSession() {
     #
     local session="${1-}"
 
-    _require_configuration_phase 'SetSession' || return 1
+    _svhs_require_configuration_phase 'SetSession' || return 1
 
     if [[ -z $session ]]; then
         printf 'SetSession: session name must not be empty\n' >&2
@@ -115,9 +115,9 @@ SetCols() {
     #
     local cols="${1-}"
 
-    _require_configuration_phase 'SetCols' || return 1
+    _svhs_require_configuration_phase 'SetCols' || return 1
 
-    if ! _is_positive_integer "$cols"; then
+    if ! _svhs_is_positive_integer "$cols"; then
         printf 'SetCols: expected a positive integer, got: %s\n' "$cols" >&2
         return 1
     fi
@@ -138,9 +138,9 @@ SetRows() {
     #
     local rows="${1-}"
 
-    _require_configuration_phase 'SetRows' || return 1
+    _svhs_require_configuration_phase 'SetRows' || return 1
 
-    if ! _is_positive_integer "$rows"; then
+    if ! _svhs_is_positive_integer "$rows"; then
         printf 'SetRows: expected a positive integer, got: %s\n' "$rows" >&2
         return 1
     fi
@@ -162,7 +162,7 @@ SetFontFamily() {
     #
     local font_family="${1-}"
 
-    _require_configuration_phase 'SetFontFamily' || return 1
+    _svhs_require_configuration_phase 'SetFontFamily' || return 1
 
     if [[ -z $font_family ]]; then
         printf 'SetFontFamily: font family must not be empty\n' >&2
@@ -193,7 +193,7 @@ SetFontFamilyExact() {
     #
     local font_family="${1-}"
 
-    _require_configuration_phase 'SetFontFamilyExact' || return 1
+    _svhs_require_configuration_phase 'SetFontFamilyExact' || return 1
 
     if [[ -z $font_family ]]; then
         printf 'SetFontFamilyExact: font family must not be empty\n' >&2
@@ -220,9 +220,9 @@ SetFontSize() {
     #
     local font_size="${1-}"
 
-    _require_configuration_phase 'SetFontSize' || return 1
+    _svhs_require_configuration_phase 'SetFontSize' || return 1
 
-    if ! _is_positive_integer "$font_size"; then
+    if ! _svhs_is_positive_integer "$font_size"; then
         printf 'SetFontSize: expected a positive integer, got: %s\n' "$font_size" >&2
         return 1
     fi
@@ -243,9 +243,9 @@ SetLineHeight() {
     #
     local line_height="${1-}"
 
-    _require_configuration_phase 'SetLineHeight' || return 1
+    _svhs_require_configuration_phase 'SetLineHeight' || return 1
 
-    if ! _is_positive_number "$line_height"; then
+    if ! _svhs_is_positive_number "$line_height"; then
         printf 'SetLineHeight: expected a positive number, got: %s\n' "$line_height" >&2
         return 1
     fi
@@ -266,7 +266,7 @@ SetTheme() {
     #
     local theme="${1-}"
 
-    _require_configuration_phase 'SetTheme' || return 1
+    _svhs_require_configuration_phase 'SetTheme' || return 1
 
     if [[ -z $theme ]]; then
         printf 'SetTheme: theme must not be empty\n' >&2
@@ -289,7 +289,7 @@ SetShell() {
     #
     local shell="${1-}"
 
-    _require_configuration_phase 'SetShell' || return 1
+    _svhs_require_configuration_phase 'SetShell' || return 1
 
     if [[ -z $shell ]]; then
         printf 'SetShell: shell command must not be empty\n' >&2
@@ -312,9 +312,9 @@ SetTypingSpeed() {
     #
     local typing_speed="${1-}"
 
-    _require_configuration_phase 'SetTypingSpeed' || return 1
+    _svhs_require_configuration_phase 'SetTypingSpeed' || return 1
 
-    if ! _is_nonnegative_number "$typing_speed"; then
+    if ! _svhs_is_nonnegative_number "$typing_speed"; then
         printf 'SetTypingSpeed: expected a non-negative number, got: %s\n' \
             "$typing_speed" >&2
         return 1
@@ -336,9 +336,9 @@ SetKeyDelay() {
     #
     local key_delay="${1-}"
 
-    _require_configuration_phase 'SetKeyDelay' || return 1
+    _svhs_require_configuration_phase 'SetKeyDelay' || return 1
 
-    if ! _is_nonnegative_number "$key_delay"; then
+    if ! _svhs_is_nonnegative_number "$key_delay"; then
         printf 'SetKeyDelay: expected a non-negative number, got: %s\n' \
             "$key_delay" >&2
         return 1
@@ -371,7 +371,7 @@ Start() {
         return 1
     fi
 
-    _prepare_cast || return 1
+    _svhs_prepare_cast || return 1
 
     tmux -f /dev/null new-session -d -s "$_SVHS_SESSION" \
         -x "$_SVHS_COLS" -y "$_SVHS_ROWS" "$_SVHS_SHELL"
@@ -400,8 +400,8 @@ RunOffRecord() {
     local command_line="$1"
     local settle="${2:-2}"
 
-    _send -l "$command_line"
-    _send Enter
+    _svhs_send -l "$command_line"
+    _svhs_send Enter
     sleep "$settle"
 }
 
@@ -424,14 +424,14 @@ Key() {
     local delay="${3:-$_SVHS_KEY_DELAY}"
     local press
 
-    if ! _is_positive_integer "$count"; then
+    if ! _svhs_is_positive_integer "$count"; then
         printf 'Key: expected a positive integer count, got: %s\n' "$count" >&2
         return 1
     fi
 
     # tmux send-keys -N repeats natively, but without a delay between presses
     for ((press = 0; press < count; press++)); do
-        _send "$key_name"
+        _svhs_send "$key_name"
         sleep "$delay"
     done
 }
@@ -453,7 +453,7 @@ Type() {
     local idx
 
     for ((idx = 0; idx < ${#text}; idx++)); do
-        _send -l "${text:idx:1}"
+        _svhs_send -l "${text:idx:1}"
         sleep "$delay"
     done
 }
@@ -597,9 +597,13 @@ Render() {
 
 
 ## Internal
+#
+# Bash cannot hide functions from a sourcing script, so the _svhs_ prefix
+# only marks them as implementation details and avoids name collisions with
+# the recording script.
 
 
-_require_configuration_phase() {
+_svhs_require_configuration_phase() {
     #
     # Reject a setting change after the tmux session has started.
     #
@@ -607,7 +611,7 @@ _require_configuration_phase() {
     #   $1 - setter - public setter name used in the error message.
     #
     # Example:
-    #   _require_configuration_phase 'SetRows' || exit 1
+    #   _svhs_require_configuration_phase 'SetRows' || exit 1
     #
     local setter="$1"
 
@@ -618,7 +622,7 @@ _require_configuration_phase() {
 }
 
 
-_is_positive_integer() {
+_svhs_is_positive_integer() {
     #
     # Return success when a value is an integer greater than zero.
     #
@@ -626,7 +630,7 @@ _is_positive_integer() {
     #   $1 - value - value to test.
     #
     # Example:
-    #   _is_positive_integer '80' || exit 1
+    #   _svhs_is_positive_integer '80' || exit 1
     #
     local value="$1"
 
@@ -635,7 +639,7 @@ _is_positive_integer() {
 }
 
 
-_is_nonnegative_number() {
+_svhs_is_nonnegative_number() {
     #
     # Return success when a value is a decimal number greater than or equal to zero.
     #
@@ -643,7 +647,7 @@ _is_nonnegative_number() {
     #   $1 - value - value to test.
     #
     # Example:
-    #   _is_nonnegative_number '0.1' || exit 1
+    #   _svhs_is_nonnegative_number '0.1' || exit 1
     #
     local value="$1"
 
@@ -652,7 +656,7 @@ _is_nonnegative_number() {
 }
 
 
-_is_positive_number() {
+_svhs_is_positive_number() {
     #
     # Return success when a value is a decimal number greater than zero.
     #
@@ -660,16 +664,16 @@ _is_positive_number() {
     #   $1 - value - value to test.
     #
     # Example:
-    #   _is_positive_number '1.2' || exit 1
+    #   _svhs_is_positive_number '1.2' || exit 1
     #
     local value="$1"
 
-    _is_nonnegative_number "$value" && [[ $value =~ [1-9] ]] || return 1
+    _svhs_is_nonnegative_number "$value" && [[ $value =~ [1-9] ]] || return 1
     return 0
 }
 
 
-_prepare_cast() {
+_svhs_prepare_cast() {
     #
     # Select a requested cast path or create a temporary renderer input.
     #
@@ -677,7 +681,7 @@ _prepare_cast() {
     #   None.
     #
     # Example:
-    #   _prepare_cast || exit 1
+    #   _svhs_prepare_cast || exit 1
     #
     local output
     local temporary_cast
@@ -701,7 +705,7 @@ _prepare_cast() {
 }
 
 
-_send() {
+_svhs_send() {
     #
     # Send keys to the demo session (thin wrapper over tmux send-keys).
     #
@@ -709,14 +713,14 @@ _send() {
     #   $@ - arguments passed through to tmux send-keys.
     #
     # Example:
-    #   _send -l 'ls'
-    #   _send Enter
+    #   _svhs_send -l 'ls'
+    #   _svhs_send Enter
     #
     tmux send-keys -t "$_SVHS_SESSION" "$@"
 }
 
 
-_cleanup() {
+_svhs_cleanup() {
     #
     # Kill the demo session and recorder on exit; safe to call when neither
     # is alive, and remove an unrequested temporary cast.
@@ -725,7 +729,7 @@ _cleanup() {
     #   None.
     #
     # Example:
-    #   _cleanup
+    #   _svhs_cleanup
     #
     tmux kill-session -t "$_SVHS_SESSION" 2> /dev/null || true
     if [[ -n $_SVHS_REC_PID ]] && kill -0 "$_SVHS_REC_PID" 2> /dev/null; then
@@ -740,4 +744,4 @@ _cleanup() {
 # Installed in the sourcing script's shell, so any exit — including a
 # set -e failure mid-recording — tears down the tmux session and recorder
 # instead of leaving them running in the background.
-trap _cleanup EXIT
+trap _svhs_cleanup EXIT
