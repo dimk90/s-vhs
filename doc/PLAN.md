@@ -42,10 +42,9 @@
         `mktemp` behaves as `mktemp -t tmp` there.
   - [x] No bash 4+ syntax is used today — keep it that way (no `declare -A`,
         `mapfile`, `${var,,}`, `&>>`, namerefs). Recorded in `AGENTS.md`.
-- [ ] Improve examples:
-  - [ ] Add example with nice one-liner for `curl+source` remote import s-vhs from: `https://github.../v0.1.0/.../s-vhs.sh`.
-  - [ ] Add it to the README -> "Remote Import".
-- [ ] Add check for missing dependencies: tmux, agg (if output set to GIF), ... to session start function.
+- [x] Add check for missing dependencies: tmux, agg (if output set to GIF), ... to session start function.
+  - [x] `Start` checks `tmux` and `asciinema` always, `agg` only when a `.gif`
+        output is requested, so a cast-only recording needs no renderer.
 - [ ] Implement basic examples:
   - [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:
     - https://github.com/charmbracelet/vhs/tree/main/examples/settings
@@ -61,6 +60,9 @@
 
 ## v0.2.0
 
+- [ ] Remote import:
+  - [ ] Add example with nice one-liner for `curl+source` remote import s-vhs from: `https://github.../v0.1.0/.../s-vhs.sh`.
+  - [ ] Add it to the README -> "Remote Import".
 - [ ] Fix `Show` after `Hide`: the second `Show` passes `--append` next to the
       always-present `--overwrite`, and asciinema rejects that combination
       (`error: the argument '--overwrite' cannot be used with '--append'`), so

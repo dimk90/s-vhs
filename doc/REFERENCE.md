@@ -38,6 +38,9 @@ Every command implemented in `s-vhs.sh`.
 | `Render`                          | End the recording and write every requested output                |
 
 > [!NOTE]
+> `Start` fails when a required tool is missing: `tmux` and `asciinema` always,
+> `agg` when a `.gif` output is requested.
+>
 > `[delay]`, `[settle]`, and `[timeout]` are in seconds; `[delay]` defaults to
 > `SetTypingSpeed` for `Type` and to `SetKeyDelay` for `Key`, which sleeps that
 > long after every one of its `[count]` presses (default: `1`).

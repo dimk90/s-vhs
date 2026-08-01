@@ -390,6 +390,7 @@ Start() {
         return 1
     fi
 
+    _svhs_require_dependencies || return 1
     _svhs_prepare_cast || return 1
 
     tmux -f /dev/null new-session -d -s "$_SVHS_SESSION" \
@@ -648,6 +649,52 @@ _svhs_require_configuration_phase() {
         printf '%s: settings cannot change after the session starts\n' "$setter" >&2
         return 1
     fi
+}
+
+
+_svhs_require_command() {
+    #
+    # Report an external dependency that is missing from PATH.
+    #
+    # Parameters:
+    #   $1 - command_name - executable the recording needs.
+    #   $2 - purpose - what it is needed for.
+    #
+    # Example:
+    #   _svhs_require_command 'agg' 'GIF output' || return 1
+    #
+    local command_name="$1"
+    local purpose="$2"
+
+    if ! command -v "$command_name" > /dev/null 2>&1; then
+        printf 'Start: %s is not installed, required for %s\n' \
+            "$command_name" "$purpose" >&2
+        return 1
+    fi
+}
+
+
+_svhs_require_dependencies() {
+    #
+    # Check the tools the session and the requested outputs need, so a long
+    # recording fails before it runs instead of at render time.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_require_dependencies || return 1
+    #
+    local output
+
+    _svhs_require_command 'tmux' 'the recording session' || return 1
+    _svhs_require_command 'asciinema' 'the recorder' || return 1
+
+    for output in "${_SVHS_OUTPUTS[@]}"; do
+        case "$output" in
+            *.gif) _svhs_require_command 'agg' 'GIF output' || return 1 ;;
+        esac
+    done
 }
 
 
