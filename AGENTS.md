@@ -107,6 +107,11 @@ Follow the `shell-code` and `code-style` skills. Project-specific points:
   no examples, no repetition of what a row already says, no section prose.
   Such text belongs in `README.md`, `doc/COMMANDS.md`, or here. Prefer cutting
   words over adding them; keep headings short.
+- **Examples.** A script under `examples/` renders at `SetFontSize 40` or
+  larger — smaller sizes look soft once a README scales the GIF down — and runs
+  a shell that carries no personal configuration into the recording:
+  `SetShell "env PS1='\[\e[32m\]❯\[\e[0m\] ' bash --norc"`. Keep the catalogue in
+  [`doc/EXAMPLES.md`](doc/EXAMPLES.md) in sync when adding or merging one.
 - Every VHS feature parity claim in `README.md` links the upstream issue it
   addresses; keep that link when editing such a line.
 

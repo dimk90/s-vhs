@@ -12,14 +12,14 @@
 
 A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superior:
 
-- **Always sharp** — no GIF quality loss
+- **Always sharp** - no GIF quality loss
   ([#625](https://github.com/charmbracelet/vhs/issues/625),
   [#69](https://github.com/charmbracelet/vhs/issues/69#issuecomment-3121533232)).
-- **No timing drift** — 1 second is 1 second at any resolution
+- **No timing drift** - 1 second is 1 second at any resolution
   ([#69](https://github.com/charmbracelet/vhs/issues/69#issuecomment-3121533232)).
-- **Sized in rows and cols** — no dancing with pixel width and height
+- **Sized in rows and cols** - no dancing with pixel width and height
   ([#578](https://github.com/charmbracelet/vhs/issues/578)).
-- **No browser, no Node** — just a wrapper around `tmux` + `asciinema` + `agg`
+- **No browser, no Node** - just a wrapper around `tmux` + `asciinema` + `agg`
   ([#528](https://github.com/charmbracelet/vhs/issues/528),
   [#438](https://github.com/charmbracelet/vhs/issues/438),
   [#150](https://github.com/charmbracelet/vhs/issues/150),
@@ -31,7 +31,7 @@ A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superi
 
 A recording is a plain shell script that sources `s-vhs.sh`:
 
-```shell
+```bash
 #!/usr/bin/env bash
 
 source ./s-vhs.sh
@@ -51,11 +51,9 @@ Show
 # Type a command in the terminal
 Type "echo 'Welcome to S-VHS!"
 sleep 1 # Pause for dramatic effect...
+
 Type " Stay awhile and listen...'"
 sleep 1
-
-# Pause for dramatic effect...
-sleep 0.5
 
 # Run the command by pressing enter.
 Key Enter
@@ -74,7 +72,7 @@ chmod +x demo.rec.sh && demo.rec.sh
 
 You should see a new file called `demo.gif` (or whatever you named the Output) in the directory:
 
-<img src="examples/images/quick-start.gif" width=700>
+<img src="examples/quick-start.gif" width=700>
 
 
 ## Installation
@@ -82,11 +80,11 @@ You should see a new file called `demo.gif` (or whatever you named the Output) i
 
 `s-vhs` is a bash script, so you only need its dependencies:
 - Install `tmux` and `asciinema`:
-  ```shell
+  ```bash
   sudo pacman -S tmux asciinema
   ```
-- Install `agg` -> follow [official instructions](https://github.com/asciinema/agg#building) or
-  ```shell
+- Install `agg`: follow [official instructions](https://github.com/asciinema/agg#building) or
+  ```bash
   paru -S asciinema-agg
   ```
 
@@ -94,7 +92,7 @@ You should see a new file called `demo.gif` (or whatever you named the Output) i
 > The provided instructions are for ArchLinux, but you can easily adapt it for your favorite distro ;)
 
 > [!NOTE]
-> `s-vhs` targets bash 3.2, the version macOS still ships as `/bin/bash`, 
+> `s-vhs` targets bash 3.2, the version macOS still ships as `/bin/bash`,
 > so recording scripts run on a stock Mac without installing a newer bash.
 
 
@@ -108,28 +106,133 @@ You should see a new file called `demo.gif` (or whatever you named the Output) i
 
 ### Enter
 
+```bash
+Key Enter 4 0.5
+```
+
+<img src="examples/enter.gif" width=500>
+
+
 ### Type
+
+```bash
+# Regular typing
+Type 'echo "whatever you want"'
+sleep 1
+
+Key Enter; sleep 0.5
+
+# Slow typing
+Type 'echo "slow down"' 0.25
+```
+
+<img src="examples/type.gif" width=500>
+
+### Columns & Rows
+
+```bash
+SetCols 40
+SetRows 8
+
+Type 'tput cols'
+Key Enter; sleep 1
+Type 'tput lines'
+Key Enter; sleep 1
+```
+
+<img src="examples/cols-rows.gif" width=500>
 
 ### Key
 
+#### Arrows
+
+```bash
+Type 'echo navigate around'; sleep 0.5
+Key Left 10 0.12
+sleep 0.5
+Key Right 10 0.05
+```
+<img src="examples/arrow.gif" width=500>
+
+#### Backspace
+
+```bash
+Type 'echo delete anything...' 0.05; sleep 0.5
+Key BSpace 18 0.05
+```
+
+<img src="examples/backspace.gif" width=500>
+
 ### Wait
 
-### Show/Hide
+Wait polls the visible pane until a text pattern shows up:
 
-### Set Theme
+```bash
+Type 'sleep 2 && echo "build succeeded"'
+Key Enter
+
+Wait '^build succeeded' 10
+Type 'echo "and on we go"'
+```
+
+<img src="examples/wait.gif" width=500>
+
+### Color Theme
+
+```bash
+# One of the renderer's named themes.
+# A comma-separated hex palette
+# (background, foreground, then 8 or 16 colors) also works.
+SetTheme 'kanagawa'
+```
+
+<img src="examples/theme.gif" width=500>
 
 ### Font Size
 
-### Set Line Height
+The font size is the only pixel-sized setting: it scales the whole render 
+without changing terminal grid the recorded shell sees.
 
-### It's a shell script - enjoy its power:
+```bash
+SetFontSize 40
+```
 
-> TODO: mouse emulation example
->
+<img src="examples/font-size-40.gif" width=500>
 
-> ;) [#66](https://github.com/charmbracelet/vhs/issues/66)
+<img src="examples/font-size-20.gif" width=300>
 
-### Recording Template
+<img src="examples/font-size-10.gif" width=150>
+
+### Show / Hide
+
+```bash
+Start # Start session / initialize terminal
+
+# Off camera: export the variable and wipe the screen it was typed on
+Run 'export HIDDEN=wow' 0.5
+Run 'clear' 0.5
+
+Show # Start recording
+
+# The recorded shell expands it, not this script
+Type 'echo $HIDDEN'
+Key Enter; sleep 2
+
+Hide # Stop recording, the session keeps running
+
+Run 'echo "nobody will ever see this"' 0.5
+```
+
+<img src="examples/hide-show.gif" width=500>
+
+### Multiple Outputs
+
+```shell
+SetOutput "multi-output.cast"
+SetOutput "multi-output.gif"
+```
+
+## Recording Template
 
 Start your new recording from the bundled template:
 
