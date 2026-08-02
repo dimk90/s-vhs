@@ -269,6 +269,8 @@ Render
 - For the architecture behind `tmux + asciinema + agg` and how `s-vhs` glues
   them together, see [INTRO.md](doc/INTRO.md).
 
+  <img src="doc/images/svhs-pipeline.svg" width="400px" alt="s-vhs pipeline">
+
 - For the full list of commands and settings, see [REFERENCE.md](doc/REFERENCE.md).
 
 ## Links

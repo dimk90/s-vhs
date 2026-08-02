@@ -5,7 +5,7 @@ not capture pixels from a terminal window. Instead, it drives a real shell,
 records the shell's terminal output and timing, then renders that recording into
 a visual format.
 
-<img src="images/pipeline.svg" width="100%" alt="s-vhs pipeline">
+<img src="images/svhs-pipeline.svg" width="800px" alt="s-vhs pipeline">
 
 
 ## The Pieces
