@@ -1,14 +1,6 @@
 # S-VHS
 
-```
-███████╗    ██╗   ██╗██╗  ██╗███████╗
-██╔════╝    ██║   ██║██║  ██║██╔════╝
-███████╗ ██ ██║   ██║███████║███████╗
-╚════██║ ██ ╚██╗ ██╔╝██╔══██║╚════██║
-███████║     ╚████╔╝ ██║  ██║███████║
-╚══════╝      ╚═══╝  ╚═╝  ╚═╝╚══════╝
-● REC      SUPER VHS      SP 0:00:00
-```
+<img src="examples/logo.gif" width=500 alt="Animated S-VHS logo">
 
 A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superior:
 
@@ -227,6 +219,11 @@ Run 'echo "nobody will ever see this"' 0.5
 SetOutput "multi-output.cast"
 SetOutput "multi-output.gif"
 ```
+
+### S-VHS in the Wild
+
+More than just a toy:
+- [S-VHS logo recording](examples/logo.rec.sh).
 
 ## Recording Template
 

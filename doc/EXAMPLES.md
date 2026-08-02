@@ -11,7 +11,7 @@ Recording scripts derived from VHS's [settings][vhs-settings] and
 A written example lives in `examples/<name>.rec.sh` and renders
 `examples/<name>.gif` next to it. Unless the example is about that very
 setting, all of them record at `SetFontSize 40` in `Iosevka Term`, through a
-shell with no personal rc files and a green `❯` prompt.
+shell with no personal rc files and a green `❯` prompt when one is shown.
 
 ## Settings
 
@@ -62,6 +62,7 @@ shell with no personal rc files and a green `❯` prompt.
 
 | Name           | Shows                                                         | Today | Done |
 | -------------- | ------------------------------------------------------------- | ----- | ---- |
+| `logo`         | Fast, colourful typing for the animated README header         | ✅    | [x]  |
 | `quick-start`  | The README's Quick Start recording                            | ✅    | [x]  |
 | `wait`         | `Wait <pattern>` synchronizing on output instead of sleeps    | ✅    | [x]  |
 | `multi-output` | Two `SetOutput` calls — a replayable cast next to the GIF     | ✅    | [x]  |
