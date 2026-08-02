@@ -10,7 +10,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 source "$SCRIPT_DIR/../s-vhs.sh"
 
 # Where should we write the GIF?
-SetOutput "$SCRIPT_DIR/images/quick-start.gif"
+SetOutput "$SCRIPT_DIR/quick-start.gif"
 
 # Set up an 60x8 terminal with a 34px font
 SetCols 60
@@ -25,6 +25,7 @@ Show
 # Type a command in the terminal
 Type "echo 'Welcome to S-VHS!"
 sleep 1 # Pause for dramatic effect...
+
 Type " Stay awhile and listen...'"
 sleep 1
 

@@ -57,16 +57,29 @@
         (`curl … | bash -s -- new demo.rec.sh`) for v0.2.0 remote import.
         The `EXIT` trap moved to the sourced path — scaffolding must not kill
         a tmux session that happens to share the default name.
-- [ ] Implement basic examples:
-  - [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:
+- [x] Implement basic examples:
+  - [x] Check which examples could be implemented with the current version of `s-vhs.sh`:
     - https://github.com/charmbracelet/vhs/tree/main/examples/settings
     - https://github.com/charmbracelet/vhs/tree/main/examples/commands
-  - [ ] Create table of examples (name + description + checkbox for planned) and put to `doc`.
-  - [ ] Ask me to mark examples to implement.
-  - [ ] Write/Implement recording scripts for examples and put to `examples`.
-  - [ ] Run recording scripts and generate GIFs, put it to `examples/images`.
+  - [x] Create table of examples (name + description + checkbox for planned) and put to `doc`.
+        See [EXAMPLES](EXAMPLES.md): every VHS settings/commands example plus
+        three s-vhs-only ones, each with a feasibility mark and a `Plan` box.
+  - [x] Ask me to mark examples to implement. Answer: all 18 feasible ones.
+  - [x] Write/Implement recording scripts for examples and put to `examples`.
+        Every script pins a reproducible shell
+        (`SetShell "env PS1='$ ' bash --norc"`) so the GIFs do not carry the
+        author's prompt.
+  - [x] Run recording scripts and generate GIFs, put it to `examples/images`.
+        `cast-output` also keeps its cast in `examples/casts/`.
+  - [ ] Show the rendered examples in `README.md` — the `## Examples` section
+        is still a list of empty `> TODO:` headings.
+- [ ] Fix `Type ';'`: tmux treats a lone `;` argument as its command separator,
+      so `send-keys -l ';'` sends nothing and `Type 'sleep 2; echo done'` types
+      `sleep 2 echo done`. Escaping it as `\;` in `_svhs_send` restores it
+      (verified). Found while writing the `wait` example, which now uses `&&`.
+  - [ ] Check the other tmux-special characters a single-character send can hit.
+- [ ] Add colorful example with typing S-VHS logo for README header.
 - [ ] Publish to the github.
-- [ ] Update `pi-context-view` recordings + add reference to the `s-vhs`.
 
 
 ## v0.2.0
@@ -83,11 +96,24 @@
   - [ ] Decide which import line that scaffold writes: the template's
         `source ./s-vhs.sh` assumes a local copy the remote user does not have,
         so it should probably emit the pinned `curl+source` one-liner instead.
+- [ ] Update `pi-context-view` recordings + add reference to the `s-vhs`.
+  - [ ] Add example "S-VHS in the Wild" to README.
 - [ ] Fix `Show` after `Hide`: the second `Show` passes `--append` next to the
       always-present `--overwrite`, and asciinema rejects that combination
       (`error: the argument '--overwrite' cannot be used with '--append'`), so
       a multi-segment recording dies at the second `Show`.
   - [ ] Mark the Show/Hide row in [COMMANDS](doc/COMMANDS.md) 🟡 until fixed.
+- [ ] Bundle colourful prompt themes, so a recording does not need the
+      `SetShell "env PS1='\[\e[32m\]❯\[\e[0m\] ' bash --norc"` incantation every
+      example repeats today.
+  - [ ] Pick the API: a `SetPrompt <name>` with a few named themes (plain,
+        arrow, powerline, path+git), or a value passed straight through as a
+        PS1 string.
+  - [ ] Update shell to `fish` for all examples and re-render GIFs.
+  - [ ] Per-shell mapping: bash `PS1`, zsh `PROMPT`, fish `fish_prompt` — the
+        env-var trick only works for the first two.
+  - [ ] Overlaps with the rc-isolation decision below; a bundled prompt is what
+        makes `--norc` look good enough to default to.
 - [ ] Decide on isolating the recorded shell from the user's rc files
       (`bash --norc`, `fish --no-config`, ...):
   - The session inherits `~/.bashrc`, so a recording shows the author's prompt
@@ -98,6 +124,7 @@
   - Options: keep inheriting, add a `SetShell 'bash --norc'` recipe to the docs
     only, or add an explicit setting (e.g. `SetCleanShell`) that maps to the
     right flag per shell.
+  - Add clear vs non-clean shell example to README.
 - [ ] Use a dedicated tmux socket (`tmux -L s-vhs ...`) for the recording session:
       `extended-keys` and `extended-keys-format` are server options, so the
       current `tmux set -g` in `Start` also changes them on the user's own
@@ -128,8 +155,11 @@
       status bar off, and `SetSession` stays for attaching by name. Verified:
       parallel recordings already work as soon as the names differ.
 - [ ] Make list of planned function which are easy to implement:
+  - [ ] Add `Sleep` as alias for `sleep`.
   - [ ] function ...
   - [ ] ...
+- [ ] Update existing examples and README if needed.
+- [ ] Rename EXAMPLES.md to examples/README.md ?
 - [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:
   - https://github.com/charmbracelet/vhs/tree/main/examples/settings
   - https://github.com/charmbracelet/vhs/tree/main/examples/commands
@@ -145,9 +175,12 @@
       [#109](https://github.com/charmbracelet/vhs/issues/109),
       [#105](https://github.com/charmbracelet/vhs/issues/105)).
     ```
+  - [ ] Update installation instructions and dependencies description.
+  - [ ] Re-render all examples to animated SVG?
 - [ ] Write advanced example with emulating mouse selection.
   - [ ] Add new commands to [COMMANDS](doc/COMMANDS.md) if possible: e.g `Highlight`.
   - [ ] Add feature + issue ref (https://github.com/charmbracelet/vhs/issues/66) to README;
+  - [ ] Add demo to README.
 - [ ] Publish link in the related VHS issues.
 - [ ] Update template (`s-vhs new`) with common settings (if any new).
 
@@ -165,7 +198,13 @@
   - [ ] If none is available, set the font to the first available monospace
         font. Skip bitmap-only faces (`.otb`, `.pcf`) — agg cannot use them,
         e.g. `Terminus` fails the same way as a missing font.
+  - [ ] Remove `Iosevka Term` from examples.
 - [ ] Add `SetPadding X` function.
 - [ ] Rended visualization for all available themes.
 - [ ] MP4 output (same `.cast`, different renderer):
   - [ ] MP4 — render with `ffmpeg`?
+- [ ] Add custom agg themes:
+  - [ ] my spaceship theme.
+  - [ ] tokyo-night theme.
+  - [ ] catppuccin themes.
+  - [ ] Add example with custom theme (hex colors).
