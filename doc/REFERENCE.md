@@ -31,7 +31,7 @@ Every command implemented in `s-vhs.sh`.
 | `Start`                          | Start the detached tmux session with the configured geometry, check for dependencies |
 | `Show`                           | Start recording; later calls append to the same cast                                 |
 | `Hide`                           | Stop recording, leaving the session alive                                            |
-| `Type <text> [delay]`            | Emulate typing, one character at a time                                              |
+| `Type <text> [delay]`            | Emulate typing literal text, one character at a time                                 |
 | `Key <key-name> [count] [delay]` | Press a tmux-named key (`Enter`, `Down`, `C-r`) `count` times                        |
 | `Wait <pattern> [timeout]`       | Poll the visible pane until a grep pattern appears (default: 15s)                    |
 | `Run <command> [settle]`         | Type and run a command, then wait (default: 2s)                                      |

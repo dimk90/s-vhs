@@ -71,14 +71,16 @@
         author's prompt.
   - [x] Run recording scripts and generate GIFs, put it to `examples/images`.
         `cast-output` also keeps its cast in `examples/casts/`.
-  - [ ] Show the rendered examples in `README.md` — the `## Examples` section
+  - [x] Show the rendered examples in `README.md` — the `## Examples` section
         is still a list of empty `> TODO:` headings.
-- [ ] Fix `Type ';'`: tmux treats a lone `;` argument as its command separator,
-      so `send-keys -l ';'` sends nothing and `Type 'sleep 2; echo done'` types
-      `sleep 2 echo done`. Escaping it as `\;` in `_svhs_send` restores it
-      (verified). Found while writing the `wait` example, which now uses `&&`.
-  - [ ] Check the other tmux-special characters a single-character send can hit.
-- [ ] Add colorful example with typing S-VHS logo for README header.
+- [x] Fix `Type ';'`: tmux treats a lone `;` argument as its command separator,
+      so `send-keys -l ';'` sends nothing. `_svhs_send` now escapes individual
+      and trailing semicolons as `\;`, preserving them as literal arguments.
+  - [x] Check the other tmux-special characters a single-character send can hit.
+        Audited every printable ASCII character; only `;` is special in tmux's
+        handling of shell arguments.
+- [ ] Add colorful example with fast typing S-VHS logo for README header.
+  - [ ] Add logo recording script to examples and render GIF.
 - [ ] Publish to the github.
 
 

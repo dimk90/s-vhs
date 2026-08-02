@@ -882,7 +882,19 @@ _svhs_send() {
     #   _svhs_send -l 'ls'
     #   _svhs_send Enter
     #
-    tmux send-keys -t "$_SVHS_SESSION" "$@"
+    local argument
+    local escaped_arguments=()
+
+    for argument in "$@"; do
+        # tmux treats an argument ending in ; as a command separator
+        if [[ $argument == *';' ]]; then
+            argument="${argument%;}"'\;'
+        fi
+        escaped_arguments+=("$argument")
+    done
+
+    tmux send-keys -t "$_SVHS_SESSION" \
+        ${escaped_arguments[@]+"${escaped_arguments[@]}"}
 }
 
 
