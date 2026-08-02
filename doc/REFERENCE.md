@@ -26,21 +26,18 @@ Every command implemented in `s-vhs.sh`.
 
 ## Core
 
-| Command                           | Description                                                       |
-| --------------------------------- | ----------------------------------------------------------------- |
-| `Start`                           | Start the detached tmux session with the configured geometry      |
-| `Show`                            | Start recording; later calls append to the same cast              |
-| `Hide`                            | Stop recording, leaving the session alive                         |
-| `Type <text> [delay]`             | Emulate typing, one character at a time                           |
-| `Key <key-name> [count] [delay]`  | Press a tmux-named key (`Enter`, `Down`, `C-r`) `count` times     |
-| `Wait <pattern> [timeout]`        | Poll the visible pane until a grep pattern appears (default: 15s) |
-| `RunOffRecord <command> [settle]` | Type and run a command, then wait (default: 2s)                   |
-| `Render`                          | End the recording and write every requested output                |
+| Command                          | Description                                                                          |
+| -------------------------------- | ------------------------------------------------------------------------------------ |
+| `Start`                          | Start the detached tmux session with the configured geometry, check for dependencies |
+| `Show`                           | Start recording; later calls append to the same cast                                 |
+| `Hide`                           | Stop recording, leaving the session alive                                            |
+| `Type <text> [delay]`            | Emulate typing, one character at a time                                              |
+| `Key <key-name> [count] [delay]` | Press a tmux-named key (`Enter`, `Down`, `C-r`) `count` times                        |
+| `Wait <pattern> [timeout]`       | Poll the visible pane until a grep pattern appears (default: 15s)                    |
+| `Run <command> [settle]`         | Type and run a command, then wait (default: 2s)                                      |
+| `Render`                         | End the recording and write every requested output                                   |
 
 > [!NOTE]
-> `Start` fails when a required tool is missing: `tmux` and `asciinema` always,
-> `agg` when a `.gif` output is requested.
->
 > `[delay]`, `[settle]`, and `[timeout]` are in seconds; `[delay]` defaults to
 > `SetTypingSpeed` for `Type` and to `SetKeyDelay` for `Key`, which sleeps that
 > long after every one of its `[count]` presses (default: `1`).

@@ -22,15 +22,15 @@ Status: early draft, pre-`v0.1.0`. The public function names are **not** frozen
 
 ## Layout
 
-| Path               | Purpose                                                       |
-| ------------------ | ------------------------------------------------------------- |
-| `s-vhs.sh`         | The whole implementation. Sourced library, never executed.    |
-| `README.md`        | User-facing docs; many sections are still `> TODO:`.          |
-| `doc/REFERENCE.md` | Reference of every command implemented today. Keep in sync.   |
-| `doc/COMMANDS.md`  | VHS parity table and target API design notes.                 |
-| `doc/PLAN.md`      | Roadmap / checklist. Update checkboxes when a task lands.     |
-| `doc/HISTORY.md`   | Verbatim archive of code removed from `s-vhs.sh`.             |
-| `examples/`        | Example recording scripts and their rendered output.          |
+| Path               | Purpose                                                     |
+| ------------------ | ----------------------------------------------------------- |
+| `s-vhs.sh`         | The whole implementation. Sourced library, never executed.  |
+| `README.md`        | User-facing docs; many sections are still `> TODO:`.        |
+| `doc/REFERENCE.md` | Reference of every command implemented today. Keep in sync. |
+| `doc/COMMANDS.md`  | VHS parity table and target API design notes.               |
+| `doc/PLAN.md`      | Roadmap / checklist. Update checkboxes when a task lands.   |
+| `doc/HISTORY.md`   | Verbatim archive of code removed from `s-vhs.sh`.           |
+| `examples/`        | Example recording scripts and their rendered output.        |
 
 No build system, no test suite, no CI. Verification is manual: run a recording
 script and inspect or replay every requested output.
@@ -71,9 +71,11 @@ Follow the `shell-code` and `code-style` skills. Project-specific points:
 - **Start validation.** Validate required overall configuration in `Start`
   before starting tmux or the recorder. Initialize internal defaults while
   sourcing.
-- **Sections.** `## Version`, `## Template`, `## Settings`, `## Session`,
-  `## Input`, `## Recording`, `## Render`, `## Internal`. Keep new functions in
-  the matching section.
+- **Sections.** `## Version`, `## Settings / Defaults`, `## Template`,
+  `## Session`, `## Input`, `## Recording`, `## Render`, `## Internal`,
+  `## CLI`. Keep new functions in the matching section — a command that only
+  sends input to the session (`Type`, `Key`, `Wait`, `Run`) belongs to
+  `## Input`, one that drives the recorder (`Show`, `Hide`) to `## Recording`.
 - **Version.** The literal in `svhs_version` (`## Version`) is the only place
   the version number is written; bump it on release.
 - **Naming tiers.** VHS-like CamelCase (`Type`, `SetRows`) is reserved for

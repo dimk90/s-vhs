@@ -71,6 +71,8 @@
 
 ## v0.2.0
 
+- [ ] Implement `RunOffRecord` as `Hide` + `Run` + `Show`:
+  - [ ] Add example.
 - [ ] Remote import:
   - [ ] Add example with nice one-liner for `curl+source` remote import s-vhs from: `https://github.../v0.1.0/.../s-vhs.sh`.
   - [ ] Add it to the README -> "Remote Import".

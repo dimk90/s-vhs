@@ -440,7 +440,7 @@ Start() {
 ## Input
 
 
-RunOffRecord() {
+Run() {
     #
     # Run a command in the session while no recorder is attached.
     #
@@ -449,7 +449,7 @@ RunOffRecord() {
     #   $2 - settle - (optional) - seconds to wait afterwards (default: 2).
     #
     # Example:
-    #   RunOffRecord 'cd ~/project' 1
+    #   Run 'cd ~/project' 1
     #
     local command_line="$1"
     local settle="${2:-2}"
@@ -458,6 +458,17 @@ RunOffRecord() {
     _svhs_send Enter
     sleep "$settle"
 }
+
+# TODO: implement, then document in REFERENCE.md and add an example
+# RunOffRecord() {
+    #
+    # Pause recording and run a command in the session and resume recording.
+    #
+
+    # Hide
+    # Run "..."
+    # Show
+# }
 
 
 Key() {
