@@ -39,7 +39,7 @@ source ./s-vhs.sh
 # Where should we write the GIF?
 SetOutput 'demo.gif'
 
-# Set up an 60x8 terminal with a 34px font.
+# Set up a 60x8 terminal with a 34px font.
 SetCols 60
 SetRows 8
 SetFontSize 34
@@ -67,10 +67,10 @@ Render
 
 Run it to render the GIF:
 ```shell
-chmod +x demo.rec.sh && demo.rec.sh
+./demo.rec.sh
 ```
 
-You should see a new file called `demo.gif` (or whatever you named the Output) in the directory:
+You should see a new file called `demo.gif` (or whatever you passed to `SetOutput`) in the directory:
 
 <img src="examples/quick-start.gif" width=700>
 
@@ -89,7 +89,7 @@ You should see a new file called `demo.gif` (or whatever you named the Output) i
   ```
 
 > [!NOTE]
-> The provided instructions are for ArchLinux, but you can easily adapt it for your favorite distro ;)
+> The provided instructions are for ArchLinux, but you can easily adapt them for your favorite distro ;)
 
 > [!NOTE]
 > `s-vhs` targets bash 3.2, the version macOS still ships as `/bin/bash`,
@@ -98,11 +98,7 @@ You should see a new file called `demo.gif` (or whatever you named the Output) i
 
 ## Examples
 
-> [!NOTE]
-> See [`examples/`](examples) for more recording scripts.
-
-
-> TODO:
+See [`examples`](examples) for the complete scripts behind the demos below, and a few more.
 
 ### Enter
 
@@ -191,7 +187,7 @@ SetTheme 'kanagawa'
 ### Font Size
 
 The font size is the only pixel-sized setting: it scales the whole render 
-without changing terminal grid the recorded shell sees.
+without changing the terminal grid the recorded shell sees.
 
 ```bash
 SetFontSize 40
@@ -268,9 +264,17 @@ sleep 3
 Render
 ```
 
-## Command Reference
+## Documentation
 
-See [REFERENCE.md](doc/REFERENCE.md) for description of all `s-vhs` commands.
+- For the architecture behind `tmux + asciinema + agg` and how `s-vhs` glues
+  them together, see [INTRO.md](doc/INTRO.md).
+
+- For the full list of commands and settings, see [REFERENCE.md](doc/REFERENCE.md).
+
+## Links
+
+- [asciinema](https://github.com/asciinema/asciinema) project ❤️
+- [agg](https://github.com/asciinema/agg) project ❤️
 
 ## License
 
