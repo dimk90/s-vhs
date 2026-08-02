@@ -235,8 +235,8 @@ Start your new recording from the bundled template:
 ```shell
 ./s-vhs.sh new demo.rec.sh
 ```
-> The file is created executable, and an existing one is never overwritten. Drop
-> the path to print the template instead: `./s-vhs.sh new > demo.rec.sh`.
+> The file is created executable, and an existing one is never overwritten. 
+> Drop the path to print the template instead: `./s-vhs.sh new`.
 
 It writes:
 
