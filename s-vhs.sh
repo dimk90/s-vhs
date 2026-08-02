@@ -82,7 +82,7 @@ SetOutput 'demo.gif'
 # SetRows 40
 # SetFontSize 28
 # SetFontFamily 'JetBrains Mono'
-# SetTheme 'kanagawa'
+# SetTheme 'dracula'
 # SetTypingSpeed 0.07
 
 Start

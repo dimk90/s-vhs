@@ -14,7 +14,7 @@ Every command implemented in `s-vhs.sh`.
 | `SetFontFamily <family>`     | agg's      | Text font, keeping the Nerd Font and emoji fallbacks        |
 | `SetFontFamilyExact <list>`  | agg's      | Complete family list, bypassing all fallbacks               |
 | `SetLineHeight <multiplier>` | `1.2`      | Line-height multiplier passed to the renderer               |
-| `SetTheme <theme>`           | `kanagawa` | agg theme name or custom palette                            |
+| `SetTheme <theme>`           | `dracula`  | agg theme name or custom palette                            |
 | `SetShell <command>`         | `bash`     | Shell command run inside the tmux session                   |
 | `SetTypingSpeed <seconds>`   | `0.07`     | Default delay between characters typed by `Type`            |
 | `SetKeyDelay <seconds>`      | `0.0`      | Default pause after a key press sent by `Key`               |

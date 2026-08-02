@@ -36,7 +36,7 @@ are implemented now; the remaining command names still describe the target API.
 | `Set Height 600`                     | `SetRows`                       | `SetRows` (`40`)          | ✅          |
 | `Set LineHeight 1.8`                 | `SetLineHeight`                 | `SetLineHeight` (`1.2`)   | ✅          |
 | `Set TypingSpeed 0.1`                | `SetTypingSpeed`                | `SetTypingSpeed` (`0.07`) | ✅          |
-| `Set Theme "…"`                      | `SetTheme`                      | `SetTheme` (`kanagawa`)   | 🟡         |
+| `Set Theme "…"`                      | `SetTheme`                      | `SetTheme` (`dracula`)    | 🟡         |
 | `Set Padding 20`                     | `SetPadding`                    | —                         | 📋         |
 | `Set Framerate 60`                   | `SetFramerate`                  | — (agg `30`)              | 📋         |
 | `Set PlaybackSpeed 2`                | `SetPlaybackSpeed`              | — (agg `1`)               | 📋         |

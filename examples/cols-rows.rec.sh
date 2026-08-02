@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# The terminal is sized in cells, not pixels: the session really is 44 columns
-# by 10 rows, and the GIF resolution follows from the font size.
+# The terminal is sized in cells, not pixels: the session really is 40 columns
+# by 8 rows, and the GIF resolution follows from the font size.
 #
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)

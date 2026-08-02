@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Minimal s-vhs recording: type a command, run it, admire the output.
-# Writes demo.gif into the current directory.
+# Writes quick-start.gif next to this script.
 #
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -12,7 +12,7 @@ source "$SCRIPT_DIR/../s-vhs.sh"
 # Where should we write the GIF?
 SetOutput "$SCRIPT_DIR/quick-start.gif"
 
-# Set up an 60x8 terminal with a 34px font
+# Set up a 60x8 terminal with a 34px font
 SetCols 60
 SetRows 8
 SetFontSize 34
