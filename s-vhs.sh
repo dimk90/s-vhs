@@ -46,7 +46,7 @@ _SVHS_FONT_SIZE=28
 _SVHS_LINE_HEIGHT=1.2
 
 # Headless recording cannot inspect the host theme; pin rendering instead
-_SVHS_THEME='kanagawa'
+_SVHS_THEME='dracula'
 
 # Shell to run inside the tmux session;
 # Bash is safe default - present everywhere
