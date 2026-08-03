@@ -52,6 +52,9 @@ _SVHS_THEME='dracula'
 # Bash is safe default - present everywhere
 _SVHS_SHELL='bash'
 
+# NAME=VALUE pairs exported into the recorded shell by Env
+_SVHS_ENV=()
+
 # Delays are in seconds
 _SVHS_TYPING_SPEED=0.07
 _SVHS_KEY_DELAY=0.0
@@ -395,6 +398,41 @@ SetKeyDelay() {
 }
 
 
+Env() {
+    #
+    # Export an environment variable into the recorded shell; repeatable.
+    #
+    # Parameters:
+    #   $1 - name - environment variable name.
+    #   $2 - value - value; pass '' for a set-but-empty variable.
+    #
+    # Example:
+    #   Env 'EDITOR' 'vim' || exit 1
+    #
+    local name="${1-}"
+    local value
+
+    _svhs_require_configuration_phase 'Env' || return 1
+
+    # an omitted value would silently export an empty variable, so require it;
+    # a deliberate Env NO_COLOR '' still says so explicitly
+    if [[ $# -lt 2 ]]; then
+        printf 'Env: expected a name and a value, got: %s\n' "$*" >&2
+        return 1
+    fi
+    value="$2"
+
+    # tmux hands the pair to the shell as an environment entry, so any shell
+    # picks it up; the name still has to be one bash, zsh and fish all accept
+    if [[ ! $name =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+        printf 'Env: invalid environment variable name: %s\n' "$name" >&2
+        return 1
+    fi
+
+    _SVHS_ENV+=("$name=$value")
+}
+
+
 ## Session
 
 
@@ -409,6 +447,9 @@ Start() {
     # Example:
     #   Start || exit 1
     #
+    local variable
+    local env_args=()
+
     if [[ $_SVHS_STARTED == 1 ]]; then
         printf 'Start: session has already started\n' >&2
         return 1
@@ -423,8 +464,15 @@ Start() {
     _svhs_require_dependencies || return 1
     _svhs_prepare_cast || return 1
 
+    for variable in ${_SVHS_ENV[@]+"${_SVHS_ENV[@]}"}; do
+        env_args+=(-e "$variable")
+    done
+
+    # bash 3.2 (stock macOS) rejects an empty array under set -u, so expand
+    # env_args only when Env was called
     tmux -f /dev/null new-session -d -s "$_SVHS_SESSION" \
-        -x "$_SVHS_COLS" -y "$_SVHS_ROWS" "$_SVHS_SHELL"
+        -x "$_SVHS_COLS" -y "$_SVHS_ROWS"                \
+        ${env_args[@]+"${env_args[@]}"} "$_SVHS_SHELL"
     _SVHS_STARTED=1
 
     # Report modified keys (C-Enter, S-Enter, C-S-<key>) instead of folding

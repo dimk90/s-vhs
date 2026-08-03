@@ -26,7 +26,7 @@ are implemented now; the remaining command names still describe the target API.
 | `Show`                               | `Show`                          | `Show`                    | ✅          |
 | `Screenshot out.png`                 | `Screenshot`                    | —                         | 📋         |
 | `Copy` / `Paste`                     | `Copy` / `Paste`                | —                         | 📋         |
-| `Env KEY "VAL"`                      | `Env`                           | `export KEY=VAL`          | 🟡         |
+| `Env KEY "VAL"`                      | `Env`                           | `Env KEY VAL`             | ✅          |
 | `Source other.tape`                  | —                               | `source other.sh`         | ✅          |
 |                                      |                                 |                           |             |
 | `Set Shell fish`                     | `SetShell`                      | `SetShell` (`fish`)       | ✅          |
@@ -349,25 +349,27 @@ Missing. tmux provides the primitives — `tmux set-buffer` and
 this is mostly a naming decision. Note it would use the tmux buffer, not the
 system clipboard.
 
-## Env 🟡
+## Env ✅
 
-No dedicated function today: exported variables are inherited by the tmux
-server started in `Start`.
+`Env` is repeatable and belongs to the configuration phase — `Start` passes
+every pair to `tmux new-session -e KEY=VAL`, so the variable is part of the
+session environment, not of a reused tmux server.
 
 ```shell
-export HELLO=WORLD
+Env HELLO WORLD
 Start
 Type 'echo $HELLO'
 Key Enter
 ```
 
-> [!WARNING]
-> tmux reuses a running server, so a session may inherit the environment of an
-> earlier one. `Start` uses `tmux -f /dev/null`, which isolates config
-> but not the server environment.
+The session environment is the shell's own interface, so the pair reaches
+`bash`, `zsh` and `fish` alike; only variables a shell reads at startup, such
+as `PS1`, depend on which shell runs (`fish` has no `PS1`).
 
-A planned `Env` function closes that hole by passing the pair straight to the
-session: `tmux new-session -e KEY=VAL`.
+> [!WARNING]
+> Exported variables are still inherited from the recording script's own
+> environment, and tmux reuses a running server, so a session may also inherit
+> the environment of an earlier one. `Env` is the reproducible way to set one.
 
 ## Source ✅
 

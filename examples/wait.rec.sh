@@ -15,14 +15,11 @@ SetRows 5
 SetFontSize 40
 SetFontFamily "Iosevka Term"
 
-# Reproducible prompt: no personal rc files
+# Reproducible prompt: no personal rc files, green ❯ prompt
 SetShell "bash --norc"
+Env PS1 '\[\e[32m\]❯\[\e[0m\] '
 
 Start
-
-# Change prompt style to green ❯
-Run "PS1='\[\e[32m\]❯\[\e[0m\] '"
-Run "clear"
 
 Show
 

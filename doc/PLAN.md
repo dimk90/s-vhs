@@ -2,9 +2,9 @@
 
 ## v0.2.0
 
-- [ ] Implement `Env` command:
-  - [ ] Make it compatible with `bash`, `fish` and `zsh`;
-  - [ ] Update `Run "PS1='\[\e[32m\]❯\[\e[0m\] '"` to `Env` for all examples;
+- [x] Implement `Env` command:
+  - [x] Make it compatible with `bash`, `fish` and `zsh`;
+  - [x] Update `Run "PS1='\[\e[32m\]❯\[\e[0m\] '"` to `Env` for all examples;
 - [ ] Fix `Show` after `Hide`: the second `Show` passes `--append` next to the
       always-present `--overwrite`, and asciinema rejects that combination
       (`error: the argument '--overwrite' cannot be used with '--append'`), so

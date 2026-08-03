@@ -18,6 +18,7 @@ Every command implemented in `s-vhs.sh`.
 | `SetShell <command>`         | `bash`     | Shell command run inside the tmux session                   |
 | `SetTypingSpeed <seconds>`   | `0.07`     | Default delay between characters typed by `Type`            |
 | `SetKeyDelay <seconds>`      | `0.0`      | Default pause after a key press sent by `Key`               |
+| `Env <name> <value>`         | —          | Export a variable into the recorded shell; repeatable       |
 
 > [!NOTE]
 > At least one `SetOutput` is required. `SetFontFamily` and `SetFontFamilyExact`
