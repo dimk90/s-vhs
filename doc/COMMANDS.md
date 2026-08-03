@@ -99,19 +99,6 @@ SetFontSize 21
 Start
 ```
 
-### Width / Height → Cols / Rows ✅
-
-`s-vhs` sizes the terminal in **cells, not pixels** — the whole point of
-[#578](https://github.com/charmbracelet/vhs/issues/578). There is no pixel-size
-setting; pixel size follows from `SetCols`/`SetRows` × the glyph size configured
-by `SetFontSize`.
-
-```shell
-SetCols 80
-SetRows 30
-SetFontSize 21
-```
-
 > Print estimated resolution in `Start` ('e.g. ::: N Rows x M Cols x F FontSize -> Resolution W x H') ?
 
 ### Theme 🟡
@@ -266,19 +253,6 @@ The output extension selects the renderer or converter; there are no
 format-specific public setting variables. Animated SVG (`termsvg`) has no VHS
 equivalent ([#644](https://github.com/charmbracelet/vhs/discussions/644)).
 
-## Type ✅
-
-`Type` types character by character with a delay, exactly like VHS's
-`Type` + `Set TypingSpeed`. VHS's per-command `Type@500ms` override is the
-optional second argument.
-
-```shell
-Type '/context'             # delay configured by SetTypingSpeed
-Type 'slow' 0.5             # VHS: Type@500ms "slow"
-```
-
-Quoting is plain shell quoting; no backtick escaping as in VHS.
-
 ## Keys 🟡
 
 One generic `Key` function takes a **tmux key name**, an optional repeat count,
@@ -349,30 +323,3 @@ Missing. tmux provides the primitives — `tmux set-buffer` and
 this is mostly a naming decision. Note it would use the tmux buffer, not the
 system clipboard.
 
-## Env ✅
-
-`Env` is repeatable and belongs to the configuration phase — `Start` passes
-every pair to `tmux new-session -e KEY=VAL`, so the variable is part of the
-session environment, not of a reused tmux server.
-
-```shell
-Env HELLO WORLD
-Start
-Type 'echo $HELLO'
-Key Enter
-```
-
-The session environment is the shell's own interface, so the pair reaches
-`bash`, `zsh` and `fish` alike; only variables a shell reads at startup, such
-as `PS1`, depend on which shell runs (`fish` has no `PS1`).
-
-> [!WARNING]
-> Exported variables are still inherited from the recording script's own
-> environment, and tmux reuses a running server, so a session may also inherit
-> the environment of an earlier one. `Env` is the reproducible way to set one.
-
-## Source ✅
-
-It's a shell script — `source common-setup.sh` is the equivalent, and full
-shell control flow (loops, conditionals, functions) comes for free
-([#66](https://github.com/charmbracelet/vhs/issues/66)).

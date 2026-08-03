@@ -20,6 +20,10 @@ Every command implemented in `s-vhs.sh`.
 | `SetKeyDelay <seconds>`      | `0.0`      | Default pause after a key press sent by `Key`               |
 | `Env <name> <value>`         | —          | Export a variable into the recorded shell; repeatable       |
 
+> [!WARNING]
+> Every command in this section must be called before `Start`; a call made
+> after the session has started fails.
+
 > [!NOTE]
 > At least one `SetOutput` is required. `SetFontFamily` and `SetFontFamilyExact`
 > are mutually exclusive — agg rejects both flags at once, so the second call
