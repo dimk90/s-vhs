@@ -48,15 +48,10 @@ shell with no personal rc files and a green `❯` prompt when one is shown.
 | `arrow`     | `arrow`        | `Key Left 10 0.12`, `Key Right 10 0.05`      | ✅    | [x]  |
 | `backspace` | `backspace`    | `Key BSpace 18 0.05`                         | ✅    | [x]  |
 | `ctrl`      | `ctrl`         | `Key C-u` and tmux modifier notation         | ✅    | [x]  |
-| `hide-show` | `hide`, `show` | `Run` before `Show`, then `Hide`             | 🟡   | [x]  |
+| `hide-show` | `hide`, `show` | Off-record `Run`, `Hide`, then `Show` again  | ✅    | [x]  |
 | —           | `tab`          | `Key Tab` completing a filename              | ✅    | [ ]  |
 | —           | `space`        | `Key Space <count>`                          | ✅    | [ ]  |
 | —           | `comment`      | Plain shell comments; nothing to demonstrate | 🚫   | —    |
-
-> [!NOTE]
-> `hide-show`: only setup-then-record and record-then-stop work. A second
-> `Show` after `Hide` still fails (`--overwrite` clashes with `--append`,
-> [PLAN](PLAN.md) v0.2.0).
 
 ## s-vhs only
 

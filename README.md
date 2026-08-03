@@ -209,6 +209,12 @@ Key Enter; sleep 2
 Hide # Stop recording, the session keeps running
 
 Run 'echo "nobody will ever see this"' 0.5
+Run 'clear' 0.5
+
+Show # Resume recording, appending to the same cast
+
+Type 'echo "back on camera"'
+Key Enter; sleep 2
 ```
 
 <img src="examples/hide-show.gif" width=500>
