@@ -18,7 +18,7 @@
         the cast.
   - [x] Extend the `hide-show` example to a second `Show`.
 - [ ] Implement `RunOffRecord` as `Hide` + `Run` + `Show`:
-  - A convenient way to run one short command in between `Start` & `Hide/Render`;
+  - A convenient way to run one short hidden command in between `Start` & `Hide/Render`;
   - [ ] Add example.
 - [ ] Use a dedicated tmux socket (`tmux -L s-vhs ...`) for the recording session:
       `extended-keys` and `extended-keys-format` are server options, so the
@@ -45,29 +45,33 @@
         stays — it is the `new` entry point, unrelated to tmux.
   - [ ] Report the collision in `Start` and point at `SetSession`, instead of
         letting tmux's `duplicate session: demo` through.
-- [ ] Make the default session name unique (e.g. `s-vhs-$$`), so two recordings
-      run in parallel without `SetSession`. The name is invisible with the
-      status bar off, and `SetSession` stays for attaching by name. Verified:
-      parallel recordings already work as soon as the names differ.
+  - [ ] Make the default session name unique (e.g. `s-vhs-$$`), so two recordings
+        run in parallel without `SetSession`. The name is invisible with the
+        status bar off, and `SetSession` stays for attaching by name. Verified:
+        parallel recordings already work as soon as the names differ.
 - [ ] Option to isolate the recorded shell from the user's rc files
       (`bash --norc`, `fish --no-config`, ...):
   - The session inherits `~/.bashrc`, so a recording shows the author's prompt
     (starship, git status, ...) and aliases — it is not reproducible on another
     machine, and a demo GIF leaks unrelated prompt content.
-  - [ ] Pick the API: a `SetPrompt <system|theme1|theme2|...>` with a few named themes (plain,
-        arrow, powerline, path+git), or a value passed straight through as a
-        PS1 string.
-  - [ ] Options: keep inheriting, add a `SetShell 'bash --norc'` recipe to the docs
-    only, or add an explicit setting (e.g. `SetPrompt <system|theme1|theme2|...>`) 
-    that maps to the right flag per shell.
+  - The option to make a record with user's prompt/shell setting must be preserved.
+  - [ ] Discus pros & cons of API like `SetPrompt <system|theme1|theme2|...|custom str>` 
+  - [ ] The `SetPrompt 'system'` should disable isolation and record terminal with user's settings (no `--norc`).
+  - [ ] The `SetPrompt` with non-`system` option must apply isolation (`--norc`).
+    - [ ] Discuss about argument name `system`. Is there better name options?
+  - [ ] Should be restricted to `SetShell <bash|fish|zsh>`?
   - [ ] Per-shell mapping: bash `PS1`, zsh `PROMPT`, fish `fish_prompt` — the
         env-var trick only works for the first two.
   - [ ] Bundle colourful prompt themes, so a recording does not need the
-      `SetShell "env PS1='\[\e[32m\]❯\[\e[0m\] ' bash --norc"` incantation every
+      `Env PS1 '\[\e[32m\]❯\[\e[0m\] '` +  `SetShell "bash --norc"` incantation every
       example repeats today.
-  - [ ] Add clear vs non-clean shell example to README.
-  - [ ] Update all examples to use `SetPrompt` instead of `SetShell "env PS1='\[\e[32...`.
+      - [ ] Add a few named themes (plain, arrow, powerline, path+git), or a value passed straight through as a
+        PS1 string.
+  - [ ] Add shell theme example.
+  - [ ] Update all examples to use `SetPrompt`.
   - [ ] Update shell to `fish` for all examples and re-render GIFs.
+ - [ ] Add `Sleep` as alias for `sleep` to match style of the `s-vhs`:
+   - [ ] Update examples.
 - [ ] Remote import:
   - [ ] Add example with nice one-liner for `curl+source` remote import s-vhs from: `https://github.../v0.1.0/.../s-vhs.sh`.
   - [ ] Add it to the README -> "Remote Import".
@@ -84,7 +88,6 @@
 ## v0.3.0
 
 - [ ] Make list of planned function which are easy to implement:
-  - [ ] Add `Sleep` as alias for `sleep`.
   - [ ] function ...
   - [ ] ...
 - [ ] Update existing examples and README if needed.
