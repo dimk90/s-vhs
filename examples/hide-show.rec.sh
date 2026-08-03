@@ -15,10 +15,14 @@ SetRows 4
 SetFontSize 40
 SetFontFamily "Iosevka Term"
 
-# Reproducible prompt: no personal rc files, a green arrow
-SetShell "env PS1='\[\e[32m\]❯\[\e[0m\] ' bash --norc"
+# Reproducible prompt: no personal rc files
+SetShell "bash --norc"
 
 Start
+
+# Change prompt style to green ❯
+Run "PS1='\[\e[32m\]❯\[\e[0m\] '"
+Run "clear"
 
 # Off camera: export the variable and wipe the screen it was typed on
 Run 'export HIDDEN=wow' 0.5

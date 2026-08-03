@@ -18,10 +18,15 @@ SetFontFamily "Iosevka Term"
 # Roomy; the default is 1.2
 SetLineHeight 1.8
 
-# Reproducible prompt: no personal rc files, a green arrow
-SetShell "env PS1='\[\e[32m\]❯\[\e[0m\] ' bash --norc"
+# Reproducible prompt: no personal rc files
+SetShell "bash --norc"
 
 Start
+
+# Change prompt style to green ❯
+Run "PS1='\[\e[32m\]❯\[\e[0m\] '"
+Run "clear"
+
 Show
 
 Type 'echo "stay"'

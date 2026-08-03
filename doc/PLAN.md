@@ -2,47 +2,17 @@
 
 ## v0.2.0
 
-- [ ] Implement `RunOffRecord` as `Hide` + `Run` + `Show`:
-  - [ ] Add example.
-- [ ] Remote import:
-  - [ ] Add example with nice one-liner for `curl+source` remote import s-vhs from: `https://github.../v0.1.0/.../s-vhs.sh`.
-  - [ ] Add it to the README -> "Remote Import".
-  - [ ] Scaffold without a local copy:
-        `curl -fsSL https://.../v0.1.0/.../s-vhs.sh | bash -s -- new demo.rec.sh`.
-        Works already — piped input leaves `BASH_SOURCE` unset, which the
-        executed-mode guard treats as execution.
-  - [ ] Decide which import line that scaffold writes: the template's
-        `source ./s-vhs.sh` assumes a local copy the remote user does not have,
-        so it should probably emit the pinned `curl+source` one-liner instead.
-- [ ] Update `pi-context-view` recordings + add reference to the `s-vhs`.
-  - [ ] Add example "S-VHS in the Wild" to README.
+- [ ] Implement `Env` command:
+  - [ ] Make it compatible with `bash`, `fish` and `zsh`;
+  - [ ] Update `Run "PS1='\[\e[32m\]❯\[\e[0m\] '"` to `Env` for all examples;
 - [ ] Fix `Show` after `Hide`: the second `Show` passes `--append` next to the
       always-present `--overwrite`, and asciinema rejects that combination
       (`error: the argument '--overwrite' cannot be used with '--append'`), so
       a multi-segment recording dies at the second `Show`.
   - [ ] Mark the Show/Hide row in [COMMANDS](doc/COMMANDS.md) 🟡 until fixed.
-- [ ] Bundle colourful prompt themes, so a recording does not need the
-      `SetShell "env PS1='\[\e[32m\]❯\[\e[0m\] ' bash --norc"` incantation every
-      example repeats today.
-  - [ ] Pick the API: a `SetPrompt <name>` with a few named themes (plain,
-        arrow, powerline, path+git), or a value passed straight through as a
-        PS1 string.
-  - [ ] Update shell to `fish` for all examples and re-render GIFs.
-  - [ ] Per-shell mapping: bash `PS1`, zsh `PROMPT`, fish `fish_prompt` — the
-        env-var trick only works for the first two.
-  - [ ] Overlaps with the rc-isolation decision below; a bundled prompt is what
-        makes `--norc` look good enough to default to.
-- [ ] Decide on isolating the recorded shell from the user's rc files
-      (`bash --norc`, `fish --no-config`, ...):
-  - The session inherits `~/.bashrc`, so a recording shows the author's prompt
-    (starship, git status, ...) and aliases — it is not reproducible on another
-    machine, and a demo GIF leaks unrelated prompt content.
-  - Against: VHS behaves the same way, and a dotfiles/prompt demo *wants* the
-    real config; a bare `--norc` prompt (`bash-5.3$`) looks worse by default.
-  - Options: keep inheriting, add a `SetShell 'bash --norc'` recipe to the docs
-    only, or add an explicit setting (e.g. `SetCleanShell`) that maps to the
-    right flag per shell.
-  - Add clear vs non-clean shell example to README.
+- [ ] Implement `RunOffRecord` as `Hide` + `Run` + `Show`:
+  - A convenient way to run one short command in between `Start` & `Hide/Render`;
+  - [ ] Add example.
 - [ ] Use a dedicated tmux socket (`tmux -L s-vhs ...`) for the recording session:
       `extended-keys` and `extended-keys-format` are server options, so the
       current `tmux set -g` in `Start` also changes them on the user's own
@@ -72,6 +42,40 @@
       run in parallel without `SetSession`. The name is invisible with the
       status bar off, and `SetSession` stays for attaching by name. Verified:
       parallel recordings already work as soon as the names differ.
+- [ ] Option to isolate the recorded shell from the user's rc files
+      (`bash --norc`, `fish --no-config`, ...):
+  - The session inherits `~/.bashrc`, so a recording shows the author's prompt
+    (starship, git status, ...) and aliases — it is not reproducible on another
+    machine, and a demo GIF leaks unrelated prompt content.
+  - [ ] Pick the API: a `SetPrompt <system|theme1|theme2|...>` with a few named themes (plain,
+        arrow, powerline, path+git), or a value passed straight through as a
+        PS1 string.
+  - [ ] Options: keep inheriting, add a `SetShell 'bash --norc'` recipe to the docs
+    only, or add an explicit setting (e.g. `SetPrompt <system|theme1|theme2|...>`) 
+    that maps to the right flag per shell.
+  - [ ] Per-shell mapping: bash `PS1`, zsh `PROMPT`, fish `fish_prompt` — the
+        env-var trick only works for the first two.
+  - [ ] Bundle colourful prompt themes, so a recording does not need the
+      `SetShell "env PS1='\[\e[32m\]❯\[\e[0m\] ' bash --norc"` incantation every
+      example repeats today.
+  - [ ] Add clear vs non-clean shell example to README.
+  - [ ] Update all examples to use `SetPrompt` instead of `SetShell "env PS1='\[\e[32...`.
+  - [ ] Update shell to `fish` for all examples and re-render GIFs.
+- [ ] Remote import:
+  - [ ] Add example with nice one-liner for `curl+source` remote import s-vhs from: `https://github.../v0.1.0/.../s-vhs.sh`.
+  - [ ] Add it to the README -> "Remote Import".
+  - [ ] Scaffold without a local copy:
+        `curl -fsSL https://.../v0.1.0/.../s-vhs.sh | bash -s -- new demo.rec.sh`.
+        Works already — piped input leaves `BASH_SOURCE` unset, which the
+        executed-mode guard treats as execution.
+  - [ ] Decide which import line that scaffold writes: the template's
+        `source ./s-vhs.sh` assumes a local copy the remote user does not have,
+        so it should probably emit the pinned `curl+source` one-liner instead.
+- [ ] Update `pi-context-view` recordings + add reference to the `s-vhs`.
+  - [ ] Add example "S-VHS in the Wild" to README.
+
+## v0.3.0
+
 - [ ] Make list of planned function which are easy to implement:
   - [ ] Add `Sleep` as alias for `sleep`.
   - [ ] function ...
@@ -81,10 +85,6 @@
 - [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:
   - https://github.com/charmbracelet/vhs/tree/main/examples/settings
   - https://github.com/charmbracelet/vhs/tree/main/examples/commands
-
-
-## v0.3.0
-
 - [ ] Implement animated SVG output format.
   - [ ] Update readme header with one more bullet:
     ```Markdown
