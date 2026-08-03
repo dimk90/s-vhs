@@ -5,11 +5,13 @@
 - [x] Implement `Env` command:
   - [x] Make it compatible with `bash`, `fish` and `zsh`;
   - [x] Update `Run "PS1='\[\e[32m\]❯\[\e[0m\] '"` to `Env` for all examples;
-- [ ] Fix `Show` after `Hide`: the second `Show` passes `--append` next to the
+- [x] Fix `Show` after `Hide`: the second `Show` passes `--append` next to the
       always-present `--overwrite`, and asciinema rejects that combination
       (`error: the argument '--overwrite' cannot be used with '--append'`), so
       a multi-segment recording dies at the second `Show`.
-  - [ ] Mark the Show/Hide row in [COMMANDS](doc/COMMANDS.md) 🟡 until fixed.
+  - [x] The flags are exclusive: `--overwrite` for the first segment,
+        `--append` for every later one. The Show/Hide row in
+        [COMMANDS](COMMANDS.md) stays ✅.
 - [ ] Implement `RunOffRecord` as `Hide` + `Run` + `Show`:
   - A convenient way to run one short command in between `Start` & `Hide/Render`;
   - [ ] Add example.

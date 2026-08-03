@@ -613,16 +613,18 @@ Show() {
     #   Show || exit 1
     #
     local attach_command
+    # asciinema rejects --overwrite next to --append, so the flags are
+    # exclusive: the first segment replaces a stale cast, later ones extend it
+    local write_mode='--overwrite'
+
+    [[ -n $_SVHS_RECORDED ]] && write_mode='--append'
     printf -v attach_command 'tmux attach -t %q' "$_SVHS_SESSION"
 
     # asciinema holds the foreground for the whole segment while the script
     # keeps driving the session, so it runs in the background and its PID is
     # kept for Hide and Render to stop it
-    #
-    # --append expands to nothing on the first call; it must stay unquoted so
-    # an empty value adds no argument
-    asciinema rec --headless --overwrite ${_SVHS_RECORDED:+--append} \
-                  --window-size "${_SVHS_COLS}x${_SVHS_ROWS}"      \
+    asciinema rec --headless "$write_mode"                    \
+                  --window-size "${_SVHS_COLS}x${_SVHS_ROWS}" \
                   -c "$attach_command" "$_SVHS_CAST" &
     _SVHS_REC_PID=$!
     _SVHS_RECORDED=1
