@@ -12,6 +12,11 @@
   - [x] The flags are exclusive: `--overwrite` for the first segment,
         `--append` for every later one. The Show/Hide row in
         [COMMANDS](COMMANDS.md) stays ✅.
+  - [x] Keep the closing frame of a hidden segment: a segment ends at its last
+        event, so a pause held before `Hide` was dropped and the frame flashed
+        by. `Hide` repaints the client first, which stamps that idle time into
+        the cast.
+  - [x] Extend the `hide-show` example to a second `Show`.
 - [ ] Implement `RunOffRecord` as `Hide` + `Run` + `Show`:
   - A convenient way to run one short command in between `Start` & `Hide/Render`;
   - [ ] Add example.

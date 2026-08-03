@@ -63,6 +63,11 @@ _SVHS_KEY_DELAY=0.0
 _SVHS_POLL_INTERVAL=0.2
 _SVHS_ATTACH_TIMEOUT=5
 
+# The recorder flushes every event, so a write lands within milliseconds and
+# is polled far more tightly than tmux
+_SVHS_WRITE_POLL_INTERVAL=0.01
+_SVHS_WRITE_TIMEOUT=5
+
 # Session and recorder lifecycle state
 _SVHS_STARTED=0
 _SVHS_CAST=''
@@ -643,7 +648,30 @@ Hide() {
     # Example:
     #   Hide || exit 1
     #
+    local client
     local clean_end
+    local size_before
+    local deadline
+
+    # A segment ends at its last event, so a pause held before Hide would be
+    # dropped and its closing frame would flash by. Repainting the recorder's
+    # client writes an event with the same pixels at the current time, which
+    # gives that frame its duration back. refresh-client targets a client,
+    # never a session
+    client=$(tmux list-clients -t "$_SVHS_SESSION" -F '#{client_name}' | head -1)
+    size_before=$(wc -c < "$_SVHS_CAST")
+    tmux refresh-client -t "$client"
+
+    # measuring the cast before the repaint reaches it would truncate the
+    # repaint away again, so wait for the file to grow instead of guessing
+    deadline=$((SECONDS + _SVHS_WRITE_TIMEOUT))
+    until [[ $(wc -c < "$_SVHS_CAST") -gt $size_before ]]; do
+        if ((SECONDS >= deadline)); then
+            printf 'Hide: timeout waiting for the recorder to write\n' >&2
+            return 1
+        fi
+        sleep "$_SVHS_WRITE_POLL_INTERVAL"
+    done
 
     # Detaching appends terminal-reset noise to the cast; remember the clean
     # size first and truncate back to it
