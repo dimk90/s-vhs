@@ -649,8 +649,8 @@ Hide() {
     #   Hide || exit 1
     #
     local client
-    local clean_end
-    local size_before
+    local clean_lines
+    local lines_before
     local deadline
 
     # A segment ends at its last event, so a pause held before Hide would be
@@ -659,13 +659,14 @@ Hide() {
     # gives that frame its duration back. refresh-client targets a client,
     # never a session
     client=$(tmux list-clients -t "$_SVHS_SESSION" -F '#{client_name}' | head -1)
-    size_before=$(wc -c < "$_SVHS_CAST")
+    lines_before=$(wc -l < "$_SVHS_CAST")
     tmux refresh-client -t "$client"
 
     # measuring the cast before the repaint reaches it would truncate the
-    # repaint away again, so wait for the file to grow instead of guessing
+    # repaint away again, so wait for the file to grow instead of guessing;
+    # a line appears only once the event behind it is written whole
     deadline=$((SECONDS + _SVHS_WRITE_TIMEOUT))
-    until [[ $(wc -c < "$_SVHS_CAST") -gt $size_before ]]; do
+    until [[ $(wc -l < "$_SVHS_CAST") -gt $lines_before ]]; do
         if ((SECONDS >= deadline)); then
             printf 'Hide: timeout waiting for the recorder to write\n' >&2
             return 1
@@ -674,13 +675,13 @@ Hide() {
     done
 
     # Detaching appends terminal-reset noise to the cast; remember the clean
-    # size first and truncate back to it
-    clean_end=$(wc -c < "$_SVHS_CAST")
+    # length first and truncate back to it
+    clean_lines=$(wc -l < "$_SVHS_CAST")
 
     tmux detach-client -s "$_SVHS_SESSION"
     wait "$_SVHS_REC_PID"
 
-    _svhs_truncate "$_SVHS_CAST" "$clean_end"
+    _svhs_truncate "$_SVHS_CAST" "$clean_lines"
     _SVHS_REC_PID=''
 }
 
@@ -698,18 +699,18 @@ Render() {
     # Example:
     #   Render || exit 1
     #
-    local clean_end=''
+    local clean_lines=''
     local output
     local font_args=()
 
     # As in Hide, drop the detach noise appended by the kill
-    [[ -n $_SVHS_REC_PID ]] && clean_end=$(wc -c < "$_SVHS_CAST")
+    [[ -n $_SVHS_REC_PID ]] && clean_lines=$(wc -l < "$_SVHS_CAST")
 
     tmux kill-session -t "$_SVHS_SESSION"
 
     if [[ -n $_SVHS_REC_PID ]]; then
         wait "$_SVHS_REC_PID"
-        _svhs_truncate "$_SVHS_CAST" "$clean_end"
+        _svhs_truncate "$_SVHS_CAST" "$clean_lines"
     fi
     _SVHS_REC_PID=''
 
@@ -902,23 +903,26 @@ _svhs_prepare_cast() {
 
 _svhs_truncate() {
     #
-    # Shrink a file to its leading bytes. Replaces GNU `truncate -s`, which is
-    # absent from the stock macOS userland.
+    # Shrink a file to its leading lines. One asciicast event is one line, so
+    # counting lines keeps every event whole: an event still being written
+    # carries no newline yet, is never counted, and is dropped rather than cut
+    # in half the way a byte count could.
     #
     # Parameters:
     #   $1 - path - file to shrink.
-    #   $2 - size - number of leading bytes to keep.
+    #   $2 - lines - number of leading lines to keep.
     #
     # Example:
-    #   _svhs_truncate 'demo.cast' 4096 || return 1
+    #   _svhs_truncate 'demo.cast' 120 || return 1
     #
     local path="$1"
-    local size="$2"
+    # BSD wc pads its count with spaces, which head rejects as an argument
+    local lines="${2// /}"
     # written next to the cast, so the replacing move stays within one
     # filesystem and cannot fail halfway across devices
     local shortened="$path.tmp"
 
-    head -c "$size" < "$path" > "$shortened" && mv -- "$shortened" "$path"
+    head -n "$lines" < "$path" > "$shortened" && mv -- "$shortened" "$path"
 }
 
 
