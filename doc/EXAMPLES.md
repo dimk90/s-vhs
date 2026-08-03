@@ -55,13 +55,14 @@ shell with no personal rc files and a green `❯` prompt when one is shown.
 
 ## s-vhs only
 
-| Name           | Shows                                                         | Today | Done |
-| -------------- | ------------------------------------------------------------- | ----- | ---- |
-| `logo`         | Fast, colourful typing for the animated README header         | ✅    | [x]  |
-| `quick-start`  | The README's Quick Start recording                            | ✅    | [x]  |
-| `wait`         | `Wait <pattern>` synchronizing on output instead of sleeps    | ✅    | [x]  |
-| `multi-output` | Two `SetOutput` calls — a replayable cast next to the GIF     | ✅    | [x]  |
-| `shell-power`  | Loops, variables and functions in the recording script itself | ✅    | [x]  |
+| Name             | Shows                                                         | Today | Done |
+| ---------------- | ------------------------------------------------------------- | ----- | ---- |
+| `logo`           | Fast, colourful typing for the animated README header         | ✅    | [x]  |
+| `quick-start`    | The README's Quick Start recording                            | ✅    | [x]  |
+| `wait`           | `Wait <pattern>` synchronizing on output instead of sleeps    | ✅    | [x]  |
+| `multi-output`   | Two `SetOutput` calls — a replayable cast next to the GIF     | ✅    | [x]  |
+| `shell-power`    | Loops, variables and functions in the recording script itself | ✅    | [x]  |
+| `run-off-record` | One hidden command mid-recording without a `Hide`/`Show` pair | ✅    | [x]  |
 
 > [!NOTE]
 > `quick-start` is the only example that keeps the default shell and renders at

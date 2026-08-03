@@ -67,7 +67,7 @@ are implemented now; the remaining command names still describe the target API.
 | —                                    | `Start`                         | `Start`                   | ✅          |
 | —                                    | `Render`                        | `Render`                  | ✅          |
 | —                                    | `Run`                           | `Run`                     | ✅          |
-| —                                    | `RunOffRecord`                  | `Hide` + `Run` + `Show`   | 📋         |
+| —                                    | `RunOffRecord`                  | `RunOffRecord`            | ✅          |
 | `vhs --version` (CLI)                | `svhs_version`                  | `svhs_version`            | ✅          |
 | `vhs new demo.tape` (CLI)            | `s-vhs.sh new`                  | `s-vhs.sh new`            | ✅          |
 

@@ -512,16 +512,31 @@ Run() {
     sleep "$settle"
 }
 
-# TODO: implement, then document in REFERENCE.md and add an example
-# RunOffRecord() {
+RunOffRecord() {
     #
-    # Pause recording and run a command in the session and resume recording.
+    # Run a command off camera in the middle of a recording: stop the
+    # recorder, run it, and resume into the same cast.
     #
+    # Parameters:
+    #   $1 - command_line - command line to type and execute.
+    #   $2 - settle - (optional) - seconds to wait afterwards (default: 2).
+    #
+    # Example:
+    #   RunOffRecord 'export STAGE=ready' 0.5
+    #
+    local command_line="$1"
+    local settle="${2:-2}"
 
-    # Hide
-    # Run "..."
-    # Show
-# }
+    # Before the first Show, and after a Hide, there is no recorder to stop
+    if [[ -z $_SVHS_REC_PID ]]; then
+        printf 'RunOffRecord: no recording is active, use Run instead\n' >&2
+        return 1
+    fi
+
+    Hide || return 1
+    Run "$command_line" "$settle"
+    Show || return 1
+}
 
 
 Key() {

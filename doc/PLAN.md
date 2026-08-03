@@ -17,9 +17,9 @@
         by. `Hide` repaints the client first, which stamps that idle time into
         the cast.
   - [x] Extend the `hide-show` example to a second `Show`.
-- [ ] Implement `RunOffRecord` as `Hide` + `Run` + `Show`:
+- [x] Implement `RunOffRecord` as `Hide` + `Run` + `Show`:
   - A convenient way to run one short hidden command in between `Start` & `Hide/Render`;
-  - [ ] Add example.
+  - [x] Add example.
 - [ ] Use a dedicated tmux socket (`tmux -L s-vhs ...`) for the recording session:
       `extended-keys` and `extended-keys-format` are server options, so the
       current `tmux set -g` in `Start` also changes them on the user's own
