@@ -26,6 +26,7 @@ Status: early draft, pre-`v0.1.0`. The public function names are **not** frozen
 | ------------------ | ----------------------------------------------------------- |
 | `s-vhs.sh`         | The whole implementation. Sourced library, never executed.  |
 | `README.md`        | User-facing docs; many sections are still `> TODO:`.        |
+| `CHANGELOG.md`     | One line per significant change, newest version on top.     |
 | `doc/REFERENCE.md` | Reference of every command implemented today. Keep in sync. |
 | `doc/COMMANDS.md`  | VHS parity table and target API design notes.               |
 | `doc/PLAN.md`      | Roadmap / checklist. Update checkboxes when a task lands.   |
@@ -101,6 +102,11 @@ Follow the `shell-code` and `code-style` skills. Project-specific points:
   signature, default value, and section (`## Settings`, `## Core`,
   `## Utility`). `doc/REFERENCE.md` documents the current implementation;
   `doc/COMMANDS.md` tracks VHS parity and the planned API.
+- **Changelog is part of the change.** Every significant fix, change, or
+  addition gets one clear line in [`CHANGELOG.md`](CHANGELOG.md), under the
+  unreleased version's `### New`, `### Changed` or `### Fixed` heading, in the
+  same change. One line per entry — what a user notices, not how it was
+  implemented. Skip purely internal refactors, doc touch-ups and formatting.
 - **Reference stays lean.** `doc/REFERENCE.md` is a lookup table, not a guide:
   a one-line description per command, plus a short note only for a rule that
   does not fit a table cell. No rationale, no design or naming justifications,
