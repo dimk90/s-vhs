@@ -72,6 +72,10 @@ Follow the `shell-code` and `code-style` skills. Project-specific points:
 - **Start validation.** Validate required overall configuration in `Start`
   before starting tmux or the recorder. Initialize internal defaults while
   sourcing.
+- **Messages.** Informational messages go to stdout with a `::: ` prefix
+  (`printf '::: Wrote %s\n' "$output"`), matching asciinema's messaging style.
+  Errors go to stderr with no prefix, named after the reporting command
+  (`printf 'Start: session has already started\n' >&2`).
 - **Sections.** `## Version`, `## Settings / Defaults`, `## Template`,
   `## Session`, `## Input`, `## Recording`, `## Render`, `## Internal`,
   `## CLI`. Keep new functions in the matching section — a command that only
