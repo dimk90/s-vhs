@@ -32,22 +32,23 @@
         server is *created*, so a recording that joins an already running server
         silently inherits the user's `tmux.conf`. The s-vhs server still stays
         shared between recordings, environment included.
-- [ ] Stop `_svhs_cleanup` from killing a session it did not create: it runs
+- [x] Stop `_svhs_cleanup` from killing a session it did not create: it runs
       `tmux kill-session -t "$_SVHS_SESSION"` unconditionally, so any exit
       before `Start` — a failed setter, a duplicate-session `Start`, or merely
       sourcing `s-vhs.sh` — kills the user's own session of that name.
       Reproduced: with a `demo` session alive, a default-named recording prints
       `duplicate session: demo`, exits 1, and takes the existing session down.
-  - [ ] Guard the handler with `_SVHS_STARTED`.
-  - [ ] Retires the trap placement: once cleanup is guarded, the `EXIT` trap no
+  - [x] Guard the handler with `_SVHS_STARTED`.
+  - [x] Retires the trap placement: once cleanup is guarded, the `EXIT` trap no
         longer has to be restricted to the sourced path. The executed-mode guard
         stays — it is the `new` entry point, unrelated to tmux.
-  - [ ] Report the collision in `Start` and point at `SetSession`, instead of
+  - [x] Report the collision in `Start` and point at `SetSession`, instead of
         letting tmux's `duplicate session: demo` through.
-  - [ ] Make the default session name unique (e.g. `s-vhs-$$`), so two recordings
+  - [x] Make the default session name unique (e.g. `s-vhs-$$`), so two recordings
         run in parallel without `SetSession`. The name is invisible with the
         status bar off, and `SetSession` stays for attaching by name. Verified:
         parallel recordings already work as soon as the names differ.
+      -  [x] Report session name.
 - [ ] Option to isolate the recorded shell from the user's rc files
       (`bash --norc`, `fish --no-config`, ...):
   - The session inherits `~/.bashrc`, so a recording shows the author's prompt

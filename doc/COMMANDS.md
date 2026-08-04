@@ -48,7 +48,7 @@ are implemented now; the remaining command names still describe the target API.
 | `Set CursorBlink`                    | —                               | —                         | 🚫         |
 |                                      |                                 |                           |             |
 | —                                    | `SetKeyDelay`                   | `SetKeyDelay` (`0.0`)     | ✅          |
-| —                                    | `SetSession`                    | `SetSession` (`demo`)     | ✅          |
+| —                                    | `SetSession`                    | `SetSession` (`s-vhs-$$`) | ✅          |
 | —                                    | `SetIdleTimeLimit`              | — (agg `5`)               | 📋         |
 | —                                    | `SetLastFrameDuration`          | — (agg `3`)               | 📋         |
 | —                                    | `SetLoop`                       | — (agg loops)             | 📋         |

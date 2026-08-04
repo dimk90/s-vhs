@@ -28,7 +28,10 @@ svhs_version() {
 
 # A shared named socket isolates recordings from the user's default tmux server
 _SVHS_TMUX_SOCKET='s-vhs'
-_SVHS_SESSION='demo'
+
+# The PID of the recording script keeps parallel recordings from colliding on
+# the default name; SetSession pins a fixed one when it should be attachable
+_SVHS_SESSION="s-vhs-$$"
 _SVHS_OUTPUTS=()
 
 # Terminal geometry is in cells, not pixels
@@ -447,7 +450,7 @@ Start() {
     #
     # Start a fresh detached tmux session with the configured geometry and
     # shell on the dedicated s-vhs server, isolated from personal tmux config
-    # and without a status bar.
+    # and without a status bar, and report how to attach to it.
     #
     # Parameters:
     #   None.
@@ -470,6 +473,13 @@ Start() {
     fi
 
     _svhs_require_dependencies || return 1
+
+    if _svhs_session_exists "$_SVHS_SESSION"; then
+        printf 'Start: session already exists: %s, pick another name with SetSession\n' \
+            "$_SVHS_SESSION" >&2
+        return 1
+    fi
+
     _svhs_prepare_cast || return 1
 
     for variable in ${_SVHS_ENV[@]+"${_SVHS_ENV[@]}"}; do
@@ -492,6 +502,11 @@ Start() {
     # xterm's older modifyOtherKeys sequences
     tmux -L "$_SVHS_TMUX_SOCKET" set -g extended-keys-format csi-u
     tmux -L "$_SVHS_TMUX_SOCKET" set-option -t "$_SVHS_SESSION" status off
+
+    # The session runs on its own socket with the status bar off and a name
+    # carrying a PID, so watching a recording live takes the printed command
+    printf '::: Started session %s, attach with: tmux -L %s attach -t %s\n' \
+        "$_SVHS_SESSION" "$_SVHS_TMUX_SOCKET" "$_SVHS_SESSION"
 }
 
 
@@ -758,7 +773,7 @@ Render() {
                 ;;
         esac
 
-        printf 'Wrote %s\n' "$output"
+        printf '::: Wrote %s\n' "$output"
     done
 
     if [[ -n $_SVHS_TEMP_CAST ]]; then
@@ -838,6 +853,27 @@ _svhs_require_dependencies() {
             *.gif) _svhs_require_command 'agg' 'GIF output' || return 1 ;;
         esac
     done
+}
+
+
+_svhs_session_exists() {
+    #
+    # Return success when a session of exactly that name is alive on the
+    # s-vhs server. tmux resolves a -t target by prefix and pattern too, so
+    # has-session would report `demo` as taken by an unrelated `demo2`.
+    #
+    # Parameters:
+    #   $1 - session - session name to look for.
+    #
+    # Example:
+    #   _svhs_session_exists 'demo' && return 1
+    #
+    local session="$1"
+
+    # a missing server means no sessions at all, hence the discarded error
+    tmux -L "$_SVHS_TMUX_SOCKET" list-sessions -F '#{session_name}' 2> /dev/null \
+        | grep -q -x -F -- "$session" || return 1
+    return 0
 }
 
 
@@ -1006,8 +1042,8 @@ _svhs_send() {
 
 _svhs_cleanup() {
     #
-    # Kill the demo session and recorder on exit; safe to call when neither
-    # is alive, and remove an unrequested temporary cast.
+    # Kill the recording session and recorder on exit; safe to call when
+    # neither is alive, and remove an unrequested temporary cast.
     #
     # Parameters:
     #   None.
@@ -1015,8 +1051,13 @@ _svhs_cleanup() {
     # Example:
     #   _svhs_cleanup
     #
-    tmux -L "$_SVHS_TMUX_SOCKET" kill-session \
-        -t "$_SVHS_SESSION" 2> /dev/null || true
+    # An exit before Start - a failed setter, a name collision, or merely
+    # sourcing the library - must leave a session of that name alone: s-vhs
+    # did not create it, so it is the user's own
+    if [[ $_SVHS_STARTED == 1 ]]; then
+        tmux -L "$_SVHS_TMUX_SOCKET" kill-session \
+            -t "$_SVHS_SESSION" 2> /dev/null || true
+    fi
     if [[ -n $_SVHS_REC_PID ]] && kill -0 "$_SVHS_REC_PID" 2> /dev/null; then
         kill "$_SVHS_REC_PID" 2> /dev/null || true
     fi
@@ -1080,7 +1121,6 @@ fi
 
 # Installed in the sourcing script's shell, so any exit — including a
 # set -e failure mid-recording — tears down the tmux session and recorder
-# instead of leaving them running in the background. Scaffolding starts
-# neither, and the handler would kill a session that happens to share the
-# default name, so the trap belongs to the sourced path only.
+# instead of leaving them running in the background. The handler is a no-op
+# until Start, so an exit before it, scaffolding included, tears down nothing.
 trap _svhs_cleanup EXIT
