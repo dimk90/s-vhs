@@ -20,19 +20,18 @@
 - [x] Implement `RunOffRecord` as `Hide` + `Run` + `Show`:
   - A convenient way to run one short hidden command in between `Start` & `Hide/Render`;
   - [x] Add example.
-- [ ] Use a dedicated tmux socket (`tmux -L s-vhs ...`) for the recording session:
+- [x] Use a dedicated tmux socket (`tmux -L s-vhs ...`) for the recording session:
       `extended-keys` and `extended-keys-format` are server options, so the
       current `tmux set -g` in `Start` also changes them on the user's own
       running tmux server.
-  - [ ] Every tmux call takes the socket, `_svhs_cleanup` included — a cleanup
+  - [x] Every tmux call takes the socket, `_svhs_cleanup` included — a cleanup
         left on the default socket kills the user's own session when it shares
         the configured name, which is also why the `EXIT` trap is installed on
         the sourced path only.
-  - [ ] Fixes config inheritance too: `tmux -f /dev/null` applies only when the
+  - [x] Fixes config inheritance too: `tmux -f /dev/null` applies only when the
         server is *created*, so a recording that joins an already running server
         silently inherits the user's `tmux.conf`. The s-vhs server still stays
-        shared between recordings, environment included (see the `Env` warning
-        in [COMMANDS](COMMANDS.md#env-)).
+        shared between recordings, environment included.
 - [ ] Stop `_svhs_cleanup` from killing a session it did not create: it runs
       `tmux kill-session -t "$_SVHS_SESSION"` unconditionally, so any exit
       before `Start` — a failed setter, a duplicate-session `Start`, or merely

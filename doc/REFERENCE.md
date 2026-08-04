@@ -7,7 +7,7 @@ Every command implemented in `s-vhs.sh`.
 | Command                      | Default    | Description                                                 |
 | ---------------------------- | ---------- | ----------------------------------------------------------- |
 | `SetOutput <path.ext>`       | —          | Add an output; repeatable. `.cast` and `.gif` are supported |
-| `SetSession <name>`          | `demo`     | tmux session name used for the recording                    |
+| `SetSession <name>`          | `demo`     | Session name on the dedicated s-vhs tmux server             |
 | `SetCols <cols>`             | `100`      | Terminal width in character cells                           |
 | `SetRows <rows>`             | `40`       | Terminal height in character cells                          |
 | `SetFontSize <px>`           | `28`       | Rendered font size in pixels                                |
@@ -33,7 +33,7 @@ Every command implemented in `s-vhs.sh`.
 
 | Command                           | Description                                                                          |
 | --------------------------------- | ------------------------------------------------------------------------------------ |
-| `Start`                           | Start the detached tmux session with the configured geometry, check for dependencies |
+| `Start`                           | Check dependencies and start the detached session on the dedicated s-vhs tmux server |
 | `Show`                            | Start recording; later calls append to the same cast                                 |
 | `Hide`                            | Stop recording, leaving the session alive                                            |
 | `Type <text> [delay]`             | Emulate typing literal text, one character at a time                                 |

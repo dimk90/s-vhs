@@ -26,6 +26,8 @@ svhs_version() {
 ## Settings / Defaults
 
 
+# A shared named socket isolates recordings from the user's default tmux server
+_SVHS_TMUX_SOCKET='s-vhs'
 _SVHS_SESSION='demo'
 _SVHS_OUTPUTS=()
 
@@ -444,7 +446,8 @@ Env() {
 Start() {
     #
     # Start a fresh detached tmux session with the configured geometry and
-    # shell, isolated from personal tmux config and without a status bar.
+    # shell on the dedicated s-vhs server, isolated from personal tmux config
+    # and without a status bar.
     #
     # Parameters:
     #   None.
@@ -475,18 +478,20 @@ Start() {
 
     # bash 3.2 (stock macOS) rejects an empty array under set -u, so expand
     # env_args only when Env was called
-    tmux -f /dev/null new-session -d -s "$_SVHS_SESSION" \
-        -x "$_SVHS_COLS" -y "$_SVHS_ROWS"                \
-        ${env_args[@]+"${env_args[@]}"} "$_SVHS_SHELL"
+    tmux -L "$_SVHS_TMUX_SOCKET" -f /dev/null \
+        new-session -d -s "$_SVHS_SESSION"    \
+                    -x "$_SVHS_COLS"          \
+                    -y "$_SVHS_ROWS"          \
+                    ${env_args[@]+"${env_args[@]}"} "$_SVHS_SHELL"
     _SVHS_STARTED=1
 
     # Report modified keys (C-Enter, S-Enter, C-S-<key>) instead of folding
     # them into their plain form, so a recording can drive TUIs that bind them
-    tmux set -g extended-keys on
+    tmux -L "$_SVHS_TMUX_SOCKET" set -g extended-keys on
     # Encode them as CSI u (^[[65;6u), the form modern TUIs parse, instead of
     # xterm's older modifyOtherKeys sequences
-    tmux set -g extended-keys-format csi-u
-    tmux set-option -t "$_SVHS_SESSION" status off
+    tmux -L "$_SVHS_TMUX_SOCKET" set -g extended-keys-format csi-u
+    tmux -L "$_SVHS_TMUX_SOCKET" set-option -t "$_SVHS_SESSION" status off
 }
 
 
@@ -608,7 +613,8 @@ Wait() {
     local timeout="${2:-15}"
     local deadline=$((SECONDS + timeout))
 
-    until tmux capture-pane -p -t "$_SVHS_SESSION" | grep -q "$pattern"; do
+    until tmux -L "$_SVHS_TMUX_SOCKET" capture-pane \
+        -p -t "$_SVHS_SESSION" | grep -q "$pattern"; do
         if ((SECONDS >= deadline)); then
             printf 'timeout waiting for: %s\n' "$pattern" >&2
             return 1
@@ -638,7 +644,8 @@ Show() {
     local write_mode='--overwrite'
 
     [[ -n $_SVHS_RECORDED ]] && write_mode='--append'
-    printf -v attach_command 'tmux attach -t %q' "$_SVHS_SESSION"
+    printf -v attach_command 'tmux -L %q attach -t %q' \
+        "$_SVHS_TMUX_SOCKET" "$_SVHS_SESSION"
 
     # asciinema holds the foreground for the whole segment while the script
     # keeps driving the session, so it runs in the background and its PID is
@@ -673,9 +680,10 @@ Hide() {
     # client writes an event with the same pixels at the current time, which
     # gives that frame its duration back. refresh-client targets a client,
     # never a session
-    client=$(tmux list-clients -t "$_SVHS_SESSION" -F '#{client_name}' | head -1)
+    client=$(tmux -L "$_SVHS_TMUX_SOCKET" list-clients \
+        -t "$_SVHS_SESSION" -F '#{client_name}' | head -1)
     lines_before=$(wc -l < "$_SVHS_CAST")
-    tmux refresh-client -t "$client"
+    tmux -L "$_SVHS_TMUX_SOCKET" refresh-client -t "$client"
 
     # measuring the cast before the repaint reaches it would truncate the
     # repaint away again, so wait for the file to grow instead of guessing;
@@ -693,7 +701,7 @@ Hide() {
     # length first and truncate back to it
     clean_lines=$(wc -l < "$_SVHS_CAST")
 
-    tmux detach-client -s "$_SVHS_SESSION"
+    tmux -L "$_SVHS_TMUX_SOCKET" detach-client -s "$_SVHS_SESSION"
     wait "$_SVHS_REC_PID"
 
     _svhs_truncate "$_SVHS_CAST" "$clean_lines"
@@ -721,7 +729,7 @@ Render() {
     # As in Hide, drop the detach noise appended by the kill
     [[ -n $_SVHS_REC_PID ]] && clean_lines=$(wc -l < "$_SVHS_CAST")
 
-    tmux kill-session -t "$_SVHS_SESSION"
+    tmux -L "$_SVHS_TMUX_SOCKET" kill-session -t "$_SVHS_SESSION"
 
     if [[ -n $_SVHS_REC_PID ]]; then
         wait "$_SVHS_REC_PID"
@@ -954,7 +962,8 @@ _svhs_wait_for_client() {
     #
     local deadline=$((SECONDS + _SVHS_ATTACH_TIMEOUT))
 
-    until [[ -n $(tmux list-clients -t "$_SVHS_SESSION" 2> /dev/null) ]]; do
+    until [[ -n $(tmux -L "$_SVHS_TMUX_SOCKET" list-clients \
+        -t "$_SVHS_SESSION" 2> /dev/null) ]]; do
         if ! kill -0 "$_SVHS_REC_PID" 2> /dev/null; then
             printf 'Show: the recorder exited before attaching\n' >&2
             return 1
@@ -990,7 +999,7 @@ _svhs_send() {
         escaped_arguments+=("$argument")
     done
 
-    tmux send-keys -t "$_SVHS_SESSION" \
+    tmux -L "$_SVHS_TMUX_SOCKET" send-keys -t "$_SVHS_SESSION" \
         ${escaped_arguments[@]+"${escaped_arguments[@]}"}
 }
 
@@ -1006,7 +1015,8 @@ _svhs_cleanup() {
     # Example:
     #   _svhs_cleanup
     #
-    tmux kill-session -t "$_SVHS_SESSION" 2> /dev/null || true
+    tmux -L "$_SVHS_TMUX_SOCKET" kill-session \
+        -t "$_SVHS_SESSION" 2> /dev/null || true
     if [[ -n $_SVHS_REC_PID ]] && kill -0 "$_SVHS_REC_PID" 2> /dev/null; then
         kill "$_SVHS_REC_PID" 2> /dev/null || true
     fi
