@@ -14,7 +14,7 @@ otherwise kept only temporarily while producing outputs such as GIF
 
 Selling points to preserve when changing behaviour: sharp output (no GIF
 quality loss), no timing drift across resolutions, terminal size in rows/cols
-instead of pixels, no browser/Node dependency.
+instead of pixels, no browser dependency.
 
 Status: early draft, pre-`v0.1.0`. The public function names are **not** frozen
 — see `doc/PLAN.md`, which calls for renaming toward VHS-like names

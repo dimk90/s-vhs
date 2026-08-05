@@ -22,7 +22,7 @@ SetFontFamily 'Iosevka Term'
 SetShell 'fish'
 
 # Bundled prompts: arrow (the default), plain, path or powerline;
-# SetPrompts 'native' would record the user's own prompt instead,
+# SetPrompt 'native' would record the user's own prompt instead,
 # and anything else is taken as a literal prompt
 SetPrompt 'powerline'
 

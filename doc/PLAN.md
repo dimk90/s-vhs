@@ -76,7 +76,9 @@
         recall *inside* the recording, so a `Key C-r` demo would show nothing.
   - [x] Add shell theme example.
   - [x] Update all examples to use `SetPrompt`.
- - [ ] Add `Sleep` as alias for `sleep` to match style of the `s-vhs`:
+- [ ] Implement `Enter`, `Tab`, `Up`, … (named keys).
+  - [ ] Update examples and README.
+- [ ] Add `Sleep` as alias for `sleep` to match style of the `s-vhs`:
    - [ ] Update examples.
 - [ ] Remote import:
   - [ ] Discuss how to do remote import for current repo with specified version (e.g. v0.2.0).
@@ -103,6 +105,8 @@
       [#105](https://github.com/charmbracelet/vhs/issues/105)).
     ```
   - [ ] Update installation instructions and dependencies description.
+  - [ ] README - agg is listed as a flat requirement, but it is only needed for GIF output; a
+        .cast-only recording never invokes it. Worth marking as "for GIF output".
 - [ ] Re-render all examples to animated SVG?
 
 ## v0.4.0

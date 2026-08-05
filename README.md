@@ -1,6 +1,6 @@
 # S-VHS
 
-<img src="examples/logo.gif" width=500 alt="Animated S-VHS logo">
+<img src="examples/logo.gif" width="500px" alt="Animated S-VHS logo">
 
 A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superior:
 
@@ -11,7 +11,8 @@ A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superi
   ([#69](https://github.com/charmbracelet/vhs/issues/69#issuecomment-3121533232)).
 - **Sized in rows and cols** - no dancing with pixel width and height
   ([#578](https://github.com/charmbracelet/vhs/issues/578)).
-- **No browser, no Node** - just a wrapper around `tmux` + `asciinema` + `agg`
+- **No browser** - no headless Chromium downloaded behind your back, just a
+  wrapper around `tmux` + `asciinema` + `agg`
   ([#528](https://github.com/charmbracelet/vhs/issues/528),
   [#438](https://github.com/charmbracelet/vhs/issues/438),
   [#150](https://github.com/charmbracelet/vhs/issues/150),
@@ -31,7 +32,7 @@ source ./s-vhs.sh
 # Where should we write the GIF?
 SetOutput 'demo.gif'
 
-# Set up a 60x8 terminal with a 34px font.
+# Set up a 60x4 terminal with a 40px font.
 SetCols 60
 SetRows 4
 SetFontSize 40
@@ -47,7 +48,7 @@ sleep 1 # Pause for dramatic effect...
 Type " Stay awhile and listen...'"
 sleep 1
 
-# Run the command by pressing enter.
+# Run the command by pressing Enter.
 Key Enter
 
 # Admire the output for a bit.
@@ -57,20 +58,21 @@ sleep 5
 Render
 ```
 
-Run it to render the GIF:
-```shell
+Save it as `demo.rec.sh`, make it executable and run it:
+```bash
+chmod +x demo.rec.sh
 ./demo.rec.sh
 ```
 
-You should see a new file called `demo.gif` in the directory:
+You should see a new file called `demo.gif` in the same directory:
 
-<img src="examples/quick-start.gif" width=700>
+<img src="examples/quick-start.gif" width="700px" alt="Quick Start recording rendered as a GIF">
 
 
 ## Installation
 
 
-`s-vhs` is a bash script, so you only need its dependencies:
+`s-vhs` is a bash script, so all you need are its dependencies:
 - Install `tmux` and `asciinema`:
   ```bash
   sudo pacman -S tmux asciinema
@@ -81,7 +83,7 @@ You should see a new file called `demo.gif` in the directory:
   ```
 
 > [!NOTE]
-> The provided instructions are for ArchLinux, but you can easily adapt them for your favorite distro ;)
+> The provided instructions are for Arch Linux, but you can easily adapt them for your favorite distro ;)
 
 > [!NOTE]
 > `s-vhs` targets bash 3.2, the version macOS still ships as `/bin/bash`,
@@ -98,7 +100,7 @@ See [`examples`](examples) for the complete scripts behind the demos below, and 
 Key Enter 4 0.5
 ```
 
-<img src="examples/enter.gif" width=500>
+<img src="examples/enter.gif" width="500px" alt="Enter pressed four times, half a second apart">
 
 
 ### Type
@@ -114,7 +116,7 @@ Key Enter; sleep 0.5
 Type 'echo "slow down"' 0.25
 ```
 
-<img src="examples/type.gif" width=500>
+<img src="examples/type.gif" width="500px" alt="A command typed at the default speed, then one typed slowly">
 
 ### Columns & Rows
 
@@ -128,7 +130,7 @@ Type 'tput lines'
 Key Enter; sleep 1
 ```
 
-<img src="examples/cols-rows.gif" width=500>
+<img src="examples/cols-rows.gif" width="500px" alt="tput cols and tput lines reporting 40 by 8 in the recorded terminal">
 
 ### Key
 
@@ -140,7 +142,7 @@ Key Left 10 0.12
 sleep 0.5
 Key Right 10 0.05
 ```
-<img src="examples/arrow.gif" width=500>
+<img src="examples/arrow.gif" width="500px" alt="The cursor walking left and right along the typed line">
 
 #### Backspace
 
@@ -149,21 +151,25 @@ Type 'echo delete anything...' 0.05; sleep 0.5
 Key BSpace 18 0.05
 ```
 
-<img src="examples/backspace.gif" width=500>
+<img src="examples/backspace.gif" width="500px" alt="Typed text deleted by repeated backspaces">
 
 ### Wait
 
-Wait polls the visible pane until a text pattern shows up:
+`Wait` polls the visible pane until a grep pattern shows up, so a recording
+keeps up with a slow command instead of guessing a `sleep`:
 
 ```bash
 Type 'sleep 2 && echo "build succeeded"'
 Key Enter
 
-Wait '^build succeeded' 10
+# Anchored: the pattern must match the output line, not the command echoed
+# above it
+Wait '^build succeeded'
+
 Type 'echo "and on we go"'
 ```
 
-<img src="examples/wait.gif" width=500>
+<img src="examples/wait.gif" width="500px" alt="The recording pausing until 'build succeeded' appears in the pane">
 
 ### Color Theme
 
@@ -174,17 +180,18 @@ Type 'echo "and on we go"'
 SetTheme 'kanagawa'
 ```
 
-<img src="examples/theme.gif" width=500>
+<img src="examples/theme.gif" width="500px" alt="Red, green and blue text rendered in the kanagawa palette">
 
 ### Shell & Prompt
 
-A recording runs in an isolated shell by default: no personal rc files, no
-prompt of yours in the frame, and nothing written to your shell history.
+A recording runs in an isolated shell by default: no personal rc files, your
+own prompt stays out of the frame, and nothing is written to your shell
+history.
 
 ```bash
 SetShell 'fish'       # bash (default), zsh or fish
 SetPrompt 'powerline' # arrow (default), plain, path or powerline
-SetTheme 'nord'       # prompt respect colors from a color theme
+SetTheme 'nord'       # the prompt picks up the theme's colors
 
 # The theme follows the working directory
 Type 'cd /tmp'
@@ -193,31 +200,31 @@ Type 'cd ~'
 Key Enter; sleep 3
 ```
 
-<img src="examples/prompt.gif" width=500>
+<img src="examples/prompt.gif" width="500px" alt="The fish shell with the powerline prompt theme following the working directory">
 
-Every theme is rendered for the shell in use, so it looks the same in all
-three.
+Every prompt theme is implemented for all three shells, so a recording looks
+the same in bash, zsh and fish.
 
 > [!TIP]
 > `SetPrompt 'native'` records your own shell configuration instead, and
-> any other value is taken as a literal prompt — `SetPrompt '$ '`.
+> any other value is taken as a literal prompt - `SetPrompt '$ '`.
 
 ### Font Size
 
-The font size is the only pixel-sized setting: it scales the whole render 
+The font size is the only pixel-sized setting: it scales the whole render
 without changing the terminal grid the recorded shell sees.
 
 ```bash
 SetFontSize 40
 ```
 
-<img src="examples/font-size-40.gif" width=500>
+<img src="examples/font-size-40.gif" width="500px" alt="A 34x2 grid rendered at a font size of 40">
 
-<img src="examples/font-size-20.gif" width=300>
+<img src="examples/font-size-20.gif" width="250px" alt="The same 34x2 grid rendered at a font size of 20">
 
-<img src="examples/font-size-10.gif" width=150>
+<img src="examples/font-size-10.gif" width="125px" alt="The same 34x2 grid rendered at a font size of 10">
 
-### Show / Hide
+### Hide / Show
 
 ```bash
 Start # Start session / initialize terminal
@@ -243,13 +250,17 @@ Type 'echo "back on camera"'
 Key Enter; sleep 2
 ```
 
-<img src="examples/hide-show.gif" width=500>
+<img src="examples/hide-show.gif" width="500px" alt="A recording that skips the commands run between Hide and the next Show">
+
+> [!TIP]
+> `RunOffRecord 'clear' 0.5` is the shorthand for a `Hide` + `Run` + `Show`
+> sandwich, see [`examples/run-off-record.rec.sh`](examples/run-off-record.rec.sh).
 
 ### Multiple Outputs
 
-```shell
-SetOutput "multi-output.cast"
-SetOutput "multi-output.gif"
+```bash
+SetOutput 'multi-output.cast'
+SetOutput 'multi-output.gif'
 ```
 
 ### S-VHS in the Wild
@@ -261,15 +272,15 @@ More than just a toy:
 
 Start your new recording from the bundled template:
 
-```shell
+```bash
 ./s-vhs.sh new demo.rec.sh
 ```
-> The file is created executable, and an existing one is never overwritten. 
+> The file is created executable, and an existing one is never overwritten.
 > Drop the path to print the template instead: `./s-vhs.sh new`.
 
 It writes:
 
-```shell
+```bash
 #!/usr/bin/env bash
 
 source ./s-vhs.sh
