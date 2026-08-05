@@ -22,13 +22,13 @@ Show
 # Ask the terminal itself how wide and how tall it is
 Type 'tput cols'
 Enter
-sleep 1
+Sleep 1
 
 Type 'tput lines'
 Enter
-sleep 1
+Sleep 1
 
 Enter 3 0.5
-sleep 5
+Sleep 5
 
 Render

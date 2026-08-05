@@ -19,7 +19,7 @@ SetFontFamily "Iosevka Term"
 run() {
     Type "$1"
     Enter
-    sleep "${2:-1}"
+    Sleep "${2:-1}"
 }
 
 Start
@@ -30,6 +30,6 @@ Show
 for command_line in 'uname -o' 'tput colors' 'echo $BASH_VERSION'; do
     run "$command_line"
 done
-sleep 1
+Sleep 1
 
 Render

@@ -43,16 +43,16 @@ Show
 
 # Type a command in the terminal
 Type "echo 'Welcome to S-VHS!"
-sleep 1 # Pause for dramatic effect...
+Sleep 1 # Pause for dramatic effect...
 
 Type " Stay awhile and listen...'"
-sleep 1
+Sleep 1
 
 # Run the command by pressing Enter.
 Enter
 
 # Admire the output for a bit.
-sleep 5
+Sleep 5
 
 # Stop recording and write every requested output.
 Render
@@ -108,9 +108,9 @@ Enter 4 0.5
 ```bash
 # Regular typing
 Type 'echo "whatever you want"'
-sleep 1
+Sleep 1
 
-Enter; sleep 0.5
+Enter; Sleep 0.5
 
 # Slow typing
 Type 'echo "slow down"' 0.25
@@ -125,9 +125,9 @@ SetCols 40
 SetRows 8
 
 Type 'tput cols'
-Enter; sleep 1
+Enter; Sleep 1
 Type 'tput lines'
-Enter; sleep 1
+Enter; Sleep 1
 ```
 
 <img src="examples/cols-rows.gif" width="500px" alt="tput cols and tput lines reporting 40 by 8 in the recorded terminal">
@@ -143,9 +143,9 @@ key goes through `Key` in tmux notation: `Key C-u`, `Key C-r`, `Key M-x`, see
 #### Arrows
 
 ```bash
-Type 'echo navigate around'; sleep 0.5
+Type 'echo navigate around'; Sleep 0.5
 Left 10 0.12
-sleep 0.5
+Sleep 0.5
 Right 10 0.05
 ```
 <img src="examples/arrow.gif" width="500px" alt="The cursor walking left and right along the typed line">
@@ -153,7 +153,7 @@ Right 10 0.05
 #### Backspace
 
 ```bash
-Type 'echo delete anything...' 0.05; sleep 0.5
+Type 'echo delete anything...' 0.05; Sleep 0.5
 Backspace 18 0.05
 ```
 
@@ -201,9 +201,9 @@ SetTheme 'nord'       # the prompt picks up the theme's colors
 
 # The theme follows the working directory
 Type 'cd /tmp'
-Enter; sleep 1.5
+Enter; Sleep 1.5
 Type 'cd ~'
-Enter; sleep 3
+Enter; Sleep 3
 ```
 
 <img src="examples/prompt.gif" width="500px" alt="The fish shell with the powerline prompt theme following the working directory">
@@ -243,7 +243,7 @@ Show # Start recording
 
 # The recorded shell expands it, not this script
 Type 'echo $HIDDEN'
-Enter; sleep 2
+Enter; Sleep 2
 
 Hide # Stop recording, the session keeps running
 
@@ -253,7 +253,7 @@ Run 'clear' 0.5
 Show # Resume recording, appending to the same cast
 
 Type 'echo "back on camera"'
-Enter; sleep 2
+Enter; Sleep 2
 ```
 
 <img src="examples/hide-show.gif" width="500px" alt="A recording that skips the commands run between Hide and the next Show">
@@ -307,7 +307,7 @@ Show
 
 Type 'echo "Hello from s-vhs"'
 Enter
-sleep 3
+Sleep 3
 
 Render
 ```

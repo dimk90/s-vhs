@@ -19,14 +19,14 @@ Start
 Show
 
 Type 'echo "whatever you want"'
-sleep 1
+Sleep 1
 
 Enter
-sleep 0.5
+Sleep 0.5
 
 Type 'echo "slow down"' 0.25 # Slow typing
 
 Enter
-sleep 4
+Sleep 4
 
 Render

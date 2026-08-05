@@ -8,6 +8,7 @@
 * Add `SetPrompt` command + bundled themes (`arrow`, `plain`, `path`, `powerline`)
 * Add `native` option for `SetPrompt` to use current shell configuration.
 * Add named key commands: `Enter`, `Tab`, `Backspace`, `Up`, etc.
+* Add `Sleep` command as alias for `sleep` for style consistency.
 
 ### Changed
 * Record in an isolated shell by default: no personal rc files.

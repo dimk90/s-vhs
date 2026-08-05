@@ -18,9 +18,9 @@ Start
 
 Show
 
-sleep 1
+Sleep 1
 
 Enter 4 0.5
-sleep 2
+Sleep 2
 
 Render

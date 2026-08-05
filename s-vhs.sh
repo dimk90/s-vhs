@@ -125,7 +125,7 @@ Show
 
 Type 'echo "Hello from s-vhs"'
 Enter
-sleep 3
+Sleep 3
 
 Render
 TEMPLATE
@@ -717,6 +717,27 @@ Type() {
         _svhs_send -l "${text:idx:1}"
         sleep "$delay"
     done
+}
+
+
+Sleep() {
+    #
+    # Pause the recording, so the last frame stays on screen.
+    #
+    # Parameters:
+    #   $1 - duration - seconds to pause; fractions allowed.
+    #
+    # Example:
+    #   Sleep 1.5
+    #
+    local duration="${1-}"
+
+    if ! _svhs_is_nonnegative_number "$duration"; then
+        printf 'Sleep: expected a non-negative number, got: %s\n' "$duration" >&2
+        return 1
+    fi
+
+    sleep "$duration"
 }
 
 

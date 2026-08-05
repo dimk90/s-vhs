@@ -24,9 +24,9 @@ Show
 
 Type 'echo "stay"'
 Enter
-sleep 0.5
+Sleep 0.5
 Type 'echo "far away!"'
 Enter
-sleep 2
+Sleep 2
 
 Render

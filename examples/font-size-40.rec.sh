@@ -21,6 +21,6 @@ Start
 Show
 
 Type 'echo "Font size is 40"'
-sleep 4
+Sleep 4
 
 Render

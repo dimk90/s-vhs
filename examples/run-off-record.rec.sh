@@ -26,13 +26,13 @@ Show
 # The variable is unset, so the recorded shell echoes an empty line
 Type 'echo $STAGE'
 Enter
-sleep 2
+Sleep 2
 
 # Off camera: set it, then wipe the screen it was typed on
 RunOffRecord 'export STAGE=ready; clear' 0.5
 
 Type 'echo $STAGE'
 Enter
-sleep 2
+Sleep 2
 
 Render

@@ -20,15 +20,15 @@ Start
 Show
 
 Type 'echo "whatever you want"'
-sleep 1
+Sleep 1
 
 # Throw the line away without running it
 Key C-u
-sleep 0.5
+Sleep 0.5
 
 # Type something else
 Type 'echo "something else"'
 Enter
-sleep 2
+Sleep 2
 
 Render

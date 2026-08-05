@@ -28,6 +28,6 @@ Wait '^build succeeded'
 
 Type 'echo "and on we go"'
 Enter
-sleep 2
+Sleep 2
 
 Render

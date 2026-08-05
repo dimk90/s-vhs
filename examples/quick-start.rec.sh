@@ -24,16 +24,16 @@ Show
 
 # Type a command in the terminal
 Type "echo 'Welcome to S-VHS!"
-sleep 1 # Pause for dramatic effect...
+Sleep 1 # Pause for dramatic effect...
 
 Type " Stay awhile and listen...'"
-sleep 1
+Sleep 1
 
 # Run the command by pressing enter
 Enter
 
 # Admire the output for a bit
-sleep 5
+Sleep 5
 
 # Stop recording and write every requested output
 Render

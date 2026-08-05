@@ -80,8 +80,8 @@
   - [x] VHS's 15 names, each a one-line wrapper over `Key`, so a count and a
         delay still apply (`Enter 4 0.5`); modified keys stay with `Key C-r`.
   - [x] Update examples and README.
-- [ ] Add `Sleep` as alias for `sleep` to match style of the `s-vhs`:
-   - [ ] Update examples.
+- [x] Add `Sleep` as alias for `sleep` to match style of the `s-vhs`:
+   - [x] Update examples.
 - [ ] Remote import:
   - [ ] Discuss how to do remote import for current repo with specified version (e.g. v0.2.0).
   - [ ] Add example with nice one-liner for `curl+source` remote import s-vhs from: `https://github.../v0.1.0/.../s-vhs.sh`.

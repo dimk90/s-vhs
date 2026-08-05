@@ -19,14 +19,14 @@ Start
 Show
 
 Type 'echo delete anything...' 0.05
-sleep 0.5
+Sleep 0.5
 
 # Backspace 18 -- back to 'echo '
 Backspace 18 0.05
-sleep 0.5
+Sleep 0.5
 
 Type 'nothing'
 Enter
-sleep 2
+Sleep 2
 
 Render

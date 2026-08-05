@@ -23,6 +23,6 @@ Show
 
 Type 'echo "one recording, two outputs"'
 Enter
-sleep 2
+Sleep 2
 
 Render

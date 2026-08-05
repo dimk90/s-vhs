@@ -19,7 +19,7 @@ are implemented now; the remaining command names still describe the target API.
 | `Enter`, `Tab`, `Up`, … (named keys) | `Enter`, `Tab`, `Up`, …         | `Enter`, `Backspace`      | ✅          |
 | `Enter 2`, `Backspace 18` (repeat)   | `Enter [<count>] [<time>]`, ... | `Backspace 18 0.05`       | ✅          |
 | `ScrollUp` / `ScrollDown`            | `ScrollUp` / `ScrollDown`       | —                         | 📋         |
-| `Sleep 2`                            | `Sleep`                         | `sleep 2`                 | ✅          |
+| `Sleep 2`                            | `Sleep`                         | `Sleep 2`                 | ✅          |
 | `Wait /regex/`                       | `Wait`                          | `Wait`                    | 🟡         |
 | `Wait+Line /regex/`                  | `Wait` + scope argument         | —                         | 📋 Useful? |
 | `Hide`                               | `Hide`                          | `Hide`                    | ✅          |

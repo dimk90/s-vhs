@@ -31,9 +31,9 @@ Show
 
 # The theme follows the working directory
 Type 'cd /tmp'
-Enter; sleep 1.5
+Enter; Sleep 1.5
 
 Type 'cd ~'
-Enter; sleep 3
+Enter; Sleep 3
 
 Render

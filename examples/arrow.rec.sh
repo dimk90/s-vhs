@@ -20,15 +20,15 @@ Start
 Show
 
 Type 'echo navigate around'
-sleep 0.5
+Sleep 0.5
 
 # Left 10 -- ten presses, an eighth of a second apart
 Left 10 0.12
-sleep 0.5
+Sleep 0.5
 
 Right 10 0.05
 
 Enter
-sleep 2
+Sleep 2
 
 Render

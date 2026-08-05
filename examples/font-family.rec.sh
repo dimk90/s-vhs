@@ -28,6 +28,6 @@ Show
 
 Type 'echo "    fallback to Fira Code + bundled Nerd Symbols"'
 Enter
-sleep 3
+Sleep 3
 
 Render

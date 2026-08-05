@@ -68,6 +68,6 @@ Type 'SP 0:00:00' $REC_TYPING_SPEED
 Type "$RESET_COLOR"
 
 Enter 2
-sleep 6
+Sleep 6
 
 Render

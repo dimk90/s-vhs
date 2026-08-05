@@ -51,6 +51,7 @@ Every command implemented in `s-vhs.sh`.
 | `Type <text> [delay]`             | Emulate typing literal text, one character at a time                                                             |
 | `Key <key-name> [count] [delay]`  | Press a tmux-named key (`Enter`, `Down`, `C-r`) `count` times                                                    |
 | `Enter`, `Tab`, … `[count] [delay]` | Press one named key; same arguments as `Key`                                                                  |
+| `Sleep <seconds>`                 | Pause the recording, holding the last frame on screen                                                            |
 | `Wait <pattern> [timeout]`        | Poll the visible pane until a grep pattern appears (default: 15s)                                                |
 | `Run <command> [settle]`          | Type and run a command, then wait (default: 2s)                                                                  |
 | `RunOffRecord <command> [settle]` | Run a command off camera: `Hide` + `Run` + `Show`; fails when not recording                                      |
