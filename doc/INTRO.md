@@ -101,4 +101,4 @@ or how asciinema records it.
 
 - [README](../README.md) - install and the quick start.
 - [REFERENCE.md](REFERENCE.md) - every command, with defaults.
-- [EXAMPLES.md](EXAMPLES.md) - the example catalogue.
+- [examples/README.md](../examples/README.md) - the example catalogue.

@@ -117,7 +117,6 @@
   - [ ] function ...
   - [ ] ...
 - [ ] Update existing examples and README if needed.
-- [ ] Rename EXAMPLES.md to examples/README.md ?
 - [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:
   - https://github.com/charmbracelet/vhs/tree/main/examples/settings
   - https://github.com/charmbracelet/vhs/tree/main/examples/commands

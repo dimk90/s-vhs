@@ -31,7 +31,7 @@ Status: early draft, pre-`v0.1.0`. The public function names are **not** frozen
 | `doc/COMMANDS.md`  | VHS parity table and target API design notes.               |
 | `doc/PLAN.md`      | Roadmap / checklist. Update checkboxes when a task lands.   |
 | `doc/HISTORY.md`   | Verbatim archive of code removed from `s-vhs.sh`.           |
-| `examples/`        | Example recording scripts and their rendered output.        |
+| `examples/`        | Example recording scripts, rendered output, catalogue.      |
 
 No build system, no test suite, no CI. Verification is manual: run a recording
 script and inspect or replay every requested output.
@@ -121,8 +121,8 @@ Follow the `shell-code` and `code-style` skills. Project-specific points:
   larger — smaller sizes look soft once a README scales the GIF down — and
   keeps the default shell, which already carries no personal configuration
   into the recording. Call `SetShell` or `SetPrompt` only in an example about
-  them. Keep the catalogue in [`doc/EXAMPLES.md`](doc/EXAMPLES.md) in sync when
-  adding or merging one.
+  them. Keep the catalogue in [`examples/README.md`](examples/README.md) in
+  sync when adding or merging one.
 - Every VHS feature parity claim in `README.md` links the upstream issue it
   addresses; keep that link when editing such a line.
 
