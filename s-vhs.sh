@@ -117,6 +117,8 @@ SetOutput 'demo.gif'
 # SetFontFamily 'JetBrains Mono'
 # SetTheme 'dracula'
 # SetTypingSpeed 0.07
+# SetShell 'bash'
+# SetPrompt 'arrow'
 
 Start
 Show
