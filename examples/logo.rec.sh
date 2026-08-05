@@ -19,11 +19,8 @@ SetFontFamily 'Iosevka Term'
 SetLineHeight 1.0
 SetTypingSpeed 0
 
-# Reproducible shell: no personal rc files
-SetShell "bash --norc"
-
 # Empty prompt: nothing but the logo may reach the screen
-Env PS1 ''
+SetPrompt ''
 
 readonly LOGO_COLOR=$'\e[38;2;255;255;255m'
 readonly REC_COLOR=$'\e[38;2;255;75;85m'

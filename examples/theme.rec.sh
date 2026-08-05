@@ -20,10 +20,6 @@ SetTypingSpeed 0.04
 # (background, foreground, then 8 or 16 colors) also works
 SetTheme 'kanagawa'
 
-# Reproducible prompt: no personal rc files, green ❯ prompt
-SetShell "bash --norc"
-Env PS1 '\[\e[32m\]❯\[\e[0m\] '
-
 Start
 
 Show
