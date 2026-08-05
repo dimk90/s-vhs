@@ -29,7 +29,7 @@ are implemented now; the remaining command names still describe the target API.
 | `Env KEY "VAL"`                      | `Env`                           | `Env KEY VAL`             | ✅          |
 | `Source other.tape`                  | —                               | `source other.sh`         | ✅          |
 |                                      |                                 |                           |             |
-| `Set Shell fish`                     | `SetShell`                      | `SetShell` (`fish`)       | ✅          |
+| `Set Shell fish`                     | `SetShell`                      | `SetShell` (`bash`)       | ✅          |
 | `Set FontSize 40`                    | `SetFontSize`                   | `SetFontSize` (`28`)      | ✅          |
 | `Set FontFamily "…"`                 | `SetFontFamily`                 | `SetFontFamily` (chain)   | ✅          |
 | `Set Width 1200`                     | `SetCols`                       | `SetCols` (`100`)         | ✅          |
@@ -49,6 +49,7 @@ are implemented now; the remaining command names still describe the target API.
 |                                      |                                 |                           |             |
 | —                                    | `SetKeyDelay`                   | `SetKeyDelay` (`0.0`)     | ✅          |
 | —                                    | `SetSession`                    | `SetSession` (`s-vhs-$$`) | ✅          |
+| —                                    | `SetPrompt`                     | `SetPrompt` (`arrow`)     | ✅          |
 | —                                    | `SetIdleTimeLimit`              | — (agg `5`)               | 📋         |
 | —                                    | `SetLastFrameDuration`          | — (agg `3`)               | 📋         |
 | —                                    | `SetLoop`                       | — (agg loops)             | 📋         |
@@ -322,4 +323,3 @@ Missing. tmux provides the primitives — `tmux set-buffer` and
 `tmux paste-buffer -p` (`-p` for bracketed paste, so TUIs see a real paste) — so
 this is mostly a naming decision. Note it would use the tmux buffer, not the
 system clipboard.
-

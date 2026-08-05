@@ -49,30 +49,37 @@
         status bar off, and `SetSession` stays for attaching by name. Verified:
         parallel recordings already work as soon as the names differ.
       -  [x] Report session name.
-- [ ] Option to isolate the recorded shell from the user's rc files
+- [x] Option to isolate the recorded shell from the user's rc files
       (`bash --norc`, `fish --no-config`, ...):
   - The session inherits `~/.bashrc`, so a recording shows the author's prompt
     (starship, git status, ...) and aliases — it is not reproducible on another
     machine, and a demo GIF leaks unrelated prompt content.
   - The option to make a record with user's prompt/shell setting must be preserved.
-  - [ ] Discus pros & cons of API like `SetPrompt <system|theme1|theme2|...|custom str>` 
-  - [ ] The `SetPrompt 'system'` should disable isolation and record terminal with user's settings (no `--norc`).
-  - [ ] The `SetPrompt` with non-`system` option must apply isolation (`--norc`).
-    - [ ] Discuss about argument name `system`. Is there better name options?
-  - [ ] Should be restricted to `SetShell <bash|fish|zsh>`?
-  - [ ] Per-shell mapping: bash `PS1`, zsh `PROMPT`, fish `fish_prompt` — the
-        env-var trick only works for the first two.
-  - [ ] Bundle colourful prompt themes, so a recording does not need the
+  - [x] Discus pros & cons of API like `SetPrompt <system|theme1|theme2|...|custom str>`
+  - [x] The `SetPrompt 'native'` disables isolation and records the terminal
+        with the user's settings (no `--norc`).
+  - [x] The `SetPrompt` with a theme or a literal applies isolation (`--norc`).
+    - [x] `native` over `system`: `--norc` skips the *user's* rc files, and
+          `/etc` still applies to a login shell.
+  - [x] Restricted to `SetShell <bash|zsh|fish>`, with a fallback to `bash`
+        when the named shell is not installed.
+  - [x] Per-shell mapping: bash `PS1`, zsh `PROMPT`, fish `fish_prompt` — the
+        env-var trick only works for the first two, so fish takes its prompt
+        as a `-C` function on the command line.
+  - [x] Bundle colourful prompt themes, so a recording does not need the
       `Env PS1 '\[\e[32m\]❯\[\e[0m\] '` +  `SetShell "bash --norc"` incantation every
-      example repeats today.
-      - [ ] Add a few named themes (plain, arrow, powerline, path+git), or a value passed straight through as a
-        PS1 string.
-  - [ ] Add shell theme example.
-  - [ ] Update all examples to use `SetPrompt`.
-  - [ ] Update shell to `fish` for all examples and re-render GIFs.
+      example repeated.
+      - [x] Named themes: `arrow` (default), `plain`, `path`, `powerline`;
+            any other value is passed through as a literal prompt.
+  - [x] Keep the recording out of the user's shell history: `HISTFILE=` for
+        bash and zsh, `--private` for fish. Not `+o history`, which also kills
+        recall *inside* the recording, so a `Key C-r` demo would show nothing.
+  - [x] Add shell theme example.
+  - [x] Update all examples to use `SetPrompt`.
  - [ ] Add `Sleep` as alias for `sleep` to match style of the `s-vhs`:
    - [ ] Update examples.
 - [ ] Remote import:
+  - [ ] Discuss how to do remote import for current repo with specified version (e.g. v0.2.0).
   - [ ] Add example with nice one-liner for `curl+source` remote import s-vhs from: `https://github.../v0.1.0/.../s-vhs.sh`.
   - [ ] Add it to the README -> "Remote Import".
   - [ ] Scaffold without a local copy:
@@ -87,14 +94,6 @@
 
 ## v0.3.0
 
-- [ ] Make list of planned function which are easy to implement:
-  - [ ] function ...
-  - [ ] ...
-- [ ] Update existing examples and README if needed.
-- [ ] Rename EXAMPLES.md to examples/README.md ?
-- [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:
-  - https://github.com/charmbracelet/vhs/tree/main/examples/settings
-  - https://github.com/charmbracelet/vhs/tree/main/examples/commands
 - [ ] Implement animated SVG output format.
   - [ ] Update readme header with one more bullet:
     ```Markdown
@@ -105,6 +104,17 @@
     ```
   - [ ] Update installation instructions and dependencies description.
   - [ ] Re-render all examples to animated SVG?
+
+## v0.4.0
+
+- [ ] Make list of planned function which are easy to implement:
+  - [ ] function ...
+  - [ ] ...
+- [ ] Update existing examples and README if needed.
+- [ ] Rename EXAMPLES.md to examples/README.md ?
+- [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:
+  - https://github.com/charmbracelet/vhs/tree/main/examples/settings
+  - https://github.com/charmbracelet/vhs/tree/main/examples/commands
 - [ ] Write advanced example with emulating mouse selection.
   - [ ] Add new commands to [COMMANDS](doc/COMMANDS.md) if possible: e.g `Highlight`.
   - [ ] Add feature + issue ref (https://github.com/charmbracelet/vhs/issues/66) to README;
@@ -113,7 +123,7 @@
 - [ ] Update template (`s-vhs new`) with common settings (if any new).
 
 
-## v0.4.0
+## Backlog
 
 - [ ] Fix default font problem: `Error: no faces matching font family options`.
   - `agg` bundles only the symbol and emoji fallbacks; the primary monospace
@@ -131,8 +141,11 @@
 - [ ] Rended visualization for all available themes.
 - [ ] MP4 output (same `.cast`, different renderer):
   - [ ] MP4 — render with `ffmpeg`?
-- [ ] Add custom agg themes:
+- [ ] Improve default fish colors: bold commands, better defaults (like current system theme).
+  - [ ] Update shell to `fish` for all examples and re-render GIFs.
+  - [ ] Add custom agg themes:
   - [ ] my spaceship theme.
   - [ ] tokyo-night theme.
   - [ ] catppuccin themes.
   - [ ] Add example with custom theme (hex colors).
+- [ ] Add a `git` theme (bash/zsh command substitution, fish `__fish_git_prompt`)?

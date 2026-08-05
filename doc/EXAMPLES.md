@@ -10,8 +10,9 @@ Recording scripts derived from VHS's [settings][vhs-settings] and
 
 A written example lives in `examples/<name>.rec.sh` and renders
 `examples/<name>.gif` next to it. Unless the example is about that very
-setting, all of them record at `SetFontSize 40` in `Iosevka Term`, through a
-shell with no personal rc files and a green `❯` prompt when one is shown.
+setting, all of them record at `SetFontSize 40` in `Iosevka Term`, through the
+default shell — no personal rc files, and the green `❯` of the `arrow` prompt
+theme.
 
 ## Settings
 

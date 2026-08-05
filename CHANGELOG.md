@@ -5,8 +5,13 @@
 ### New
 * Add `Env` command.
 * Add `RunOffRecord` command: `Hide` + `Run` + `Show` in one call.
+* Add `SetPrompt` command + bundled themes (`arrow`, `plain`, `path`, `powerline`)
+* Add `native` option for `SetPrompt` to use current shell configuration.
 
 ### Changed
+* Record in an isolated shell by default: no personal rc files.
+* Keep recordings out of the user's shell history.
+* `SetShell` now takes `bash`, `zsh` or `fish`, and falls back to `bash` when that shell is not installed.
 * Isolate recordings from the user's tmux server and configuration with a dedicated s-vhs socket.
 * Name the session `s-vhs-<pid>` by default, so recordings can run in parallel.
 

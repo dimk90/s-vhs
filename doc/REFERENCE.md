@@ -15,7 +15,8 @@ Every command implemented in `s-vhs.sh`.
 | `SetFontFamilyExact <list>`  | agg's      | Complete family list, bypassing all fallbacks               |
 | `SetLineHeight <multiplier>` | `1.2`      | Line-height multiplier passed to the renderer               |
 | `SetTheme <theme>`           | `dracula`  | agg theme name or custom palette                            |
-| `SetShell <command>`         | `bash`     | Shell command run inside the tmux session                   |
+| `SetShell <shell>`           | `bash`     | Shell run inside the session: `bash`, `zsh` or `fish`       |
+| `SetPrompt <prompt>`         | `arrow`    | Prompt theme, literal prompt, or `native`                   |
 | `SetTypingSpeed <seconds>`   | `0.07`     | Default delay between characters typed by `Type`            |
 | `SetKeyDelay <seconds>`      | `0.0`      | Default pause after a key press sent by `Key`               |
 | `Env <name> <value>`         | —          | Export a variable into the recorded shell; repeatable       |
@@ -25,9 +26,20 @@ Every command implemented in `s-vhs.sh`.
 > after the session has started fails.
 
 > [!NOTE]
-> At least one `SetOutput` is required. `SetFontFamily` and `SetFontFamilyExact`
-> are mutually exclusive — agg rejects both flags at once, so the second call
-> fails.
+> At least one `SetOutput` is required.
+
+> [!NOTE] Font
+> `SetFontFamily` and `SetFontFamilyExact` are mutually exclusive - agg rejects
+> both flags at once, so the second call fails.
+
+> [!NOTE] SetShell
+> A shell that is not installed falls back to `bash`.
+
+> [!NOTE] SetPrompt
+> Bundled prompt themes: `arrow`, `plain`, `path` or `powerline`.
+> A literal prompt in the shell's own syntax, or `native`. A theme and a
+> literal both keep the shell out of the user's rc files; `native` keeps them.
+
 
 ## Core
 

@@ -53,9 +53,24 @@ _SVHS_LINE_HEIGHT=1.2
 # Headless recording cannot inspect the host theme; pin rendering instead
 _SVHS_THEME='dracula'
 
-# Shell to run inside the tmux session;
-# Bash is safe default - present everywhere
+# Shell run inside the tmux session. s-vhs assembles the isolation flags and
+# injects the prompt itself, so the shell has to be one it knows;
+# bash is the safe default - present everywhere
 _SVHS_SHELL='bash'
+
+# Prompt of the recorded shell: a bundled theme, a literal prompt, or 'native'
+# for the user's own rc files. See SetPrompt
+_SVHS_PROMPT='arrow'
+_SVHS_PROMPT_MODE='theme'
+
+# Bundled themes, rendered per shell by _svhs_theme_prompt
+_SVHS_PROMPT_THEMES='arrow plain path powerline'
+
+# Glyphs the themes draw with, spelled as bytes to keep this file ASCII:
+# U+276F, the arrow, and U+E0B0, the powerline separator - a private-use glyph
+# agg draws from the Nerd Font it bundles
+_SVHS_PROMPT_ARROW=$'\xe2\x9d\xaf'
+_SVHS_POWERLINE_SEPARATOR=$'\xee\x82\xb0'
 
 # NAME=VALUE pairs exported into the recorded shell by Env
 _SVHS_ENV=()
@@ -72,6 +87,11 @@ _SVHS_ATTACH_TIMEOUT=5
 # is polled far more tightly than tmux
 _SVHS_WRITE_POLL_INTERVAL=0.01
 _SVHS_WRITE_TIMEOUT=5
+
+# The recorded shell's command line and the environment it needs, assembled
+# by Start from the configured shell and prompt
+_SVHS_SHELL_COMMAND=()
+_SVHS_SHELL_ENV=()
 
 # Session and recorder lifecycle state
 _SVHS_STARTED=0
@@ -339,10 +359,13 @@ SetTheme() {
 
 SetShell() {
     #
-    # Set the shell command run inside the tmux session.
+    # Set the shell run inside the tmux session. s-vhs adds the isolation
+    # flags and the prompt itself, so the shell has to be one it knows; one
+    # that is not installed falls back to bash rather than failing the
+    # recording.
     #
     # Parameters:
-    #   $1 - shell - non-empty shell command.
+    #   $1 - shell - 'bash', 'zsh' or 'fish'.
     #
     # Example:
     #   SetShell 'fish' || exit 1
@@ -351,12 +374,64 @@ SetShell() {
 
     _svhs_require_configuration_phase 'SetShell' || return 1
 
-    if [[ -z $shell ]]; then
-        printf 'SetShell: shell command must not be empty\n' >&2
-        return 1
+    case "$shell" in
+        bash|zsh|fish) ;;
+        *)
+            printf 'SetShell: expected bash, zsh or fish, got: %s\n' "$shell" >&2
+            return 1
+            ;;
+    esac
+
+    if ! command -v "$shell" > /dev/null 2>&1; then
+        printf '::: SetShell: %s is not installed, falling back to bash\n' "$shell"
+        shell='bash'
     fi
 
     _SVHS_SHELL="$shell"
+}
+
+
+SetPrompt() {
+    #
+    # Set the prompt of the recorded shell. A theme or a literal prompt also
+    # keeps the shell out of the user's rc files, so the recording looks the
+    # same on any machine; 'native' keeps the user's own configuration,
+    # prompt and aliases included.
+    #
+    # Parameters:
+    #   $1 - prompt - a bundled theme (arrow, plain, path, powerline), a
+    #        literal prompt in the shell's own syntax, or 'native'.
+    #
+    # Example:
+    #   SetPrompt 'powerline' || exit 1
+    #   SetPrompt '' || exit 1
+    #
+    local prompt="${1-}"
+
+    _svhs_require_configuration_phase 'SetPrompt' || return 1
+
+    # an omitted argument would silently mean the empty prompt, so require it;
+    # a deliberate SetPrompt '' still says so explicitly
+    if [[ $# -lt 1 ]]; then
+        printf 'SetPrompt: expected a theme, a literal prompt or native\n' >&2
+        return 1
+    fi
+
+    if [[ $prompt == 'native' ]]; then
+        _SVHS_PROMPT_MODE='native'
+    elif _svhs_is_prompt_theme "$prompt"; then
+        _SVHS_PROMPT_MODE='theme'
+    elif [[ $prompt =~ ^[a-z][a-z0-9-]*$ ]]; then
+        # a bare lowercase word is a misspelled theme far more often than a
+        # wanted prompt; spelled as a prompt it carries a separator anyway
+        printf 'SetPrompt: unknown theme: %s, expected one of: %s, native, or a literal prompt\n' \
+            "$prompt" "$_SVHS_PROMPT_THEMES" >&2
+        return 1
+    else
+        _SVHS_PROMPT_MODE='literal'
+    fi
+
+    _SVHS_PROMPT="$prompt"
 }
 
 
@@ -448,9 +523,9 @@ Env() {
 
 Start() {
     #
-    # Start a fresh detached tmux session with the configured geometry and
-    # shell on the dedicated s-vhs server, isolated from personal tmux config
-    # and without a status bar, and report how to attach to it.
+    # Start a fresh detached tmux session with the configured geometry, shell
+    # and prompt on the dedicated s-vhs server, isolated from personal tmux
+    # config and without a status bar, and report how to attach to it.
     #
     # Parameters:
     #   None.
@@ -482,7 +557,12 @@ Start() {
 
     _svhs_prepare_cast || return 1
 
-    for variable in ${_SVHS_ENV[@]+"${_SVHS_ENV[@]}"}; do
+    _svhs_build_shell
+
+    # the shell's own pairs come first, so an explicit Env PS1 still wins:
+    # tmux keeps the last -e given for a name
+    for variable in ${_SVHS_SHELL_ENV[@]+"${_SVHS_SHELL_ENV[@]}"} \
+                    ${_SVHS_ENV[@]+"${_SVHS_ENV[@]}"}; do
         env_args+=(-e "$variable")
     done
 
@@ -492,7 +572,7 @@ Start() {
         new-session -d -s "$_SVHS_SESSION"    \
                     -x "$_SVHS_COLS"          \
                     -y "$_SVHS_ROWS"          \
-                    ${env_args[@]+"${env_args[@]}"} "$_SVHS_SHELL"
+                    ${env_args[@]+"${env_args[@]}"} "${_SVHS_SHELL_COMMAND[@]}"
     _SVHS_STARTED=1
 
     # Report modified keys (C-Enter, S-Enter, C-S-<key>) instead of folding
@@ -925,6 +1005,179 @@ _svhs_is_positive_number() {
 
     _svhs_is_nonnegative_number "$value" && [[ $value =~ [1-9] ]] || return 1
     return 0
+}
+
+
+_svhs_is_prompt_theme() {
+    #
+    # Return success when a value names a bundled prompt theme.
+    #
+    # Parameters:
+    #   $1 - value - value to test.
+    #
+    # Example:
+    #   _svhs_is_prompt_theme 'arrow' || exit 1
+    #
+    local value="$1"
+
+    [[ " $_SVHS_PROMPT_THEMES " == *" $value "* ]] || return 1
+    return 0
+}
+
+
+_svhs_theme_prompt() {
+    #
+    # Print the configured theme in the configured shell's own prompt syntax:
+    # a PS1 or PROMPT value for bash and zsh, the body of a fish_prompt
+    # function for fish. Colours are ANSI names rather than fixed hex, so a
+    # theme follows the palette SetTheme renders with.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   prompt=$(_svhs_theme_prompt)
+    #
+    local arrow="$_SVHS_PROMPT_ARROW"
+    local separator="$_SVHS_POWERLINE_SEPARATOR"
+    # fish has no prompt string, so its themes are code. Every string in them
+    # is double-quoted, which fish reads the same and this file can hold in
+    # plain single quotes; HOME and PWD are fish's own variables, so they have
+    # to reach it unexpanded
+    # shellcheck disable=SC2016
+    local fish_path='(string replace -- "$HOME" "~" $PWD)'
+    local fish_arrow='set_color green; echo -n '"$arrow"'; set_color normal; echo -n " "'
+    local fish_directory="set_color blue; echo -n $fish_path"
+    local fish_segment='set_color -b blue brwhite; echo -n " "'"$fish_path"'" "'
+
+    fish_directory+='; set_color normal; echo -n " "'
+    fish_segment+='; set_color -b normal blue; echo -n '"$separator"
+    fish_segment+='; set_color normal; echo -n " "'
+
+    case "$_SVHS_SHELL" in
+        bash)
+            case "$_SVHS_PROMPT" in
+                arrow)     printf '%s' "\[\e[32m\]$arrow\[\e[0m\] " ;;
+                plain)     printf '%s' '$ ' ;;
+                path)      printf '%s' "\[\e[34m\]\w\[\e[0m\] \[\e[32m\]$arrow\[\e[0m\] " ;;
+                powerline) printf '%s' "\[\e[44;97m\] \w \[\e[0m\]\[\e[34m\]$separator\[\e[0m\] " ;;
+            esac
+            ;;
+        zsh)
+            case "$_SVHS_PROMPT" in
+                arrow)     printf '%s' "%F{green}$arrow%f " ;;
+                plain)     printf '%s' '$ ' ;;
+                path)      printf '%s' "%F{blue}%~%f %F{green}$arrow%f " ;;
+                powerline) printf '%s' "%K{blue}%F{15} %~ %f%k%F{blue}$separator%f " ;;
+            esac
+            ;;
+        fish)
+            case "$_SVHS_PROMPT" in
+                arrow)     printf '%s' "$fish_arrow" ;;
+                plain)     printf '%s' 'echo -n "\$ "' ;;
+                path)      printf '%s' "$fish_directory; $fish_arrow" ;;
+                powerline) printf '%s' "$fish_segment" ;;
+            esac
+            ;;
+    esac
+}
+
+
+_svhs_fish_quote() {
+    #
+    # Print a value as a fish single-quoted string. Inside those, fish reads
+    # only \' and \\ as escapes, so escaping the two keeps a literal prompt
+    # from closing the string or starting an escape of its own.
+    #
+    # Parameters:
+    #   $1 - value - value to quote.
+    #
+    # Example:
+    #   quoted=$(_svhs_fish_quote "$prompt")
+    #
+    local value="$1"
+    local escaped="${value//\\/\\\\}"
+
+    printf "'%s'" "${escaped//\'/\\\'}"
+}
+
+
+_svhs_prompt_body() {
+    #
+    # Print the configured prompt in the shell's own syntax: a theme rendered
+    # for it, or a literal prompt as the recording script gave it.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   prompt=$(_svhs_prompt_body)
+    #
+    if [[ $_SVHS_PROMPT_MODE == 'theme' ]]; then
+        _svhs_theme_prompt
+        return 0
+    fi
+
+    # bash and zsh read a literal as their own prompt syntax; fish has no
+    # prompt string at all, so its function prints the literal verbatim
+    case "$_SVHS_SHELL" in
+        fish) printf "printf '%%s' %s" "$(_svhs_fish_quote "$_SVHS_PROMPT")" ;;
+        *)    printf '%s' "$_SVHS_PROMPT" ;;
+    esac
+}
+
+
+_svhs_build_shell() {
+    #
+    # Assemble the recorded shell's command line in _SVHS_SHELL_COMMAND and
+    # the environment it needs in _SVHS_SHELL_ENV. The shell always keeps its
+    # history to itself, so a recording never lands in the user's history and
+    # no autosuggestion puts an earlier command of theirs on screen, while
+    # recall within the recording still works. Unless the prompt is native,
+    # the shell also skips the user's rc files and takes the configured
+    # prompt - fish on its command line, the others through the environment.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_build_shell
+    #
+    local isolated=1
+
+    [[ $_SVHS_PROMPT_MODE == 'native' ]] && isolated=0
+
+    case "$_SVHS_SHELL" in
+        bash)
+            # bash and zsh both read and write the user's history through
+            # HISTFILE, and leave it alone when it names no file
+            _SVHS_SHELL_COMMAND=(bash)
+            _SVHS_SHELL_ENV=('HISTFILE=')
+            if [[ $isolated == 1 ]]; then
+                _SVHS_SHELL_COMMAND+=(--norc --noprofile)
+                _SVHS_SHELL_ENV+=("PS1=$(_svhs_prompt_body)")
+            fi
+            ;;
+        zsh)
+            _SVHS_SHELL_COMMAND=(zsh)
+            _SVHS_SHELL_ENV=('HISTFILE=')
+            if [[ $isolated == 1 ]]; then
+                _SVHS_SHELL_COMMAND+=(--no-rcs)
+                _SVHS_SHELL_ENV+=("PROMPT=$(_svhs_prompt_body)")
+            fi
+            ;;
+        fish)
+            # fish has no prompt string and no HISTFILE: its prompt is a
+            # function, and --private gives the session a history of its own
+            _SVHS_SHELL_COMMAND=(fish --private)
+            _SVHS_SHELL_ENV=()
+            if [[ $isolated == 1 ]]; then
+                _SVHS_SHELL_COMMAND+=(--no-config                     \
+                    -C 'function fish_greeting; end'                  \
+                    -C "function fish_prompt; $(_svhs_prompt_body); end")
+            fi
+            ;;
+    esac
 }
 
 
