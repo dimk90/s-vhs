@@ -64,10 +64,7 @@ theme.
 | `multi-output`   | Two `SetOutput` calls — a replayable cast next to the GIF     | ✅    | [x]  |
 | `shell-power`    | Loops, variables and functions in the recording script itself | ✅    | [x]  |
 | `run-off-record` | One hidden command mid-recording without a `Hide`/`Show` pair | ✅    | [x]  |
-
-> [!NOTE]
-> `quick-start` is the only example that keeps the default shell and renders at
-> `SetFontSize 34`; the README scales it down to 700 px.
+| `prompt`         | `SetPrompt` themes, and `SetShell` picking the shell          | ✅    | [x]  |
 
 > [!NOTE]
 > `wait`: the pattern is anchored (`^build succeeded`), because the pane also

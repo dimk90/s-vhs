@@ -176,6 +176,32 @@ SetTheme 'kanagawa'
 
 <img src="examples/theme.gif" width=500>
 
+### Shell & Prompt
+
+A recording runs in an isolated shell by default: no personal rc files, no
+prompt of yours in the frame, and nothing written to your shell history.
+
+```bash
+SetShell 'fish'       # bash (default), zsh or fish
+SetPrompt 'powerline' # arrow (default), plain, path or powerline
+SetTheme 'nord'       # prompt respect colors from a color theme
+
+# The theme follows the working directory
+Type 'cd /tmp'
+Key Enter; sleep 1.5
+Type 'cd ~'
+Key Enter; sleep 3
+```
+
+<img src="examples/prompt.gif" width=500>
+
+Every theme is rendered for the shell in use, so it looks the same in all
+three.
+
+> [!TIP]
+> `SetPrompt 'native'` records your own shell configuration instead, and
+> any other value is taken as a literal prompt — `SetPrompt '$ '`.
+
 ### Font Size
 
 The font size is the only pixel-sized setting: it scales the whole render 
