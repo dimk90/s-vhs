@@ -33,8 +33,8 @@ SetOutput 'demo.gif'
 
 # Set up a 60x8 terminal with a 34px font.
 SetCols 60
-SetRows 8
-SetFontSize 34
+SetRows 4
+SetFontSize 40
 
 # Start the terminal, then the recorder.
 Start
@@ -62,7 +62,7 @@ Run it to render the GIF:
 ./demo.rec.sh
 ```
 
-You should see a new file called `demo.gif` (or whatever you passed to `SetOutput`) in the directory:
+You should see a new file called `demo.gif` in the directory:
 
 <img src="examples/quick-start.gif" width=700>
 

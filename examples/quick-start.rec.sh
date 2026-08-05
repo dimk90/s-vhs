@@ -14,8 +14,8 @@ SetOutput "$SCRIPT_DIR/quick-start.gif"
 
 # Set up a 60x8 terminal with a 34px font
 SetCols 60
-SetRows 8
-SetFontSize 34
+SetRows 4
+SetFontSize 40
 SetFontFamily 'Iosevka Term'
 
 # Start the terminal, then the recorder

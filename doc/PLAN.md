@@ -103,7 +103,7 @@
       [#105](https://github.com/charmbracelet/vhs/issues/105)).
     ```
   - [ ] Update installation instructions and dependencies description.
-  - [ ] Re-render all examples to animated SVG?
+- [ ] Re-render all examples to animated SVG?
 
 ## v0.4.0
 
@@ -141,7 +141,7 @@
 - [ ] Rended visualization for all available themes.
 - [ ] MP4 output (same `.cast`, different renderer):
   - [ ] MP4 — render with `ffmpeg`?
-- [ ] Improve default fish colors: bold commands, better defaults (like current system theme).
+- [ ] Improve default fish colors: commands and completion colors, bold commands,...
   - [ ] Update shell to `fish` for all examples and re-render GIFs.
   - [ ] Add custom agg themes:
   - [ ] my spaceship theme.
