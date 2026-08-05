@@ -18,7 +18,7 @@ SetFontFamily "Iosevka Term"
 # Run a command in the recorded shell and let its output settle
 run() {
     Type "$1"
-    Key Enter
+    Enter
     sleep "${2:-1}"
 }
 

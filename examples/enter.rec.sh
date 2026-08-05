@@ -20,7 +20,7 @@ Show
 
 sleep 1
 
-Key Enter 4 0.5
+Enter 4 0.5
 sleep 2
 
 Render

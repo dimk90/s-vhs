@@ -21,14 +21,14 @@ Show
 
 # Ask the terminal itself how wide and how tall it is
 Type 'tput cols'
-Key Enter
+Enter
 sleep 1
 
 Type 'tput lines'
-Key Enter
+Enter
 sleep 1
 
-Key Enter 3 0.5
+Enter 3 0.5
 sleep 5
 
 Render

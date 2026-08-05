@@ -50,10 +50,16 @@ Every command implemented in `s-vhs.sh`.
 | `Hide`                            | Stop recording, leaving the session alive                                                                        |
 | `Type <text> [delay]`             | Emulate typing literal text, one character at a time                                                             |
 | `Key <key-name> [count] [delay]`  | Press a tmux-named key (`Enter`, `Down`, `C-r`) `count` times                                                    |
+| `Enter`, `Tab`, … `[count] [delay]` | Press one named key; same arguments as `Key`                                                                  |
 | `Wait <pattern> [timeout]`        | Poll the visible pane until a grep pattern appears (default: 15s)                                                |
 | `Run <command> [settle]`          | Type and run a command, then wait (default: 2s)                                                                  |
 | `RunOffRecord <command> [settle]` | Run a command off camera: `Hide` + `Run` + `Show`; fails when not recording                                      |
 | `Render`                          | End the recording and write every requested output                                                               |
+
+> [!NOTE] Named keys
+> `Enter`, `Tab`, `Space`, `Backspace`, `Escape`, `Up`, `Down`, `Left`,
+> `Right`, `PageUp`, `PageDown`, `Home`, `End`, `Insert`, `Delete`.
+> A modified key stays with `Key` and tmux notation: `Key C-r`.
 
 > [!NOTE]
 > `[delay]`, `[settle]`, and `[timeout]` are in seconds; `[delay]` defaults to

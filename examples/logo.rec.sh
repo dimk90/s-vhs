@@ -49,7 +49,7 @@ Run 'cat'
 Show
 
 # Skip one more line
-Key Enter
+Enter
 
 Type "$LOGO_COLOR"
 for logo_line in "${LOGO[@]}"; do
@@ -67,7 +67,7 @@ Type "$MUTED_COLOR"
 Type 'SP 0:00:00' $REC_TYPING_SPEED
 Type "$RESET_COLOR"
 
-Key Enter 2
+Enter 2
 sleep 6
 
 Render

@@ -124,7 +124,7 @@ Start
 Show
 
 Type 'echo "Hello from s-vhs"'
-Key Enter
+Enter
 sleep 3
 
 Render
@@ -671,10 +671,36 @@ Key() {
     done
 }
 
+#
+# A key press is a command of its own: every named key is Key under that name
+# and takes the same [count] and [delay] - `Enter 4 0.5`.
+#
+# A modified key stays with Key and tmux notation (`Key C-r`), and three of
+# the names are spelled differently there: BSpace, IC and DC.
+#
+Enter()     { Key Enter ${@+"$@"}; }
+Tab()       { Key Tab ${@+"$@"}; }
+Space()     { Key Space ${@+"$@"}; }
+Backspace() { Key BSpace ${@+"$@"}; }
+Escape()    { Key Escape ${@+"$@"}; }
+Up()        { Key Up ${@+"$@"}; }
+Down()      { Key Down ${@+"$@"}; }
+Left()      { Key Left ${@+"$@"}; }
+Right()     { Key Right ${@+"$@"}; }
+PageUp()    { Key PageUp ${@+"$@"}; }
+PageDown()  { Key PageDown ${@+"$@"}; }
+Home()      { Key Home ${@+"$@"}; }
+End()       { Key End ${@+"$@"}; }
+Insert()    { Key IC ${@+"$@"}; }
+Delete()    { Key DC ${@+"$@"}; }
+#
+# bash 3.2 (stock macOS) reports "$@" as unbound under set -u when the caller
+# passed nothing, so the arguments are guarded the same way an array is.
+#
 
 Type() {
     #
-    # Type text one character at a time, like VHS's TypingSpeed.
+    # Type text one character at a time, at the configured typing speed.
     #
     # Parameters:
     #   $1 - text - text to type.
@@ -727,7 +753,7 @@ Wait() {
 Show() {
     #
     # Start (or resume) recording the session; the first call records fresh,
-    # later calls append to the same cast (VHS Show).
+    # later calls append to the same cast.
     #
     # Parameters:
     #   None.
@@ -759,7 +785,7 @@ Show() {
 
 Hide() {
     #
-    # Stop recording without disturbing the session (VHS Hide).
+    # Stop recording without disturbing the session.
     #
     # Parameters:
     #   None.

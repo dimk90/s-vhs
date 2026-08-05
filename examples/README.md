@@ -45,14 +45,13 @@ theme.
 | Name        | VHS example    | Shows                                        | Today | Done |
 | ----------- | -------------- | -------------------------------------------- | ----- | ---- |
 | `type`      | `type`         | `Type` with the default and a per-call delay | ✅    | [x]  |
-| `enter`     | `enter`        | `Key Enter 4 0.5` — repeat count and delay   | ✅    | [x]  |
-| `arrow`     | `arrow`        | `Key Left 10 0.12`, `Key Right 10 0.05`      | ✅    | [x]  |
-| `backspace` | `backspace`    | `Key BSpace 18 0.05`                         | ✅    | [x]  |
+| `enter`     | `enter`        | `Enter 4 0.5` — repeat count and delay       | ✅    | [x]  |
+| `arrow`     | `arrow`        | `Left 10 0.12`, `Right 10 0.05`              | ✅    | [x]  |
+| `backspace` | `backspace`    | `Backspace 18 0.05`                          | ✅    | [x]  |
 | `ctrl`      | `ctrl`         | `Key C-u` and tmux modifier notation         | ✅    | [x]  |
 | `hide-show` | `hide`, `show` | Off-record `Run`, `Hide`, then `Show` again  | ✅    | [x]  |
-| —           | `tab`          | `Key Tab` completing a filename              | ✅    | [ ]  |
-| —           | `space`        | `Key Space <count>`                          | ✅    | [ ]  |
-| —           | `comment`      | Plain shell comments; nothing to demonstrate | 🚫   | —    |
+| —           | `tab`          | `Tab` completing a filename                  | ✅    | [ ]  |
+| —           | `space`        | `Space <count>`                              | ✅    | [ ]  |
 
 ## s-vhs only
 

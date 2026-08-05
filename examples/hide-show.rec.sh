@@ -26,7 +26,7 @@ Show # Start recording
 
 # The recorded shell expands it, not this script
 Type 'echo $HIDDEN'
-Key Enter
+Enter
 sleep 2
 
 Hide # Stop recording, the session keeps running
@@ -38,7 +38,7 @@ Run 'clear' 0.5
 Show # Resume recording, appending to the same cast
 
 Type 'echo "back on camera"'
-Key Enter
+Enter
 sleep 2
 
 Render

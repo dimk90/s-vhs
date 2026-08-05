@@ -25,7 +25,7 @@ Start
 Show
 
 Type 'printf "\e[31mred \e[32mgreen \e[34mblue\e[0m\n"'
-Key Enter
+Enter
 sleep 3
 
 Render

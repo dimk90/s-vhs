@@ -16,8 +16,8 @@ are implemented now; the remaining command names still describe the target API.
 | `Require prog`                       | `Require`                       | —                         | 📋         |
 | `Type "text"`                        | `Type <text> [<delay>]`         | `Type`                    | ✅          |
 | `Ctrl+R`, `Alt+X`, `Ctrl+Shift+P`    | `Key <key> [<count>] [<delay>]` | `Key C-r`, `Key M-x`      | ✅          |
-| `Enter`, `Tab`, `Up`, … (named keys) | `Enter`, `Tab`, `Up`, …         | `Key Enter`, `Key BSpace` | 📋         |
-| `Enter 2`, `Backspace 18` (repeat)   | `Enter [<count>] [<time>]`, ... | `Key BSpace 18`           | 🟡         |
+| `Enter`, `Tab`, `Up`, … (named keys) | `Enter`, `Tab`, `Up`, …         | `Enter`, `Backspace`      | ✅          |
+| `Enter 2`, `Backspace 18` (repeat)   | `Enter [<count>] [<time>]`, ... | `Backspace 18 0.05`       | ✅          |
 | `ScrollUp` / `ScrollDown`            | `ScrollUp` / `ScrollDown`       | —                         | 📋         |
 | `Sleep 2`                            | `Sleep`                         | `sleep 2`                 | ✅          |
 | `Wait /regex/`                       | `Wait`                          | `Wait`                    | 🟡         |
@@ -254,34 +254,6 @@ The output extension selects the renderer or converter; there are no
 format-specific public setting variables. Animated SVG (`termsvg`) has no VHS
 equivalent ([#644](https://github.com/charmbracelet/vhs/discussions/644)).
 
-## Keys 🟡
-
-One generic `Key` function takes a **tmux key name**, an optional repeat count,
-and an optional pause after each press:
-
-```shell
-Key Enter
-Key Down 3                  # VHS: Down 3
-Key Down 3 0.2              # VHS: Down@200ms 3
-```
-
-Differences from VHS:
-
-- Named keys are arguments, not commands 📋 — `Key Enter`, not `Enter`.
-- The repeat count is a loop rather than `tmux send-keys -N <count>`, which
-  repeats natively but without a delay between presses.
-
-Modifiers work through tmux's own notation, so `Ctrl+R` is `Key C-r`, `Alt+X` is
-`Key M-x`, and `Ctrl+Alt+Shift+P` is `Key C-M-S-p`. `Start` enables
-`extended-keys` with `csi-u` format, so apps that read CSI-u sequences receive
-the modified keys correctly.
-
-```shell
-Key C-r                     # VHS: Ctrl+R
-Key C-c                     # VHS: Ctrl+C
-```
-
-> Any way to have `Ctrl+R` instead of `C-r` ? Is easier to read.
 
 ### ScrollUp / ScrollDown 📋
 

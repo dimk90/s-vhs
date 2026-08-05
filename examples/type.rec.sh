@@ -21,12 +21,12 @@ Show
 Type 'echo "whatever you want"'
 sleep 1
 
-Key Enter
+Enter
 sleep 0.5
 
 Type 'echo "slow down"' 0.25 # Slow typing
 
-Key Enter
+Enter
 sleep 4
 
 Render

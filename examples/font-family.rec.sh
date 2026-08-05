@@ -27,7 +27,7 @@ Start
 Show
 
 Type 'echo "    fallback to Fira Code + bundled Nerd Symbols"'
-Key Enter
+Enter
 sleep 3
 
 Render

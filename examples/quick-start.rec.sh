@@ -30,7 +30,7 @@ Type " Stay awhile and listen...'"
 sleep 1
 
 # Run the command by pressing enter
-Key Enter
+Enter
 
 # Admire the output for a bit
 sleep 5

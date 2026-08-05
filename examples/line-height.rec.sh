@@ -23,10 +23,10 @@ Start
 Show
 
 Type 'echo "stay"'
-Key Enter
+Enter
 sleep 0.5
 Type 'echo "far away!"'
-Key Enter
+Enter
 sleep 2
 
 Render

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 #
-# Backspace is a tmux key name (BSpace), and takes the same repeat count as
-# every other key.
+# Backspace takes the same repeat count and delay as every other named key.
 #
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -23,11 +22,11 @@ Type 'echo delete anything...' 0.05
 sleep 0.5
 
 # Backspace 18 -- back to 'echo '
-Key BSpace 18 0.05
+Backspace 18 0.05
 sleep 0.5
 
 Type 'nothing'
-Key Enter
+Enter
 sleep 2
 
 Render

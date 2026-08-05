@@ -76,8 +76,10 @@
         recall *inside* the recording, so a `Key C-r` demo would show nothing.
   - [x] Add shell theme example.
   - [x] Update all examples to use `SetPrompt`.
-- [ ] Implement `Enter`, `Tab`, `Up`, … (named keys).
-  - [ ] Update examples and README.
+- [x] Implement `Enter`, `Tab`, `Up`, … (named keys).
+  - [x] VHS's 15 names, each a one-line wrapper over `Key`, so a count and a
+        delay still apply (`Enter 4 0.5`); modified keys stay with `Key C-r`.
+  - [x] Update examples and README.
 - [ ] Add `Sleep` as alias for `sleep` to match style of the `s-vhs`:
    - [ ] Update examples.
 - [ ] Remote import:

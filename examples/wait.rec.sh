@@ -20,14 +20,14 @@ Start
 Show
 
 Type 'sleep 2 && echo "build succeeded"'
-Key Enter
+Enter
 
 # Anchored: the pattern must match the output line, not the command echoed
 # above it
 Wait '^build succeeded'
 
 Type 'echo "and on we go"'
-Key Enter
+Enter
 sleep 2
 
 Render

@@ -49,7 +49,7 @@ Type " Stay awhile and listen...'"
 sleep 1
 
 # Run the command by pressing Enter.
-Key Enter
+Enter
 
 # Admire the output for a bit.
 sleep 5
@@ -97,7 +97,7 @@ See [`examples`](examples) for the complete scripts behind the demos below, and 
 ### Enter
 
 ```bash
-Key Enter 4 0.5
+Enter 4 0.5
 ```
 
 <img src="examples/enter.gif" width="500px" alt="Enter pressed four times, half a second apart">
@@ -110,7 +110,7 @@ Key Enter 4 0.5
 Type 'echo "whatever you want"'
 sleep 1
 
-Key Enter; sleep 0.5
+Enter; sleep 0.5
 
 # Slow typing
 Type 'echo "slow down"' 0.25
@@ -125,22 +125,28 @@ SetCols 40
 SetRows 8
 
 Type 'tput cols'
-Key Enter; sleep 1
+Enter; sleep 1
 Type 'tput lines'
-Key Enter; sleep 1
+Enter; sleep 1
 ```
 
 <img src="examples/cols-rows.gif" width="500px" alt="tput cols and tput lines reporting 40 by 8 in the recorded terminal">
 
-### Key
+### Keys
+
+Named keys are commands of their own: `Enter`, `Tab`, `Space`, `Backspace`,
+`Escape`, `Up`, `Down`, `Left`, `Right`, `PageUp`, `PageDown`, `Home`, `End`,
+`Insert`, `Delete`. Each taking an optional repeat count and delay. A modified
+key goes through `Key` in tmux notation: `Key C-u`, `Key C-r`, `Key M-x`, see
+[`examples/ctrl.rec.sh`](examples/ctrl.rec.sh).
 
 #### Arrows
 
 ```bash
 Type 'echo navigate around'; sleep 0.5
-Key Left 10 0.12
+Left 10 0.12
 sleep 0.5
-Key Right 10 0.05
+Right 10 0.05
 ```
 <img src="examples/arrow.gif" width="500px" alt="The cursor walking left and right along the typed line">
 
@@ -148,7 +154,7 @@ Key Right 10 0.05
 
 ```bash
 Type 'echo delete anything...' 0.05; sleep 0.5
-Key BSpace 18 0.05
+Backspace 18 0.05
 ```
 
 <img src="examples/backspace.gif" width="500px" alt="Typed text deleted by repeated backspaces">
@@ -160,7 +166,7 @@ keeps up with a slow command instead of guessing a `sleep`:
 
 ```bash
 Type 'sleep 2 && echo "build succeeded"'
-Key Enter
+Enter
 
 # Anchored: the pattern must match the output line, not the command echoed
 # above it
@@ -195,9 +201,9 @@ SetTheme 'nord'       # the prompt picks up the theme's colors
 
 # The theme follows the working directory
 Type 'cd /tmp'
-Key Enter; sleep 1.5
+Enter; sleep 1.5
 Type 'cd ~'
-Key Enter; sleep 3
+Enter; sleep 3
 ```
 
 <img src="examples/prompt.gif" width="500px" alt="The fish shell with the powerline prompt theme following the working directory">
@@ -237,7 +243,7 @@ Show # Start recording
 
 # The recorded shell expands it, not this script
 Type 'echo $HIDDEN'
-Key Enter; sleep 2
+Enter; sleep 2
 
 Hide # Stop recording, the session keeps running
 
@@ -247,7 +253,7 @@ Run 'clear' 0.5
 Show # Resume recording, appending to the same cast
 
 Type 'echo "back on camera"'
-Key Enter; sleep 2
+Enter; sleep 2
 ```
 
 <img src="examples/hide-show.gif" width="500px" alt="A recording that skips the commands run between Hide and the next Show">
@@ -300,7 +306,7 @@ Start
 Show
 
 Type 'echo "Hello from s-vhs"'
-Key Enter
+Enter
 sleep 3
 
 Render

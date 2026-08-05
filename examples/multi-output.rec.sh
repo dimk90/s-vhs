@@ -22,7 +22,7 @@ Start
 Show
 
 Type 'echo "one recording, two outputs"'
-Key Enter
+Enter
 sleep 2
 
 Render
