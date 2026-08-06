@@ -97,7 +97,7 @@
           form needs a guard line.
   - [x] Release step: point the pinned URL at the tag being released before
         cutting it, and verify it resolves afterwards — in [RELEASE](RELEASE.md).
-- [ ] Shorten the remote import URL with GitHub Pages:
+- [x] Shorten the remote import URL with GitHub Pages:
       `https://dimk90.github.io/s-vhs/v0.2.0` (37 chars) instead of
       `https://raw.githubusercontent.com/dimk90/s-vhs/v0.2.0/s-vhs.sh` (62).
       No trailing `/s-vhs.sh` — the name is already in the middle of the URL.
@@ -117,13 +117,13 @@
         `pages: write` explicitly requests the build because a `GITHUB_TOKEN`
         branch push does not trigger Pages. Verify the public bytes before
         creating the GitHub release.
-  - [ ] Land it any time: the raw URLs of released versions keep working.
+  - [x] Land it any time: the raw URLs of released versions keep working.
   - [x] Weigh the cost first — a deploy that fails after the tag lands leaves
         the release's own README pointing at a 404.
 - [ ] Remote import:
-  - [ ] Add example with nice one-liner for `curl+source` remote import s-vhs from: `https://github.../v0.1.0`.
+  - [x] Add example with nice one-liner for `curl+source` remote import s-vhs from: `https://github.../v0.2.0`.
   - [ ] Add it to the README -> "Remote Import".
-  - [ ] Scaffold without a local copy via `https://github.../v0.1.0`.
+  - [ ] Scaffold without a local copy via `https://github.../v0.2.0`.
   - [ ] Decide which import line that scaffold writes: the template's
         `source ./s-vhs.sh` assumes a local copy the remote user does not have,
         so it should probably emit the pinned `curl+source` one-liner instead.
