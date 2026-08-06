@@ -104,10 +104,11 @@ _SVHS_RECORDED=''
 ## Template
 
 
-_SVHS_TEMPLATE=$(cat <<'TEMPLATE'
+_SVHS_TEMPLATE=$(cat <<TEMPLATE
 #!/usr/bin/env bash
 
-source ./s-vhs.sh
+# shellcheck disable=SC1090
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v$(svhs_version)) && wait "\$!" || exit 1
 
 SetOutput 'demo.gif'
 

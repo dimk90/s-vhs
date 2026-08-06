@@ -303,20 +303,22 @@ More than just a toy:
 
 ## Recording Template
 
-Start your new recording from the bundled template:
+Start a new recording without downloading `s-vhs.sh`:
 
+```bash
+curl -fsSL https://dimk90.github.io/s-vhs/v0.2.0 | bash -s -- new demo.rec.sh
+```
+or if `s-vhs.sh` is already local:
 ```bash
 ./s-vhs.sh new demo.rec.sh
 ```
-> The file is created executable, and an existing one is never overwritten.
-> Drop the path to print the template instead: `./s-vhs.sh new`.
 
 It writes:
 
 ```bash
 #!/usr/bin/env bash
 
-source ./s-vhs.sh
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.2.0) && wait "$!" || exit 1
 
 SetOutput 'demo.gif'
 

@@ -72,4 +72,4 @@ Every command implemented in `s-vhs.sh`.
 | Command               | Description                                                                                          |
 | --------------------- | ---------------------------------------------------------------------------------------------------- |
 | `svhs_version`        | Print the version of the sourced `s-vhs.sh`                                                          |
-| `s-vhs.sh new [path]` | Write an executable starting-point recording script to `path` or to stdout if `path` is not provided |
+| `s-vhs.sh new [path]` | Write an executable recording script with a pinned import, or print it when the path is omitted       |

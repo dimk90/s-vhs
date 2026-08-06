@@ -17,10 +17,11 @@ section as the GitHub release notes.
    - verify that README commands, examples and the recording template are
      current.
 
-1. Point every pinned remote import URL at the tag being released — in
-   `README.md`, in the `_SVHS_TEMPLATE` heredoc if it emits one, and in
-   `examples/`. The tag does not exist yet, so these URLs stay broken until the
-   push; they are verified at the end.
+1. Point every literal pinned remote import URL at the tag being released — in
+   `README.md` and in `examples/`. The `_SVHS_TEMPLATE` URL derives its version
+   from `svhs_version`, so the version bump below updates it automatically. The
+   tag does not exist yet, so these URLs stay broken until the push; they are
+   verified at the end.
 
    ```bash
    rg -n '(raw\.githubusercontent\.com/dimk90/s-vhs|dimk90\.github\.io/s-vhs)/v[0-9]' README.md s-vhs.sh doc examples
@@ -36,7 +37,7 @@ section as the GitHub release notes.
    shellcheck s-vhs.sh
    ```
    ```bash
-   ./s-vhs.sh new /tmp/release-check.rec.sh && /tmp/release-check.rec.sh
+   ./s-vhs.sh new /tmp/release-check.rec.sh && bash -n /tmp/release-check.rec.sh
    ```
 
 1. Re-render every example whose output changed, and replay each rendered file
@@ -102,7 +103,7 @@ section as the GitHub release notes.
    form the README documents:
 
    ```bash
-   bash -c 'source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.?.?); svhs_version'
+   bash -c 'source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.?.?) && wait "$!" || exit 1; svhs_version'
    ```
 
 1. Return to the `develop` branch:

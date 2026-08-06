@@ -120,13 +120,13 @@
   - [x] Land it any time: the raw URLs of released versions keep working.
   - [x] Weigh the cost first — a deploy that fails after the tag lands leaves
         the release's own README pointing at a 404.
-- [ ] Remote import:
-  - [x] Add example with nice one-liner for `curl+source` remote import s-vhs from: `https://github.../v0.2.0`.
+- [x] Remote import:
+  - [x] Add example with nice one-liner for `curl+source` remote import s-vhs from: `https://dimk90.github.io/s-vhs/v0.2.0`.
   - [x] Add it to the README -> "Remote Import".
-  - [ ] Scaffold without a local copy via `https://github.../v0.2.0`.
-  - [ ] Decide which import line that scaffold writes: the template's
-        `source ./s-vhs.sh` assumes a local copy the remote user does not have,
-        so it should probably emit the pinned `curl+source` one-liner instead.
+  - [x] Scaffold without a local copy via `https://dimk90.github.io/s-vhs/v0.2.0`.
+  - [x] Decide which import line that scaffold writes: the template's old
+        `source ./s-vhs.sh` assumed a local copy the remote user did not have,
+        so it now emits the pinned `curl+source` one-liner instead.
 
 ## v0.3.0
 
