@@ -1,6 +1,6 @@
 # Changelog
 
-## `[v0.2.0]` - Unreleased
+## `[v0.2.0]` - 06.08.2026
 
 ### New
 * Add `Env` command.

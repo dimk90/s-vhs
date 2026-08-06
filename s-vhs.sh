@@ -19,7 +19,7 @@ set -euo pipefail
 
 
 svhs_version() {
-    printf '%s\n' '0.1.0'
+    printf '%s\n' '0.2.0'
 }
 
 
@@ -107,7 +107,6 @@ _SVHS_RECORDED=''
 _SVHS_TEMPLATE=$(cat <<TEMPLATE
 #!/usr/bin/env bash
 
-# shellcheck disable=SC1090
 source <(curl -fsSL https://dimk90.github.io/s-vhs/v$(svhs_version)) && wait "\$!" || exit 1
 
 SetOutput 'demo.gif'
