@@ -31,6 +31,8 @@ Status: early draft, pre-`v0.1.0`. The public function names are **not** frozen
 | `doc/COMMANDS.md`  | VHS parity table and target API design notes.               |
 | `doc/PLAN.md`      | Roadmap / checklist. Update checkboxes when a task lands.   |
 | `doc/HISTORY.md`   | Verbatim archive of code removed from `s-vhs.sh`.           |
+| `doc/DEPLOY.md`    | GitHub Pages deployment strategy and setup.                 |
+| `doc/RELEASE.md`   | Step-by-step release procedure.                             |
 | `examples/`        | Example recording scripts, rendered output, catalogue.      |
 
 No build system, no test suite, no CI. Verification is manual: run a recording

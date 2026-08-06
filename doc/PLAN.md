@@ -82,19 +82,53 @@
   - [x] Update examples and README.
 - [x] Add `Sleep` as alias for `sleep` to match style of the `s-vhs`:
    - [x] Update examples.
+- [x] Remote import research:
+  - [x] Discuss how to do remote import for current repo with specified version (e.g. v0.2.0).
+    - [x] Pin the raw URL at the tag,
+          `https://raw.githubusercontent.com/dimk90/s-vhs/v0.2.0/s-vhs.sh`. It
+          exists the moment the tag does — no release asset to upload, no
+          second publishing surface. A shorter Pages URL is in the backlog.
+    - [x] Import with `source <(curl -fsSL …)`, not `eval "$(curl …)"`:
+          inside `eval` the caller's `BASH_SOURCE[0]` is still `$0`, so the
+          executed-mode guard misfires and prints `usage: s-vhs.sh new [path]`.
+          Process substitution reads as a sourced path.
+    - [x] A failed or truncated fetch is silent — `source <(…)` returns 0 and
+          the recording runs on with every command undefined, so the documented
+          form needs a guard line.
+  - [x] Release step: point the pinned URL at the tag being released before
+        cutting it, and verify it resolves afterwards — in [RELEASE](RELEASE.md).
+- [ ] Shorten the remote import URL with GitHub Pages:
+      `https://dimk90.github.io/s-vhs/v0.2.0` (37 chars) instead of
+      `https://raw.githubusercontent.com/dimk90/s-vhs/v0.2.0/s-vhs.sh` (62).
+      No trailing `/s-vhs.sh` — the name is already in the middle of the URL.
+  - Pages publishes one snapshot of one branch and cannot read tags (its Jekyll
+    allows no custom plugins), so every version must exist as a file: the
+    release workflow copies `s-vhs.sh` to `deploy` as `v<X.Y.Z>`, plus a
+    `latest` alias. Extensionless files are served verbatim as
+    `application/octet-stream` — `dimk90.github.io/anarchy/wipe-disk` proves it.
+  - [x] Document the deployment strategy and initialization in
+        [DEPLOY](DEPLOY.md).
+  - [ ] Initialize the orphan `deploy` branch with a `.nojekyll` marker and the
+        existing release files.
+  - [ ] Enable Pages: Settings → Pages → Deploy from a branch → `deploy` /
+        `(root)`.
+  - [ ] Add the copy step to `release.yml`; it already has `contents: write`.
+        Preserve old versions and update `latest` without force-pushing. Deploy
+        from a branch, not `actions/deploy-pages`, which replaces the whole site
+        per run and would drop older versions.
+  - [ ] Land it any time: the raw URLs of released versions keep working.
+  - [x] Weigh the cost first — a deploy that fails after the tag lands leaves
+        the release's own README pointing at a 404.
 - [ ] Remote import:
-  - [ ] Discuss how to do remote import for current repo with specified version (e.g. v0.2.0).
-  - [ ] Add example with nice one-liner for `curl+source` remote import s-vhs from: `https://github.../v0.1.0/.../s-vhs.sh`.
+  - [ ] Add example with nice one-liner for `curl+source` remote import s-vhs from: `https://github.../v0.1.0`.
   - [ ] Add it to the README -> "Remote Import".
-  - [ ] Scaffold without a local copy:
-        `curl -fsSL https://.../v0.1.0/.../s-vhs.sh | bash -s -- new demo.rec.sh`.
-        Works already — piped input leaves `BASH_SOURCE` unset, which the
-        executed-mode guard treats as execution.
+  - [ ] Scaffold without a local copy via `https://github.../v0.1.0`.
   - [ ] Decide which import line that scaffold writes: the template's
         `source ./s-vhs.sh` assumes a local copy the remote user does not have,
         so it should probably emit the pinned `curl+source` one-liner instead.
 - [ ] Update `pi-context-view` recordings + add reference to the `s-vhs`.
   - [ ] Add example "S-VHS in the Wild" to README.
+- [ ] Is it reasonable to have skill for `s-vhs` ?
 
 ## v0.3.0
 
