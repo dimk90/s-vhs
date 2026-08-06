@@ -85,11 +85,6 @@ You should see a new file called `demo.gif` in the same directory:
 > [!NOTE]
 > The provided instructions are for Arch Linux, but you can easily adapt them for your favorite distro ;)
 
-> [!NOTE]
-> `s-vhs` targets bash 3.2, the version macOS still ships as `/bin/bash`,
-> so recording scripts run on a stock Mac without installing a newer bash.
-
-
 ## Examples
 
 See [`examples`](examples) for the complete scripts behind the demos below, and a few more.
@@ -213,7 +208,7 @@ the same in bash, zsh and fish.
 
 > [!TIP]
 > `SetPrompt 'native'` records your own shell configuration instead, and
-> any other value is taken as a literal prompt - `SetPrompt '$ '`.
+> any other value is taken as a literal prompt.
 
 ### Font Size
 
