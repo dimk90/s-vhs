@@ -18,17 +18,15 @@ SetFontFamily "Iosevka Term"
 # Roomy; the default is 1.2
 SetLineHeight 1.8
 
-# Reproducible prompt: no personal rc files, a green arrow
-SetShell "env PS1='\[\e[32m\]❯\[\e[0m\] ' bash --norc"
-
 Start
+
 Show
 
 Type 'echo "stay"'
-Key Enter
-sleep 0.5
+Enter
+Sleep 0.5
 Type 'echo "far away!"'
-Key Enter
-sleep 2
+Enter
+Sleep 2
 
 Render

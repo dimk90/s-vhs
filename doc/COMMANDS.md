@@ -16,20 +16,20 @@ are implemented now; the remaining command names still describe the target API.
 | `Require prog`                       | `Require`                       | —                         | 📋         |
 | `Type "text"`                        | `Type <text> [<delay>]`         | `Type`                    | ✅          |
 | `Ctrl+R`, `Alt+X`, `Ctrl+Shift+P`    | `Key <key> [<count>] [<delay>]` | `Key C-r`, `Key M-x`      | ✅          |
-| `Enter`, `Tab`, `Up`, … (named keys) | `Enter`, `Tab`, `Up`, …         | `Key Enter`, `Key BSpace` | 📋         |
-| `Enter 2`, `Backspace 18` (repeat)   | `Enter [<count>] [<time>]`, ... | `Key BSpace 18`           | 🟡         |
+| `Enter`, `Tab`, `Up`, … (named keys) | `Enter`, `Tab`, `Up`, …         | `Enter`, `Backspace`      | ✅          |
+| `Enter 2`, `Backspace 18` (repeat)   | `Enter [<count>] [<time>]`, ... | `Backspace 18 0.05`       | ✅          |
 | `ScrollUp` / `ScrollDown`            | `ScrollUp` / `ScrollDown`       | —                         | 📋         |
-| `Sleep 2`                            | `Sleep`                         | `sleep 2`                 | ✅          |
+| `Sleep 2`                            | `Sleep`                         | `Sleep 2`                 | ✅          |
 | `Wait /regex/`                       | `Wait`                          | `Wait`                    | 🟡         |
 | `Wait+Line /regex/`                  | `Wait` + scope argument         | —                         | 📋 Useful? |
 | `Hide`                               | `Hide`                          | `Hide`                    | ✅          |
 | `Show`                               | `Show`                          | `Show`                    | ✅          |
 | `Screenshot out.png`                 | `Screenshot`                    | —                         | 📋         |
 | `Copy` / `Paste`                     | `Copy` / `Paste`                | —                         | 📋         |
-| `Env KEY "VAL"`                      | `Env`                           | `export KEY=VAL`          | 🟡         |
+| `Env KEY "VAL"`                      | `Env`                           | `Env KEY VAL`             | ✅          |
 | `Source other.tape`                  | —                               | `source other.sh`         | ✅          |
 |                                      |                                 |                           |             |
-| `Set Shell fish`                     | `SetShell`                      | `SetShell` (`fish`)       | ✅          |
+| `Set Shell fish`                     | `SetShell`                      | `SetShell` (`bash`)       | ✅          |
 | `Set FontSize 40`                    | `SetFontSize`                   | `SetFontSize` (`28`)      | ✅          |
 | `Set FontFamily "…"`                 | `SetFontFamily`                 | `SetFontFamily` (chain)   | ✅          |
 | `Set Width 1200`                     | `SetCols`                       | `SetCols` (`100`)         | ✅          |
@@ -48,7 +48,8 @@ are implemented now; the remaining command names still describe the target API.
 | `Set CursorBlink`                    | —                               | —                         | 🚫         |
 |                                      |                                 |                           |             |
 | —                                    | `SetKeyDelay`                   | `SetKeyDelay` (`0.0`)     | ✅          |
-| —                                    | `SetSession`                    | `SetSession` (`demo`)     | ✅          |
+| —                                    | `SetSession`                    | `SetSession` (`s-vhs-$$`) | ✅          |
+| —                                    | `SetPrompt`                     | `SetPrompt` (`arrow`)     | ✅          |
 | —                                    | `SetIdleTimeLimit`              | — (agg `5`)               | 📋         |
 | —                                    | `SetLastFrameDuration`          | — (agg `3`)               | 📋         |
 | —                                    | `SetLoop`                       | — (agg loops)             | 📋         |
@@ -67,7 +68,7 @@ are implemented now; the remaining command names still describe the target API.
 | —                                    | `Start`                         | `Start`                   | ✅          |
 | —                                    | `Render`                        | `Render`                  | ✅          |
 | —                                    | `Run`                           | `Run`                     | ✅          |
-| —                                    | `RunOffRecord`                  | `Hide` + `Run` + `Show`   | 📋         |
+| —                                    | `RunOffRecord`                  | `RunOffRecord`            | ✅          |
 | `vhs --version` (CLI)                | `svhs_version`                  | `svhs_version`            | ✅          |
 | `vhs new demo.tape` (CLI)            | `s-vhs.sh new`                  | `s-vhs.sh new`            | ✅          |
 
@@ -97,19 +98,6 @@ SetRows 30
 SetFontSize 21
 
 Start
-```
-
-### Width / Height → Cols / Rows ✅
-
-`s-vhs` sizes the terminal in **cells, not pixels** — the whole point of
-[#578](https://github.com/charmbracelet/vhs/issues/578). There is no pixel-size
-setting; pixel size follows from `SetCols`/`SetRows` × the glyph size configured
-by `SetFontSize`.
-
-```shell
-SetCols 80
-SetRows 30
-SetFontSize 21
 ```
 
 > Print estimated resolution in `Start` ('e.g. ::: N Rows x M Cols x F FontSize -> Resolution W x H') ?
@@ -266,47 +254,6 @@ The output extension selects the renderer or converter; there are no
 format-specific public setting variables. Animated SVG (`termsvg`) has no VHS
 equivalent ([#644](https://github.com/charmbracelet/vhs/discussions/644)).
 
-## Type ✅
-
-`Type` types character by character with a delay, exactly like VHS's
-`Type` + `Set TypingSpeed`. VHS's per-command `Type@500ms` override is the
-optional second argument.
-
-```shell
-Type '/context'             # delay configured by SetTypingSpeed
-Type 'slow' 0.5             # VHS: Type@500ms "slow"
-```
-
-Quoting is plain shell quoting; no backtick escaping as in VHS.
-
-## Keys 🟡
-
-One generic `Key` function takes a **tmux key name**, an optional repeat count,
-and an optional pause after each press:
-
-```shell
-Key Enter
-Key Down 3                  # VHS: Down 3
-Key Down 3 0.2              # VHS: Down@200ms 3
-```
-
-Differences from VHS:
-
-- Named keys are arguments, not commands 📋 — `Key Enter`, not `Enter`.
-- The repeat count is a loop rather than `tmux send-keys -N <count>`, which
-  repeats natively but without a delay between presses.
-
-Modifiers work through tmux's own notation, so `Ctrl+R` is `Key C-r`, `Alt+X` is
-`Key M-x`, and `Ctrl+Alt+Shift+P` is `Key C-M-S-p`. `Start` enables
-`extended-keys` with `csi-u` format, so apps that read CSI-u sequences receive
-the modified keys correctly.
-
-```shell
-Key C-r                     # VHS: Ctrl+R
-Key C-c                     # VHS: Ctrl+C
-```
-
-> Any way to have `Ctrl+R` instead of `C-r` ? Is easier to read.
 
 ### ScrollUp / ScrollDown 📋
 
@@ -348,29 +295,3 @@ Missing. tmux provides the primitives — `tmux set-buffer` and
 `tmux paste-buffer -p` (`-p` for bracketed paste, so TUIs see a real paste) — so
 this is mostly a naming decision. Note it would use the tmux buffer, not the
 system clipboard.
-
-## Env 🟡
-
-No dedicated function today: exported variables are inherited by the tmux
-server started in `Start`.
-
-```shell
-export HELLO=WORLD
-Start
-Type 'echo $HELLO'
-Key Enter
-```
-
-> [!WARNING]
-> tmux reuses a running server, so a session may inherit the environment of an
-> earlier one. `Start` uses `tmux -f /dev/null`, which isolates config
-> but not the server environment.
-
-A planned `Env` function closes that hole by passing the pair straight to the
-session: `tmux new-session -e KEY=VAL`.
-
-## Source ✅
-
-It's a shell script — `source common-setup.sh` is the equivalent, and full
-shell control flow (loops, conditionals, functions) comes for free
-([#66](https://github.com/charmbracelet/vhs/issues/66)).

@@ -15,22 +15,20 @@ SetRows 8
 SetFontSize 40
 SetFontFamily "Iosevka Term"
 
-# Reproducible prompt: no personal rc files, a green arrow
-SetShell "env PS1='\[\e[32m\]❯\[\e[0m\] ' bash --norc"
-
 Start
+
 Show
 
 # Ask the terminal itself how wide and how tall it is
 Type 'tput cols'
-Key Enter
-sleep 1
+Enter
+Sleep 1
 
 Type 'tput lines'
-Key Enter
-sleep 1
+Enter
+Sleep 1
 
-Key Enter 3 0.5
-sleep 5
+Enter 3 0.5
+Sleep 5
 
 Render

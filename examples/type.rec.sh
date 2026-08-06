@@ -14,21 +14,19 @@ SetRows 5
 SetFontSize 40
 SetFontFamily "Iosevka Term"
 
-# Reproducible prompt: no personal rc files, a green arrow
-SetShell "env PS1='\[\e[32m\]❯\[\e[0m\] ' bash --norc"
-
 Start
+
 Show
 
 Type 'echo "whatever you want"'
-sleep 1
+Sleep 1
 
-Key Enter
-sleep 0.5
+Enter
+Sleep 0.5
 
 Type 'echo "slow down"' 0.25 # Slow typing
 
-Key Enter
-sleep 4
+Enter
+Sleep 4
 
 Render

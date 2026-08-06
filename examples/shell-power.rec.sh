@@ -15,23 +15,21 @@ SetRows 10
 SetFontSize 40
 SetFontFamily "Iosevka Term"
 
-# Reproducible prompt: no personal rc files, a green arrow
-SetShell "env PS1='\[\e[32m\]❯\[\e[0m\] ' bash --norc"
-
 # Run a command in the recorded shell and let its output settle
 run() {
     Type "$1"
-    Key Enter
-    sleep "${2:-1}"
+    Enter
+    Sleep "${2:-1}"
 }
 
 Start
+
 Show
 
 # "for" is redundant here - only for demo purpose
 for command_line in 'uname -o' 'tput colors' 'echo $BASH_VERSION'; do
     run "$command_line"
 done
-sleep 1
+Sleep 1
 
 Render

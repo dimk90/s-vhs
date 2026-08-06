@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
-# The session and the recorder are separate: everything before Show and after
-# Hide happens in the same live terminal, but never reaches the GIF.
+# The session and the recorder are separate: everything before Show and
+# between Hide and the next Show happens in the same live terminal, but never
+# reaches the GIF. Every Show appends one more segment to the same recording.
 #
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -15,9 +16,6 @@ SetRows 4
 SetFontSize 40
 SetFontFamily "Iosevka Term"
 
-# Reproducible prompt: no personal rc files, a green arrow
-SetShell "env PS1='\[\e[32m\]❯\[\e[0m\] ' bash --norc"
-
 Start
 
 # Off camera: export the variable and wipe the screen it was typed on
@@ -28,11 +26,19 @@ Show # Start recording
 
 # The recorded shell expands it, not this script
 Type 'echo $HIDDEN'
-Key Enter
-sleep 2
+Enter
+Sleep 2
 
 Hide # Stop recording, the session keeps running
 
+# Off camera again: noise nobody will ever see, and a clean screen to return to
 Run 'echo "nobody will ever see this"' 0.5
+Run 'clear' 0.5
+
+Show # Resume recording, appending to the same cast
+
+Type 'echo "back on camera"'
+Enter
+Sleep 2
 
 Render

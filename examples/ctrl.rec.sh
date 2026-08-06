@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Modifiers use tmux notation: Ctrl+R is 'C-r', Alt+X is 'M-x', and
-# Ctrl+Alt+Shift+P is 'C-M-S-p'.
+# A modified key stays with Key, in tmux notation: Ctrl+R is 'C-r', Alt+X is
+# 'M-x', and Ctrl+Alt+Shift+P is 'C-M-S-p'.
 #
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -15,22 +15,20 @@ SetRows 3
 SetFontSize 40
 SetFontFamily "Iosevka Term"
 
-# Reproducible prompt: no personal rc files, a green arrow
-SetShell "env PS1='\[\e[32m\]❯\[\e[0m\] ' bash --norc"
-
 Start
+
 Show
 
 Type 'echo "whatever you want"'
-sleep 1
+Sleep 1
 
 # Throw the line away without running it
 Key C-u
-sleep 0.5
+Sleep 0.5
 
 # Type something else
 Type 'echo "something else"'
-Key Enter
-sleep 2
+Enter
+Sleep 2
 
 Render

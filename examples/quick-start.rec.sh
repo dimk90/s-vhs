@@ -12,10 +12,10 @@ source "$SCRIPT_DIR/../s-vhs.sh"
 # Where should we write the GIF?
 SetOutput "$SCRIPT_DIR/quick-start.gif"
 
-# Set up a 60x8 terminal with a 34px font
+# Set up a 60x4 terminal with a 40px font
 SetCols 60
-SetRows 8
-SetFontSize 34
+SetRows 4
+SetFontSize 40
 SetFontFamily 'Iosevka Term'
 
 # Start the terminal, then the recorder
@@ -24,16 +24,16 @@ Show
 
 # Type a command in the terminal
 Type "echo 'Welcome to S-VHS!"
-sleep 1 # Pause for dramatic effect...
+Sleep 1 # Pause for dramatic effect...
 
 Type " Stay awhile and listen...'"
-sleep 1
+Sleep 1
 
 # Run the command by pressing enter
-Key Enter
+Enter
 
 # Admire the output for a bit
-sleep 5
+Sleep 5
 
 # Stop recording and write every requested output
 Render

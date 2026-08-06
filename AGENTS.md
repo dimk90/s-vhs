@@ -14,7 +14,7 @@ otherwise kept only temporarily while producing outputs such as GIF
 
 Selling points to preserve when changing behaviour: sharp output (no GIF
 quality loss), no timing drift across resolutions, terminal size in rows/cols
-instead of pixels, no browser/Node dependency.
+instead of pixels, no browser dependency.
 
 Status: early draft, pre-`v0.1.0`. The public function names are **not** frozen
 — see `doc/PLAN.md`, which calls for renaming toward VHS-like names
@@ -26,11 +26,14 @@ Status: early draft, pre-`v0.1.0`. The public function names are **not** frozen
 | ------------------ | ----------------------------------------------------------- |
 | `s-vhs.sh`         | The whole implementation. Sourced library, never executed.  |
 | `README.md`        | User-facing docs; many sections are still `> TODO:`.        |
+| `CHANGELOG.md`     | One line per significant change, newest version on top.     |
 | `doc/REFERENCE.md` | Reference of every command implemented today. Keep in sync. |
 | `doc/COMMANDS.md`  | VHS parity table and target API design notes.               |
 | `doc/PLAN.md`      | Roadmap / checklist. Update checkboxes when a task lands.   |
 | `doc/HISTORY.md`   | Verbatim archive of code removed from `s-vhs.sh`.           |
-| `examples/`        | Example recording scripts and their rendered output.        |
+| `doc/DEPLOY.md`    | GitHub Pages deployment strategy and setup.                 |
+| `doc/RELEASE.md`   | Step-by-step release procedure.                             |
+| `examples/`        | Example recording scripts, rendered output, catalogue.      |
 
 No build system, no test suite, no CI. Verification is manual: run a recording
 script and inspect or replay every requested output.
@@ -71,6 +74,10 @@ Follow the `shell-code` and `code-style` skills. Project-specific points:
 - **Start validation.** Validate required overall configuration in `Start`
   before starting tmux or the recorder. Initialize internal defaults while
   sourcing.
+- **Messages.** Informational messages go to stdout with a `::: ` prefix
+  (`printf '::: Wrote %s\n' "$output"`), matching asciinema's messaging style.
+  Errors go to stderr with no prefix, named after the reporting command
+  (`printf 'Start: session has already started\n' >&2`).
 - **Sections.** `## Version`, `## Settings / Defaults`, `## Template`,
   `## Session`, `## Input`, `## Recording`, `## Render`, `## Internal`,
   `## CLI`. Keep new functions in the matching section — a command that only
@@ -101,6 +108,11 @@ Follow the `shell-code` and `code-style` skills. Project-specific points:
   signature, default value, and section (`## Settings`, `## Core`,
   `## Utility`). `doc/REFERENCE.md` documents the current implementation;
   `doc/COMMANDS.md` tracks VHS parity and the planned API.
+- **Changelog is part of the change.** Every significant fix, change, or
+  addition gets one clear line in [`CHANGELOG.md`](CHANGELOG.md), under the
+  unreleased version's `### New`, `### Changed` or `### Fixed` heading, in the
+  same change. One line per entry — what a user notices, not how it was
+  implemented. Skip purely internal refactors, doc touch-ups and formatting.
 - **Reference stays lean.** `doc/REFERENCE.md` is a lookup table, not a guide:
   a one-line description per command, plus a short note only for a rule that
   does not fit a table cell. No rationale, no design or naming justifications,
@@ -108,10 +120,11 @@ Follow the `shell-code` and `code-style` skills. Project-specific points:
   Such text belongs in `README.md`, `doc/COMMANDS.md`, or here. Prefer cutting
   words over adding them; keep headings short.
 - **Examples.** A script under `examples/` renders at `SetFontSize 40` or
-  larger — smaller sizes look soft once a README scales the GIF down — and runs
-  a shell that carries no personal configuration into the recording:
-  `SetShell "env PS1='\[\e[32m\]❯\[\e[0m\] ' bash --norc"`. Keep the catalogue in
-  [`doc/EXAMPLES.md`](doc/EXAMPLES.md) in sync when adding or merging one.
+  larger — smaller sizes look soft once a README scales the GIF down — and
+  keeps the default shell, which already carries no personal configuration
+  into the recording. Call `SetShell` or `SetPrompt` only in an example about
+  them. Keep the catalogue in [`examples/README.md`](examples/README.md) in
+  sync when adding or merging one.
 - Every VHS feature parity claim in `README.md` links the upstream issue it
   addresses; keep that link when editing such a line.
 

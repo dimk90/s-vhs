@@ -22,14 +22,12 @@ SetFontSize 40
 # The first family that exists on the rendering machine wins
 SetFontFamily 'Some Fancy Font, Fira Code'
 
-# Reproducible prompt: no personal rc files, a green arrow
-SetShell "env PS1='\[\e[32m\]❯\[\e[0m\] ' bash --norc"
-
 Start
+
 Show
 
 Type 'echo "    fallback to Fira Code + bundled Nerd Symbols"'
-Key Enter
-sleep 3
+Enter
+Sleep 3
 
 Render

@@ -39,8 +39,9 @@ Render            # Finalize the cast and render the requested outputs
 
 What happens during a recording:
 1. **`Start` creates the terminal.** tmux starts the configured shell inside a
-   pseudo-terminal. The session remains alive without a visible terminal
-   window, so the script can drive it deterministically.
+   pseudo-terminal on the dedicated `s-vhs` socket, isolated from the user's
+   tmux server and configuration. The session remains alive without a visible
+   terminal window, so the script can drive it deterministically.
 1. **`Show` starts capture.** asciinema starts headless and runs `tmux attach`
    as its command. It receives the same terminal stream an interactive client
    would receive and writes timestamped events to a cast.
@@ -49,6 +50,9 @@ What happens during a recording:
    records those updates.
 1. **`Render` produces outputs.** s-vhs closes the session, keeps the cast when
    requested, and passes it to the renderer for each visual output.
+
+Every tmux invocation uses the named `s-vhs` socket (`tmux -L s-vhs ...`);
+the command sketches below omit that shared prefix.
 
 Each command is a thin wrapper over one of the tools:
 
@@ -97,4 +101,4 @@ or how asciinema records it.
 
 - [README](../README.md) - install and the quick start.
 - [REFERENCE.md](REFERENCE.md) - every command, with defaults.
-- [EXAMPLES.md](EXAMPLES.md) - the example catalogue.
+- [examples/README.md](../examples/README.md) - the example catalogue.

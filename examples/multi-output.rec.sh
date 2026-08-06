@@ -17,14 +17,12 @@ SetRows 4
 SetFontSize 40
 SetFontFamily "Iosevka Term"
 
-# Reproducible prompt: no personal rc files, a green arrow
-SetShell "env PS1='\[\e[32m\]❯\[\e[0m\] ' bash --norc"
-
 Start
+
 Show
 
 Type 'echo "one recording, two outputs"'
-Key Enter
-sleep 2
+Enter
+Sleep 2
 
 Render

@@ -16,13 +16,11 @@ SetRows 2
 SetFontSize 20
 SetFontFamily "Iosevka Term"
 
-# Reproducible prompt: no personal rc files, a green arrow
-SetShell "env PS1='\[\e[32m\]❯\[\e[0m\] ' bash --norc"
-
 Start
+
 Show
 
 Type 'echo "Font size is 20"'
-sleep 4
+Sleep 4
 
 Render

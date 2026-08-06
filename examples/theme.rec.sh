@@ -20,14 +20,12 @@ SetTypingSpeed 0.04
 # (background, foreground, then 8 or 16 colors) also works
 SetTheme 'kanagawa'
 
-# Reproducible prompt: no personal rc files, a green arrow
-SetShell "env PS1='\[\e[32m\]❯\[\e[0m\] ' bash --norc"
-
 Start
+
 Show
 
 Type 'printf "\e[31mred \e[32mgreen \e[34mblue\e[0m\n"'
-Key Enter
-sleep 3
+Enter
+Sleep 3
 
 Render
