@@ -2,7 +2,8 @@
 
 Release from `develop`, merge the reviewed release commit into `master`, and tag
 the resulting `master` commit. Pushing a stable `vX.Y.Z` tag starts the
-`Publish GitHub release` workflow, which publishes the matching `CHANGELOG.md`
+`Publish GitHub release` workflow. It publishes the versioned Pages import and
+`latest`, verifies the public file, then publishes the matching `CHANGELOG.md`
 section as the GitHub release notes.
 
 1. Finalize the release documentation:
@@ -22,7 +23,7 @@ section as the GitHub release notes.
    push; they are verified at the end.
 
    ```bash
-   rg -n 'raw\.githubusercontent\.com/dimk90/s-vhs/v[0-9]' README.md s-vhs.sh doc examples
+   rg -n '(raw\.githubusercontent\.com/dimk90/s-vhs|dimk90\.github\.io/s-vhs)/v[0-9]' README.md s-vhs.sh doc examples
    ```
 
 1. Bump the version literal in `svhs_version` (`## Version` in `s-vhs.sh`). It
@@ -92,6 +93,7 @@ section as the GitHub release notes.
    ```
 
 1. Wait for the `Publish GitHub release` workflow to complete. Verify that the
+   versioned Pages import and `latest` serve the released library, and that the
    published release has the target tag and title, the exact target changelog
    section as its notes, and the tested merge commit as its tag target. Do not
    create the release manually if the workflow fails.
@@ -100,7 +102,7 @@ section as the GitHub release notes.
    form the README documents:
 
    ```bash
-   bash -c 'source <(curl -fsSL https://raw.githubusercontent.com/dimk90/s-vhs/v0.?.?/s-vhs.sh); svhs_version'
+   bash -c 'source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.?.?); svhs_version'
    ```
 
 1. Return to the `develop` branch:

@@ -108,14 +108,15 @@
     `application/octet-stream` — `dimk90.github.io/anarchy/wipe-disk` proves it.
   - [x] Document the deployment strategy and initialization in
         [DEPLOY](DEPLOY.md).
-  - [ ] Initialize the orphan `deploy` branch with a `.nojekyll` marker and the
+  - [x] Initialize the orphan `deploy` branch with a `.nojekyll` marker and the
         existing release files.
-  - [ ] Enable Pages: Settings → Pages → Deploy from a branch → `deploy` /
+  - [x] Enable Pages: Settings → Pages → Deploy from a branch → `deploy` /
         `(root)`.
-  - [ ] Add the copy step to `release.yml`; it already has `contents: write`.
-        Preserve old versions and update `latest` without force-pushing. Deploy
-        from a branch, not `actions/deploy-pages`, which replaces the whole site
-        per run and would drop older versions.
+  - [x] Add the copy step to `release.yml`: preserve old versions, update
+        `latest` and never force-push. `contents: write` updates `deploy`;
+        `pages: write` explicitly requests the build because a `GITHUB_TOKEN`
+        branch push does not trigger Pages. Verify the public bytes before
+        creating the GitHub release.
   - [ ] Land it any time: the raw URLs of released versions keep working.
   - [x] Weigh the cost first — a deploy that fails after the tag lands leaves
         the release's own README pointing at a 404.
@@ -126,12 +127,12 @@
   - [ ] Decide which import line that scaffold writes: the template's
         `source ./s-vhs.sh` assumes a local copy the remote user does not have,
         so it should probably emit the pinned `curl+source` one-liner instead.
-- [ ] Update `pi-context-view` recordings + add reference to the `s-vhs`.
-  - [ ] Add example "S-VHS in the Wild" to README.
-- [ ] Is it reasonable to have skill for `s-vhs` ?
 
 ## v0.3.0
 
+- [ ] Update `pi-context-view` recordings + add reference to the `s-vhs`.
+  - [ ] Add example "S-VHS in the Wild" to README.
+- [ ] Is it reasonable to have skill for `s-vhs` ?
 - [ ] Implement animated SVG output format.
   - [ ] Update readme header with one more bullet:
     ```Markdown

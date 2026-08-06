@@ -9,6 +9,7 @@
 * Add `native` option for `SetPrompt` to use current shell configuration.
 * Add named key commands: `Enter`, `Tab`, `Backspace`, `Up`, etc.
 * Add `Sleep` command as alias for `sleep` for style consistency.
+* Publish version-pinned remote imports through GitHub Pages.
 
 ### Changed
 * Record in an isolated shell by default: no personal rc files.

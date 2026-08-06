@@ -100,23 +100,25 @@ rm /tmp/s-vhs-v0.1.0
 
 ## Release Publication
 
-A future Pages publication step in `.github/workflows/release.yml` should:
+`.github/workflows/release.yml` publishes Pages before creating the GitHub
+release:
 
-1. Validate the stable `vX.Y.Z` tag and `svhs_version` as it does today.
-2. Fetch and check out the current `deploy` branch without force-pushing.
+1. Validate the stable `vX.Y.Z` tag and `svhs_version`.
+2. Read the current `deploy` branch without force-pushing.
 3. Copy the tagged `s-vhs.sh` to the extensionless path named by the tag.
 4. Fail if that path already exists with different content; do nothing if it
    already contains the same content.
 5. Replace `latest` with the same file.
-6. Commit and push the changed files to `deploy`.
-7. Wait for Pages deployment and verify the version URL before publishing the
-   GitHub release.
+6. Commit both files to `deploy` while preserving every earlier version.
+7. Explicitly request a Pages build and wait for it to finish.
+8. Verify that the public version URL serves the exact released bytes.
+9. Create the GitHub release from the matching changelog section.
 
-Keep Pages writers serialized with one shared workflow concurrency group. The
-current release concurrency is per tag, so two different tags could otherwise
-race while updating `deploy`.
+GitHub does not trigger a branch-based Pages build when `GITHUB_TOKEN` pushes
+the source commit. The workflow therefore declares both `contents: write` for
+the branch update and `pages: write` for the explicit build request.
 
-The workflow already declares `contents: write`, which permits its
-`GITHUB_TOKEN` to push the branch unless a branch-protection rule blocks it.
-Do not protect `deploy` in a way that prevents the release workflow from
-updating it.
+All releases share one workflow concurrency group, so different tags cannot
+race while updating `deploy`. Rerunning an older release verifies its pinned
+file without moving `latest` backwards. Do not protect the branch in a way that
+prevents the release workflow from updating it.

@@ -9,19 +9,20 @@ on:
 
 permissions:
   contents: write
+  pages: write
 
 concurrency:
-  group: github-release-${{ github.ref_name }}
+  group: github-release
   cancel-in-progress: false
 
 jobs:
   publish:
     name: Publish release
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
-      - name: Create release from changelog
+      - name: Publish Pages and GitHub release
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           RELEASE_SHA: ${{ github.sha }}
@@ -52,26 +53,38 @@ jobs:
             }
 
             /**
-             * Read a repository file as text at the released tag.
+             * Read a repository file as text at a ref.
              *
-             * Throws when the path is missing or is not a plain file.
+             * Returns undefined for a missing file when allowMissing is true.
              */
-            const readFileAtTag = async (path) => {
-              const { data: file } = await github.rest.repos.getContent({
-                owner,
-                repo,
-                path,
-                ref: releaseTag,
-              });
-              if (Array.isArray(file) || file.type !== "file" || file.encoding !== "base64") {
-                throw new Error(`Cannot read ${path} from ${releaseTag}.`);
+            const readFileAtRef = async (path, ref, allowMissing = false) => {
+              let file;
+              try {
+                ({ data: file } = await github.rest.repos.getContent({
+                  owner,
+                  repo,
+                  path,
+                  ref,
+                }));
+              } catch (error) {
+                if (allowMissing && error.status === 404) {
+                  return undefined;
+                }
+                throw error;
               }
 
-              return Buffer.from(file.content, "base64").toString("utf8").replace(/\r\n/g, "\n");
+              if (Array.isArray(file) || file.type !== "file" || file.encoding !== "base64") {
+                throw new Error(`Cannot read ${path} from ${ref}.`);
+              }
+
+              return Buffer.from(file.content, "base64").toString("utf8");
             };
 
-            const source = await readFileAtTag("s-vhs.sh");
-            const versionMatch = /\nsvhs_version\(\) \{\n\s*printf '%s\\n' '([^']*)'\n\}/.exec(source);
+            const source = await readFileAtRef("s-vhs.sh", releaseTag);
+            const normalizedSource = source.replace(/\r\n/g, "\n");
+            const versionMatch = /\nsvhs_version\(\) \{\n\s*printf '%s\\n' '([^']*)'\n\}/.exec(
+              normalizedSource,
+            );
             if (!versionMatch) {
               throw new Error(`Cannot read the svhs_version literal from s-vhs.sh at ${releaseTag}.`);
             }
@@ -81,7 +94,10 @@ jobs:
               );
             }
 
-            const changelog = await readFileAtTag("CHANGELOG.md");
+            const changelog = (await readFileAtRef("CHANGELOG.md", releaseTag)).replace(
+              /\r\n/g,
+              "\n",
+            );
             const lines = changelog.split("\n");
             const headingPrefix = `## \`[${releaseTag}]\` - `;
             const matchingHeadingIndexes = [];
@@ -144,7 +160,180 @@ jobs:
               if (!matches) {
                 throw new Error(`An inconsistent GitHub release already exists for ${releaseTag}.`);
               }
+            }
 
+            const { data: deployBranch } = await github.rest.repos.getBranch({
+              owner,
+              repo,
+              branch: "deploy",
+            });
+            const deployHeadSha = deployBranch.commit.sha;
+            const existingVersion = await readFileAtRef(releaseTag, "deploy", true);
+            const existingLatest = await readFileAtRef("latest", "deploy", true);
+            const { data: deployEntries } = await github.rest.repos.getContent({
+              owner,
+              repo,
+              path: "",
+              ref: "deploy",
+            });
+            if (!Array.isArray(deployEntries)) {
+              throw new Error("Cannot list files on deploy.");
+            }
+
+            /** Compare two stable vX.Y.Z tags numerically. */
+            const compareStableTags = (left, right) => {
+              const leftParts = left.slice(1).split(".").map(Number);
+              const rightParts = right.slice(1).split(".").map(Number);
+
+              for (let index = 0; index < leftParts.length; index += 1) {
+                if (leftParts[index] !== rightParts[index]) {
+                  return leftParts[index] - rightParts[index];
+                }
+              }
+              return 0;
+            };
+
+            const deployedTags = deployEntries
+              .map((entry) => entry.name)
+              .filter((name) => /^v[0-9]+\.[0-9]+\.[0-9]+$/.test(name));
+            const newestDeployedTag = deployedTags.reduce((newest, tag) => {
+              if (!newest || compareStableTags(tag, newest) > 0) {
+                return tag;
+              }
+              return newest;
+            }, undefined);
+            const isNewestVersion = !newestDeployedTag
+              || compareStableTags(releaseTag, newestDeployedTag) >= 0;
+
+            if (!isNewestVersion && !existingRelease) {
+              throw new Error(
+                `Cannot publish ${releaseTag} after newer version ${newestDeployedTag}.`,
+              );
+            }
+            if (existingVersion !== undefined && existingVersion !== source) {
+              throw new Error(`${releaseTag} already exists on deploy with different content.`);
+            }
+
+            const versionNeedsUpdate = existingVersion !== source;
+            const latestNeedsUpdate = isNewestVersion && existingLatest !== source;
+            let pagesCommitSha = deployHeadSha;
+            if (versionNeedsUpdate || latestNeedsUpdate) {
+              const { data: deployCommit } = await github.rest.git.getCommit({
+                owner,
+                repo,
+                commit_sha: deployHeadSha,
+              });
+              const { data: sourceBlob } = await github.rest.git.createBlob({
+                owner,
+                repo,
+                content: Buffer.from(source, "utf8").toString("base64"),
+                encoding: "base64",
+              });
+              const treeEntries = [];
+              if (versionNeedsUpdate) {
+                treeEntries.push({
+                  path: releaseTag,
+                  mode: "100644",
+                  type: "blob",
+                  sha: sourceBlob.sha,
+                });
+              }
+              if (latestNeedsUpdate) {
+                treeEntries.push({
+                  path: "latest",
+                  mode: "100644",
+                  type: "blob",
+                  sha: sourceBlob.sha,
+                });
+              }
+              const { data: pagesTree } = await github.rest.git.createTree({
+                owner,
+                repo,
+                base_tree: deployCommit.tree.sha,
+                tree: treeEntries,
+              });
+              const { data: pagesCommit } = await github.rest.git.createCommit({
+                owner,
+                repo,
+                message: `Publish ${releaseTag}`,
+                tree: pagesTree.sha,
+                parents: [deployHeadSha],
+              });
+
+              await github.rest.git.updateRef({
+                owner,
+                repo,
+                ref: "heads/deploy",
+                sha: pagesCommit.sha,
+                force: false,
+              });
+              pagesCommitSha = pagesCommit.sha;
+              core.info(`Updated deploy to ${pagesCommitSha}.`);
+            } else if (isNewestVersion) {
+              core.info(`${releaseTag} and latest already match the released source.`);
+            } else {
+              core.info(`${releaseTag} already matches; latest remains ${newestDeployedTag}.`);
+            }
+
+            // GITHUB_TOKEN pushes do not trigger branch-based Pages builds
+            await github.request("POST /repos/{owner}/{repo}/pages/builds", {
+              owner,
+              repo,
+            });
+
+            const wait = (milliseconds) => new Promise((resolve) => {
+              setTimeout(resolve, milliseconds);
+            });
+
+            let completedBuild;
+            for (let attempt = 0; attempt < 60; attempt += 1) {
+              if (attempt > 0) {
+                await wait(5000);
+              }
+
+              const { data: build } = await github.request(
+                "GET /repos/{owner}/{repo}/pages/builds/latest",
+                { owner, repo },
+              );
+              if (build.commit !== pagesCommitSha) {
+                continue;
+              }
+              if (build.status === "errored") {
+                throw new Error(
+                  `Pages build failed: ${build.error?.message ?? "unknown error"}`,
+                );
+              }
+              if (build.status === "built") {
+                completedBuild = build;
+                break;
+              }
+            }
+            if (!completedBuild) {
+              throw new Error(`Pages did not build deploy commit ${pagesCommitSha} in time.`);
+            }
+
+            const pagesUrl = `https://${owner}.github.io/${repo}/${releaseTag}`;
+            const expectedSource = Buffer.from(source, "utf8");
+            let pagesVerified = false;
+            for (let attempt = 0; attempt < 12; attempt += 1) {
+              const response = await fetch(`${pagesUrl}?commit=${pagesCommitSha}`, {
+                headers: { "cache-control": "no-cache" },
+              });
+              if (response.ok) {
+                const publishedSource = Buffer.from(await response.arrayBuffer());
+                if (publishedSource.equals(expectedSource)) {
+                  pagesVerified = true;
+                  break;
+                }
+              }
+              await wait(5000);
+            }
+            if (!pagesVerified) {
+              throw new Error(`${pagesUrl} does not serve the released source.`);
+            }
+            core.notice(`Published ${pagesUrl}`);
+
+            if (existingRelease) {
               core.notice(`Matching release already exists: ${existingRelease.html_url}`);
               return;
             }
