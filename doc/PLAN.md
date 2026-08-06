@@ -122,7 +122,7 @@
         the release's own README pointing at a 404.
 - [ ] Remote import:
   - [x] Add example with nice one-liner for `curl+source` remote import s-vhs from: `https://github.../v0.2.0`.
-  - [ ] Add it to the README -> "Remote Import".
+  - [x] Add it to the README -> "Remote Import".
   - [ ] Scaffold without a local copy via `https://github.../v0.2.0`.
   - [ ] Decide which import line that scaffold writes: the template's
         `source ./s-vhs.sh` assumes a local copy the remote user does not have,

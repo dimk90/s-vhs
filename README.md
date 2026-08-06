@@ -269,6 +269,33 @@ SetOutput 'multi-output.cast'
 SetOutput 'multi-output.gif'
 ```
 
+### Remote Import
+
+Import an immutable release directly from GitHub via `curl` instead
+of keeping a local `s-vhs.sh` next to the recording script:
+
+```bash
+# Remote import instead of "source ./s-vhs.sh"
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.2.0) && wait "$!" || exit 1
+
+SetOutput "remote-import.gif"
+
+Start
+Show
+
+Type "printf 'Imported s-vhs %s\\n' '$(svhs_version)'"
+Enter; Sleep 3
+
+Render
+```
+
+> [!NOTE]
+> The `wait "$!"` is a guard: without it, process substitution can hide a
+> failed or truncated `curl` download.
+
+> [!TIP]
+> Keep the version pinned so the same script always imports the same library.
+
 ### S-VHS in the Wild
 
 More than just a toy:
