@@ -1,5 +1,9 @@
 # S-VHS
 
+[![Release & Deploy Workflow](https://github.com/dimk90/s-vhs/actions/workflows/release.yml/badge.svg)](https://github.com/dimk90/s-vhs/actions/workflows/release.yml)
+[![Deployed](https://img.shields.io/github/v/release/dimk90/s-vhs?label=Deployed)](https://github.com/dimk90/s-vhs/tree/deploy)
+
+
 <img src="examples/logo.gif" width="500px" alt="Animated S-VHS logo">
 
 A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superior:
