@@ -4,6 +4,8 @@
 
 - [ ] Update `pi-context-view` recordings + add reference to the `s-vhs`.
   - [ ] Add example "S-VHS in the Wild" to README.
+- [ ] Add remote import to "Quick Start" example with note about local import?
+  - [ ] Note: ~"You can use source ./s-vhs.sh" if you going to keep it locally".
 - [ ] Is it reasonable to have skill for `s-vhs` ?
 - [ ] Implement animated SVG output format.
   - [ ] Update readme header with one more bullet:
