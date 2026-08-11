@@ -1,10 +1,10 @@
 # S-VHS
 
+<img src="examples/logo.gif" width="500px" alt="Animated S-VHS logo">
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Release & Deploy](https://img.shields.io/github/actions/workflow/status/dimk90/s-vhs/release.yml?label=Release%20%26%20Deploy&style=flat-square)](https://github.com/dimk90/s-vhs/actions/workflows/release.yml)
 [![Deployed](https://img.shields.io/github/v/release/dimk90/s-vhs?label=Deployed&style=flat-square)](https://github.com/dimk90/s-vhs/tree/deploy)
-
-
-<img src="examples/logo.gif" width="500px" alt="Animated S-VHS logo">
 
 A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superior:
 
@@ -16,7 +16,7 @@ A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superi
 - **Sized in rows and cols** - no dancing with pixel width and height
   ([#578](https://github.com/charmbracelet/vhs/issues/578)).
 - **No browser** - no headless Chromium downloaded behind your back, just a
-  wrapper around `tmux` + `asciinema` + `agg`
+  wrapper around `tmux` + [asciinema](https://github.com/asciinema/asciinema) + [agg](https://github.com/asciinema/agg)
   ([#528](https://github.com/charmbracelet/vhs/issues/528),
   [#438](https://github.com/charmbracelet/vhs/issues/438),
   [#150](https://github.com/charmbracelet/vhs/issues/150),
@@ -298,7 +298,7 @@ Render
 ### S-VHS in the Wild
 
 More than just a toy:
-- [S-VHS logo recording](examples/logo.rec.sh).
+📌 [S-VHS logo recording](examples/logo.rec.sh).
 
 ## Recording Template
 
@@ -342,17 +342,19 @@ Render
 
 ## Documentation
 
-- For the architecture behind `tmux + asciinema + agg` and how `s-vhs` glues
+
+
+ For the architecture behind `tmux + asciinema + agg` and how `s-vhs` glues
   them together, see [INTRO.md](doc/INTRO.md).
 
-  <img src="doc/images/svhs-pipeline.svg" width="400px" alt="s-vhs pipeline">
+  <p align="center">
+    <img src="doc/images/svhs-pipeline.svg" width="500px" alt="s-vhs pipeline">
+  </p>
+
+- For debugging a recording script see [DEBUG.md](doc/DEBUG.md).
 
 - For the full list of commands and settings, see [REFERENCE.md](doc/REFERENCE.md).
 
-## Links
-
-- [asciinema](https://github.com/asciinema/asciinema) project ❤️
-- [agg](https://github.com/asciinema/agg) project ❤️
 
 ## License
 
