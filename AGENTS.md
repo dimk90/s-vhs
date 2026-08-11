@@ -114,11 +114,15 @@ Follow the `shell-code` and `code-style` skills. Project-specific points:
   same change. One line per entry — what a user notices, not how it was
   implemented. Skip purely internal refactors, doc touch-ups and formatting.
 - **Reference stays lean.** `doc/REFERENCE.md` is a lookup table, not a guide:
-  a one-line description per command, plus a short note only for a rule that
-  does not fit a table cell. No rationale, no design or naming justifications,
-  no examples, no repetition of what a row already says, no section prose.
-  Such text belongs in `README.md`, `doc/COMMANDS.md`, or here. Prefer cutting
-  words over adding them; keep headings short.
+  a one-line description per command. No rationale, no design or naming
+  justifications, no examples, no repetition of what a row already says, no
+  section prose. Such text belongs in `README.md`, `doc/COMMANDS.md`, or here.
+  Prefer cutting words over adding them; keep headings short.
+- **Reference text lives in the tables.** Keep the amount of prose outside the
+  tables of `doc/REFERENCE.md` minimal: a note or warning is justified only for
+  a rule that is global to a section and important enough to stand out (like
+  "every setting must be called before `Start`"). A rule about a single command
+  goes into that command's row, even if the cell grows.
 - **Examples.** A script under `examples/` renders at `SetFontSize 40` or
   larger — smaller sizes look soft once a README scales the GIF down — and
   keeps the default shell, which already carries no personal configuration
@@ -133,4 +137,3 @@ Follow the `shell-code` and `code-style` skills. Project-specific points:
 - Branch: `develop`.
 - Commit subjects: short, imperative, optional prefix (like '[doc]', '[ci]', '[examples]')
   (e.g. `Draft README, PLAN and s-vhs.sh`).
-- Do not stage/unstage files unless explicitly asked.

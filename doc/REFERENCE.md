@@ -4,22 +4,22 @@ Every command implemented in `s-vhs.sh`.
 
 ## Settings
 
-| Command                      | Default    | Description                                                 |
-| ---------------------------- | ---------- | ----------------------------------------------------------- |
-| `SetOutput <path.ext>`       | —          | Add an output; repeatable. `.cast` and `.gif` are supported |
-| `SetSession <name>`          | `s-vhs-$$` | Session name on the dedicated s-vhs tmux server             |
-| `SetCols <cols>`             | `100`      | Terminal width in character cells                           |
-| `SetRows <rows>`             | `40`       | Terminal height in character cells                          |
-| `SetFontSize <px>`           | `28`       | Rendered font size in pixels                                |
-| `SetFontFamily <family>`     | agg's      | Text font, keeping the Nerd Font and emoji fallbacks        |
-| `SetFontFamilyExact <list>`  | agg's      | Complete family list, bypassing all fallbacks               |
-| `SetLineHeight <multiplier>` | `1.2`      | Line-height multiplier passed to the renderer               |
-| `SetTheme <theme>`           | `dracula`  | agg theme name or custom palette                            |
-| `SetShell <shell>`           | `bash`     | Shell run inside the session: `bash`, `zsh` or `fish`       |
-| `SetPrompt <prompt>`         | `arrow`    | Prompt theme, literal prompt, or `native`                   |
-| `SetTypingSpeed <seconds>`   | `0.07`     | Default delay between characters typed by `Type`            |
-| `SetKeyDelay <seconds>`      | `0.0`      | Default pause after a key press sent by `Key`               |
-| `Env <name> <value>`         | —          | Export a variable into the recorded shell; repeatable       |
+| Command                      | Default    | Description                                                                               |
+| ---------------------------- | ---------- | ----------------------------------------------------------------------------------------- |
+| `SetOutput <path.ext>`       | —          | Add an output; repeatable. `.cast` and `.gif` are supported                               |
+| `SetSession <name>`          | `s-vhs-$$` | Session name on the dedicated s-vhs tmux server                                           |
+| `SetCols <cols>`             | `100`      | Terminal width in character cells                                                         |
+| `SetRows <rows>`             | `40`       | Terminal height in character cells                                                        |
+| `SetFontSize <px>`           | `28`       | Rendered font size in pixels                                                              |
+| `SetFontFamily <family>`     | agg's      | Text font, keeping the Nerd Font and emoji fallbacks; excludes `SetFontFamilyExact`       |
+| `SetFontFamilyExact <list>`  | agg's      | Complete family list, bypassing all fallbacks; excludes `SetFontFamily`                   |
+| `SetLineHeight <multiplier>` | `1.2`      | Line-height multiplier passed to the renderer                                             |
+| `SetTheme <theme>`           | `dracula`  | agg theme name or custom palette                                                          |
+| `SetShell <shell>`           | `bash`     | Shell run inside the session: `bash`, `zsh` or `fish`; a missing shell falls back to bash |
+| `SetPrompt <prompt>`         | `arrow`    | Prompt theme, literal prompt, or `native`                                                 |
+| `SetTypingSpeed <seconds>`   | `0.07`     | Default delay between characters typed by `Type`                                          |
+| `SetKeyDelay <seconds>`      | `0.0`      | Default pause after a key press sent by `Key`                                             |
+| `Env <name> <value>`         | —          | Export a variable into the recorded shell; repeatable                                     |
 
 > [!WARNING]
 > Every command in this section must be called before `Start`; a call made
@@ -27,13 +27,6 @@ Every command implemented in `s-vhs.sh`.
 
 > [!WARNING]
 > At least one `SetOutput` is required.
-
-> [!NOTE] Font
-> `SetFontFamily` and `SetFontFamilyExact` are mutually exclusive - agg rejects
-> both flags at once, so the second call fails.
-
-> [!NOTE] SetShell
-> A shell that is not installed falls back to `bash`.
 
 > [!NOTE]  (TODO: add theme list with visualizations)
 > Bundled prompt themes: `arrow`, `plain`, `path` or `powerline`.
