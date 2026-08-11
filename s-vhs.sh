@@ -83,6 +83,10 @@ _SVHS_KEY_DELAY=0.0
 _SVHS_POLL_INTERVAL=0.2
 _SVHS_ATTACH_TIMEOUT=5
 
+# A native configuration can pull in plugins on startup, so the shell gets
+# more time to become ready for input than the recorder gets to attach
+_SVHS_SHELL_TIMEOUT=10
+
 # The recorder flushes every event, so a write lands within milliseconds and
 # is polled far more tightly than tmux
 _SVHS_WRITE_POLL_INTERVAL=0.01
@@ -527,16 +531,29 @@ Start() {
     #
     # Start a fresh detached tmux session with the configured geometry, shell
     # and prompt on the dedicated s-vhs server, isolated from personal tmux
-    # config and without a status bar, and report how to attach to it.
+    # config and without a status bar, and report how to attach to it. It
+    # returns once the shell's line editor starts reading, so the first input
+    # cannot race its startup.
     #
     # Parameters:
-    #   None.
+    #   $1 - wait_mode - (optional) - 'no-wait' returns as soon as the shell
+    #        is spawned, leaving a session whose startup can be inspected.
     #
     # Example:
     #   Start || exit 1
+    #   Start 'no-wait' || exit 1
     #
+    local wait_mode="${1-}"
     local variable
     local env_args=()
+
+    case "$wait_mode" in
+        ''|no-wait) ;;
+        *)
+            printf 'Start: expected no-wait or no argument, got: %s\n' "$wait_mode" >&2
+            return 1
+            ;;
+    esac
 
     if [[ $_SVHS_STARTED == 1 ]]; then
         printf 'Start: session has already started\n' >&2
@@ -584,6 +601,10 @@ Start() {
     # xterm's older modifyOtherKeys sequences
     tmux -L "$_SVHS_TMUX_SOCKET" set -g extended-keys-format csi-u
     tmux -L "$_SVHS_TMUX_SOCKET" set-option -t "$_SVHS_SESSION" status off
+
+    if [[ $wait_mode != 'no-wait' ]]; then
+        _svhs_wait_for_shell || return 1
+    fi
 
     # The session runs on its own socket with the status bar off and a name
     # carrying a PID, so watching a recording live takes the printed command
@@ -1259,6 +1280,80 @@ _svhs_prepare_cast() {
         _SVHS_CAST="$temporary_cast"
         _SVHS_TEMP_CAST="$temporary_cast"
     fi
+}
+
+
+_svhs_tty_reads_input() {
+    #
+    # Return success when a terminal is in the mode a shell's line editor sets
+    # while it waits for input: noncanonical, with kernel echo off. It asks
+    # the terminal driver, not the screen, so it holds for every prompt -
+    # themed, literal, colored or empty.
+    #
+    # Parameters:
+    #   $1 - tty - terminal device to inspect.
+    #
+    # Example:
+    #   _svhs_tty_reads_input '/dev/pts/3' || return 1
+    #
+    local tty="$1"
+    local modes
+
+    # stty spells a disabled flag as -flag and wraps the list over several
+    # lines in both userlands; folding it into one padded line makes a flag
+    # match on whole words, so -echoprt cannot pass for -echo.
+    # stderr is redirected before the terminal, so a pane that vanished
+    # between the two silences the failing redirection as well
+    modes=$(stty -a 2> /dev/null < "$tty" | tr -s '[:space:]' ' ') || return 1
+    modes=" $modes "
+
+    [[ $modes == *' -icanon '* && $modes == *' -echo '* ]] || return 1
+    return 0
+}
+
+
+_svhs_wait_for_shell() {
+    #
+    # Wait until the session's shell is ready to accept input. A fresh pane
+    # starts in canonical, echoing mode, so input sent before the shell's line
+    # editor takes over is echoed by the terminal driver as well: the command
+    # appears twice and the opening frames differ from run to run.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_wait_for_shell || return 1
+    #
+    local deadline=$((SECONDS + _SVHS_SHELL_TIMEOUT))
+    local pane
+    local tty
+    local foreground
+
+    while :; do
+        # the session holds a single pane and dies together with the shell,
+        # so a failing query means the shell is gone
+        pane=$(tmux -L "$_SVHS_TMUX_SOCKET" display-message -p -t "$_SVHS_SESSION" \
+            '#{pane_tty} #{pane_current_command}' 2> /dev/null) || {
+            printf 'Start: the shell exited during startup\n' >&2
+            return 1
+        }
+        tty="${pane% *}"
+        foreground="${pane#* }"
+
+        # a program started by a native configuration can hold the terminal in
+        # that very mode, so the shell itself has to be in the foreground too
+        if [[ $foreground == "$_SVHS_SHELL" ]] && _svhs_tty_reads_input "$tty"; then
+            return 0
+        fi
+
+        if ((SECONDS >= deadline)); then
+            printf 'Start: %s is not ready for input after %s seconds\n' \
+                "$_SVHS_SHELL" "$_SVHS_SHELL_TIMEOUT" >&2
+            return 1
+        fi
+        sleep "$_SVHS_POLL_INTERVAL"
+    done
 }
 
 

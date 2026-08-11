@@ -25,7 +25,7 @@ Every command implemented in `s-vhs.sh`.
 > Every command in this section must be called before `Start`; a call made
 > after the session has started fails.
 
-> [!NOTE]
+> [!WARNING]
 > At least one `SetOutput` is required.
 
 > [!NOTE] Font
@@ -35,7 +35,7 @@ Every command implemented in `s-vhs.sh`.
 > [!NOTE] SetShell
 > A shell that is not installed falls back to `bash`.
 
-> [!NOTE] SetPrompt
+> [!NOTE]  (TODO: add theme list with visualizations)
 > Bundled prompt themes: `arrow`, `plain`, `path` or `powerline`.
 > A literal prompt in the shell's own syntax, or `native`. A theme and a
 > literal both keep the shell out of the user's rc files; `native` keeps them.
@@ -43,19 +43,19 @@ Every command implemented in `s-vhs.sh`.
 
 ## Core
 
-| Command                           | Description                                                                                                      |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `Start`                           | Check dependencies, start the detached session on the dedicated s-vhs tmux server, and print how to attach to it |
-| `Show`                            | Start recording; later calls append to the same cast                                                             |
-| `Hide`                            | Stop recording, leaving the session alive                                                                        |
-| `Type <text> [delay]`             | Emulate typing literal text, one character at a time                                                             |
-| `Key <key-name> [count] [delay]`  | Press a tmux-named key (`Enter`, `Down`, `C-r`) `count` times                                                    |
-| `Enter`, `Tab`, … `[count] [delay]` | Press one named key; same arguments as `Key`                                                                  |
-| `Sleep <seconds>`                 | Pause the recording, holding the last frame on screen                                                            |
-| `Wait <pattern> [timeout]`        | Poll the visible pane until a grep pattern appears (default: 15s)                                                |
-| `Run <command> [settle]`          | Type and run a command, then wait (default: 2s)                                                                  |
-| `RunOffRecord <command> [settle]` | Run a command off camera: `Hide` + `Run` + `Show`; fails when not recording                                      |
-| `Render`                          | End the recording and write every requested output                                                               |
+| Command                             | Description                                                                                                                                                         |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Start [no-wait]`                   | Check dependencies, start the detached session on the dedicated s-vhs tmux server, wait until the shell's line editor starts reading, and print how to attach to it; `no-wait` skips that wait |
+| `Show`                              | Start recording; later calls append to the same cast                                                                                                                |
+| `Hide`                              | Stop recording, leaving the session alive                                                                                                                           |
+| `Type <text> [delay]`               | Emulate typing literal text, one character at a time                                                                                                                |
+| `Key <key-name> [count] [delay]`    | Press a tmux-named key (`Enter`, `Down`, `C-r`) `count` times                                                                                                       |
+| `Enter`, `Tab`, … `[count] [delay]` | Press one named key; same arguments as `Key`                                                                                                                        |
+| `Sleep <seconds>`                   | Pause the recording, holding the last frame on screen                                                                                                               |
+| `Wait <pattern> [timeout]`          | Poll the visible pane until a grep pattern appears (default: 15s)                                                                                                   |
+| `Run <command> [settle]`            | Type and run a command, then wait (default: 2s)                                                                                                                     |
+| `RunOffRecord <command> [settle]`   | Run a command off camera: `Hide` + `Run` + `Show`; fails when not recording                                                                                         |
+| `Render`                            | End the recording and write every requested output                                                                                                                  |
 
 > [!NOTE] Named keys
 > `Enter`, `Tab`, `Space`, `Backspace`, `Escape`, `Up`, `Down`, `Left`,
@@ -69,7 +69,7 @@ Every command implemented in `s-vhs.sh`.
 
 ## Utility & CLI
 
-| Command               | Description                                                                                          |
-| --------------------- | ---------------------------------------------------------------------------------------------------- |
-| `svhs_version`        | Print the version of the sourced `s-vhs.sh`                                                          |
-| `s-vhs.sh new [path]` | Write an executable recording script with a pinned import, or print it when the path is omitted       |
+| Command               | Description                                                                                     |
+| --------------------- | ----------------------------------------------------------------------------------------------- |
+| `svhs_version`        | Print the version of the sourced `s-vhs.sh`                                                     |
+| `s-vhs.sh new [path]` | Write an executable recording script with a pinned import, or print it when the path is omitted |

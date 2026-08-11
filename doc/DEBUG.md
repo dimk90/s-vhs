@@ -19,6 +19,26 @@ Show
 Only one recording can use that name at a time. Remove `SetSession` after
 finishing the investigation if recordings should run concurrently again.
 
+## Start Without Waiting for the Shell
+
+`Start` returns only once the shell's line editor starts reading, and fails
+after ten seconds if that never happens. A `SetPrompt native` startup file that
+asks a question or turns the line editor off never gets there, and the failed
+`Start` takes the session with it, leaving nothing to look at.
+
+Start the session anyway with `no-wait`:
+
+```bash
+SetSession 'debug'
+
+Start 'no-wait'
+```
+
+The session then stays alive and the commands below show what its shell is
+waiting on. Input sent in this state races with the shell's startup - a typed
+command is echoed by the terminal driver and then again by the line editor, so
+it appears twice. Use `no-wait` to inspect a stuck startup, not to record.
+
 ## Watch the Pane Live
 
 Run this viewer in another terminal. It may be started before the recording

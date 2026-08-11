@@ -2,11 +2,11 @@
 
 ## v0.3.0
 
-- [ ] Make `Start` wait until the configured shell is ready for input
+- [x] Make `Start` wait until the configured shell is ready for input
       ([details](SHELL-READINESS.md)).
-  - [ ] Detect the shell line editor through the pane TTY's `-icanon -echo`
+  - [x] Detect the shell line editor through the pane TTY's `-icanon -echo`
         mode instead of matching the prompt or using a fixed sleep.
-  - [ ] Handle startup timeout or shell exit and verify bash, zsh, fish, and
+  - [x] Handle startup timeout or shell exit and verify bash, zsh, fish, and
         `SetPrompt native` behaviour.
 - [ ] Integrate the passive live pane viewer from [DEBUG.md](DEBUG.md) as an
       easy-to-use `svhs_watch [session]` helper.
@@ -18,7 +18,7 @@
         DEBUG.md, and REFERENCE.md.
 - [ ] Add remote import to "Quick Start" example with note about local import?
   - [ ] Note: ~"You can use source ./s-vhs.sh" if you going to keep it locally".
-- [ ] Is it reasonable to have skill for `s-vhs` ?
+- [x] Is it reasonable to have skill for `s-vhs` ?
 - [ ] Implement animated SVG output format.
   - [ ] Update readme header with one more bullet:
     ```Markdown
