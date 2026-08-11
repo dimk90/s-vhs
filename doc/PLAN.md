@@ -4,6 +4,20 @@
 
 - [ ] Update `pi-context-view` recordings + add reference to the `s-vhs`.
   - [ ] Add example "S-VHS in the Wild" to README.
+- [ ] Make `Start` wait until the configured shell is ready for input
+      ([details](SHELL-READINESS.md)).
+  - [ ] Detect the shell line editor through the pane TTY's `-icanon -echo`
+        mode instead of matching the prompt or using a fixed sleep.
+  - [ ] Handle startup timeout or shell exit and verify bash, zsh, fish, and
+        `SetPrompt native` behaviour.
+- [ ] Integrate the passive live pane viewer from [DEBUG.md](DEBUG.md) as an
+      easy-to-use `svhs_watch [session]` helper.
+  - [ ] Preserve ANSI/24-bit colors, repaint rows without flicker, and restore
+        the viewer terminal on exit.
+  - [ ] Wait for an explicitly named session; when omitted, wait for a default
+        `s-vhs-*` session and select deterministically if several matches exist.
+  - [ ] Document the helper and its session-selection behavior in README,
+        DEBUG.md, and REFERENCE.md.
 - [ ] Add remote import to "Quick Start" example with note about local import?
   - [ ] Note: ~"You can use source ./s-vhs.sh" if you going to keep it locally".
 - [ ] Is it reasonable to have skill for `s-vhs` ?
@@ -19,7 +33,7 @@
   - [ ] README - agg is listed as a flat requirement, but it is only needed for GIF output; a
         .cast-only recording never invokes it. Worth marking as "for GIF output".
 - [ ] Re-render all examples to animated SVG?
-- [ ] Test on macOS.
+- [ ] Test on macOS + installation instruction.
 
 ## v0.4.0
 
