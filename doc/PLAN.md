@@ -2,8 +2,6 @@
 
 ## v0.3.0
 
-- [ ] Update `pi-context-view` recordings + add reference to the `s-vhs`.
-  - [ ] Add example "S-VHS in the Wild" to README.
 - [ ] Make `Start` wait until the configured shell is ready for input
       ([details](SHELL-READINESS.md)).
   - [ ] Detect the shell line editor through the pane TTY's `-icanon -echo`
