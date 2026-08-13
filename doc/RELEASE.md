@@ -9,7 +9,7 @@
      current.
 
 1. Point every literal pinned remote import URL at the tag being released — in
-   `README.md` and in `examples/remote-import.rec.sh`.
+   `README.md`, `doc/DEBUG.md` and in `examples/remote-import.rec.sh`.
 
 1. Bump the version literal in `svhs_version`.
 

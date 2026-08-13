@@ -25,7 +25,7 @@ Status: early draft, pre-`v0.1.0`. The public function names are **not** frozen
 | Path               | Purpose                                                     |
 | ------------------ | ----------------------------------------------------------- |
 | `s-vhs.sh`         | The whole implementation. Sourced library, never executed.  |
-| `README.md`        | User-facing docs; many sections are still `> TODO:`.        |
+| `README.md`        | User-facing docs;                                           |
 | `CHANGELOG.md`     | One line per significant change, newest version on top.     |
 | `doc/REFERENCE.md` | Reference of every command implemented today. Keep in sync. |
 | `doc/COMMANDS.md`  | VHS parity table and target API design notes.               |
@@ -48,12 +48,14 @@ Dev: `shellcheck`.
 
 Follow the `shell-code` and `code-style` skills. Project-specific points:
 
-- **Sourced library with one subcommand.** `s-vhs.sh` must stay safe to
+- **Sourced library with subcommands.** `s-vhs.sh` must stay safe to
   `source`: sourcing only defines functions and installs an `EXIT` trap
   (`_svhs_cleanup`) in the sourcing script's shell. Executing it
-  (`s-vhs.sh new demo.rec.sh`, including the piped
-  `curl … | bash -s -- new …`) scaffolds a recording script and exits; that is
-  the only subcommand. Do not grow it into a CLI or add a general `main`.
+  (`s-vhs.sh new demo.rec.sh`, `s-vhs.sh watch demo`, including the piped
+  `curl … | bash -s -- new …`) scaffolds a recording script or runs the live
+  pane viewer, and exits; those are the only subcommands, each a thin wrapper
+  around a function usable from a recording script. Do not grow it into a CLI
+  or add a general `main`.
   Dispatch detects execution, never `$1` — a sourced library inherits the
   positional parameters of the script that sourced it.
 - **Bash 3.2 compatible.** macOS still ships bash 3.2.57 as `/bin/bash`, so no

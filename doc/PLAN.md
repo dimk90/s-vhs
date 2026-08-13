@@ -8,14 +8,16 @@
         mode instead of matching the prompt or using a fixed sleep.
   - [x] Handle startup timeout or shell exit and verify bash, zsh, fish, and
         `SetPrompt native` behaviour.
-- [ ] Integrate the passive live pane viewer from [DEBUG.md](DEBUG.md) as an
+- [x] Integrate the passive live pane viewer from [DEBUG.md](DEBUG.md) as an
       easy-to-use `svhs_watch [session]` helper.
-  - [ ] Preserve ANSI/24-bit colors, repaint rows without flicker, and restore
+  - [x] Preserve ANSI/24-bit colors, repaint rows without flicker, and restore
         the viewer terminal on exit.
-  - [ ] Wait for an explicitly named session; when omitted, wait for a default
+  - [x] Wait for an explicitly named session; when omitted, wait for a default
         `s-vhs-*` session and select deterministically if several matches exist.
-  - [ ] Document the helper and its session-selection behavior in README,
+  - [x] Document the helper and its session-selection behavior in README,
         DEBUG.md, and REFERENCE.md.
+  - [x] Document simple `watch` command and its problem: missing 24-bit colors.
+  - [ ] Improve DEBUG.md structure and clearness, remove bloat.
 - [ ] Add remote import to "Quick Start" example with note about local import?
   - [ ] Note: ~"You can use source ./s-vhs.sh" if you going to keep it locally".
 - [x] Is it reasonable to have skill for `s-vhs` ?
@@ -30,8 +32,8 @@
   - [ ] Update installation instructions and dependencies description.
   - [ ] README - agg is listed as a flat requirement, but it is only needed for GIF output; a
         .cast-only recording never invokes it. Worth marking as "for GIF output".
+  - [ ] Add table of output formats -> name/description/render-dependency.
 - [ ] Re-render all examples to animated SVG?
-- [ ] Test on macOS + installation instruction.
 
 ## v0.4.0
 
@@ -48,6 +50,7 @@
   - [ ] Add demo to README.
 - [ ] Publish link in the related VHS issues.
 - [ ] Update template (`s-vhs new`) with common settings (if any new).
+- [ ] Test on macOS + installation instruction.
 
 
 ## Backlog

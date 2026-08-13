@@ -1,10 +1,7 @@
 #!/bin/bash
 #
-# s-vhs — shared helpers for agg + asciinema + tmux demo recordings.
-# Meant to be sourced by a recording script; executing it only scaffolds one:
-# `s-vhs.sh new demo.rec.sh`.
+# S-VHS - shared helpers for agg + asciinema + tmux demo recordings.
 #
-# Requires:  bash 3.2+ — the version macOS still ships as /bin/bash.
 # Homepage:  https://github.com/dimk90/s-vhs
 # License:   MIT
 # Copyright: (c) 2026 Dmitry Makarov
@@ -82,6 +79,18 @@ _SVHS_KEY_DELAY=0.0
 # How often tmux is polled, and how long the recorder may take to attach
 _SVHS_POLL_INTERVAL=0.2
 _SVHS_ATTACH_TIMEOUT=5
+
+# The live viewer snapshots the pane rather than following it, so it redraws
+# faster than tmux is polled - a typed character has to show up as it lands
+_SVHS_WATCH_INTERVAL=0.1
+
+# The viewer takes the terminal over: the alternate screen leaves the screen it
+# was started on untouched, the cursor is hidden, and line wrapping is off, so
+# a row wider than that terminal is cut off instead of pushing the rows below
+# it down. Restoring puts all three back
+_SVHS_WATCH_CLEAR=$'\033[2J\033[H'
+_SVHS_WATCH_ENTER=$'\033[?1049h\033[?25l\033[?7l'"$_SVHS_WATCH_CLEAR"
+_SVHS_WATCH_RESTORE=$'\033[0m\033[?7h\033[?25h\033[?1049l'
 
 # A native configuration can pull in plugins on startup, so the shell gets
 # more time to become ready for input than the recorder gets to attach
@@ -613,6 +622,43 @@ Start() {
 }
 
 
+svhs_watch() {
+    #
+    # Watch a recording's pane live from another terminal, by repainting a
+    # snapshot of it several times a second. No tmux client is attached, so
+    # the viewer cannot resize the pane, send input to it, or interfere with
+    # the recorder. It waits for the session to appear, returns to waiting
+    # once the recording ends, and runs until interrupted with Ctrl-C.
+    #
+    # Parameters:
+    #   $1 - session - (optional) - session name to watch; without it, the
+    #        newest default s-vhs-<pid> session is picked, so the viewer can
+    #        be left running across recordings.
+    #
+    # Example:
+    #   svhs_watch 'demo'
+    #
+    local session="${1-}"
+
+    if [[ $# -ge 1 && -z $session ]]; then
+        printf 'svhs_watch: session name must not be empty\n' >&2
+        return 1
+    fi
+
+    _svhs_require_command 'svhs_watch' 'tmux' 'the live pane viewer' || return 1
+
+    # the viewer takes the terminal over, so its restoring EXIT trap runs in a
+    # subshell of its own rather than replacing the caller's _svhs_cleanup
+    (
+        trap 'printf "%s" "$_SVHS_WATCH_RESTORE"' EXIT
+        trap 'exit 130' INT TERM
+
+        printf '%s' "$_SVHS_WATCH_ENTER"
+        _svhs_watch_loop "$session"
+    )
+}
+
+
 ## Input
 
 
@@ -965,18 +1011,20 @@ _svhs_require_command() {
     # Report an external dependency that is missing from PATH.
     #
     # Parameters:
-    #   $1 - command_name - executable the recording needs.
-    #   $2 - purpose - what it is needed for.
+    #   $1 - caller - public command name to report the failure under.
+    #   $2 - command_name - executable the recording needs.
+    #   $3 - purpose - what it is needed for.
     #
     # Example:
-    #   _svhs_require_command 'agg' 'GIF output' || return 1
+    #   _svhs_require_command 'Start' 'agg' 'GIF output' || return 1
     #
-    local command_name="$1"
-    local purpose="$2"
+    local caller="$1"
+    local command_name="$2"
+    local purpose="$3"
 
     if ! command -v "$command_name" > /dev/null 2>&1; then
-        printf 'Start: %s is not installed, required for %s\n' \
-            "$command_name" "$purpose" >&2
+        printf '%s: %s is not installed, required for %s\n' \
+            "$caller" "$command_name" "$purpose" >&2
         return 1
     fi
 }
@@ -995,12 +1043,12 @@ _svhs_require_dependencies() {
     #
     local output
 
-    _svhs_require_command 'tmux' 'the recording session' || return 1
-    _svhs_require_command 'asciinema' 'the recorder' || return 1
+    _svhs_require_command 'Start' 'tmux' 'the recording session' || return 1
+    _svhs_require_command 'Start' 'asciinema' 'the recorder' || return 1
 
     for output in "${_SVHS_OUTPUTS[@]}"; do
         case "$output" in
-            *.gif) _svhs_require_command 'agg' 'GIF output' || return 1 ;;
+            *.gif) _svhs_require_command 'Start' 'agg' 'GIF output' || return 1 ;;
         esac
     done
 }
@@ -1024,6 +1072,109 @@ _svhs_session_exists() {
     tmux -L "$_SVHS_TMUX_SOCKET" list-sessions -F '#{session_name}' 2> /dev/null \
         | grep -q -x -F -- "$session" || return 1
     return 0
+}
+
+
+_svhs_watch_target() {
+    #
+    # Print the session the viewer should follow, or nothing when none is
+    # alive yet.
+    #
+    # Parameters:
+    #   $1 - session - session name to look for; empty picks the newest
+    #        default s-vhs-<pid> session.
+    #
+    # Example:
+    #   target=$(_svhs_watch_target 'demo')
+    #
+    local session="$1"
+
+    if [[ -n $session ]]; then
+        _svhs_session_exists "$session" && printf '%s\n' "$session"
+        return 0
+    fi
+
+    # the newest default session is the recording that just started; sorting
+    # by creation time and then by name keeps the pick independent of the
+    # order tmux happens to list them in, and a name says nothing about age
+    tmux -L "$_SVHS_TMUX_SOCKET" list-sessions \
+         -F '#{session_created} #{session_name}' 2> /dev/null \
+        | grep ' s-vhs-[0-9][0-9]*$'                          \
+        | sort -k1,1nr -k2,2                                  \
+        | head -n 1                                           \
+        | cut -d ' ' -f 2 || true
+}
+
+
+_svhs_watch_pane() {
+    #
+    # Repaint one session's visible pane until it is gone.
+    #
+    # Parameters:
+    #   $1 - session - session name to capture.
+    #
+    # Example:
+    #   _svhs_watch_pane 'demo'
+    #
+    local session="$1"
+    local frame
+
+    while :; do
+        # -p writes the pane to stdout without creating a client, -e keeps its
+        # ANSI attributes, 24-bit color included; a failing capture is the
+        # session ending, which returns the viewer to waiting
+        frame=$(tmux -L "$_SVHS_TMUX_SOCKET" capture-pane \
+            -e -p -t "$session" 2> /dev/null) || return 0
+
+        # each row is written at its own address and cleared to the end of the
+        # line, and the rows below the last one are dropped, so the picture
+        # never blinks the way clearing the screen per frame would
+        printf '%s\n' "$frame" | awk '
+            { printf "\033[%d;1H%s\033[0m\033[K", NR, $0 }
+            END { printf "\033[%d;1H\033[J", NR + 1 }'
+
+        sleep "$_SVHS_WATCH_INTERVAL"
+    done
+}
+
+
+_svhs_watch_loop() {
+    #
+    # Follow recordings until interrupted: wait for a session, paint it while
+    # it lives, and wait again once it ends, so a viewer left running picks up
+    # the next run of a recording script.
+    #
+    # Parameters:
+    #   $1 - session - session name to watch; empty follows default ones.
+    #
+    # Example:
+    #   _svhs_watch_loop 'demo'
+    #
+    local session="$1"
+    local target
+    local waiting=''
+
+    while :; do
+        target=$(_svhs_watch_target "$session")
+
+        if [[ -z $target ]]; then
+            # painted once per wait, so the message does not blink while the
+            # session is polled for
+            if [[ -z $waiting ]]; then
+                printf '%s::: Waiting for %s, Ctrl-C to exit\n' \
+                    "$_SVHS_WATCH_CLEAR" "${session:-an s-vhs session}"
+                waiting=1
+            fi
+            sleep "$_SVHS_POLL_INTERVAL"
+            continue
+        fi
+
+        # the frames themselves never clear the screen, so the wait message
+        # has to go before the first one of a session is painted
+        printf '%s' "$_SVHS_WATCH_CLEAR"
+        waiting=''
+        _svhs_watch_pane "$target"
+    done
 }
 
 
@@ -1498,21 +1649,31 @@ _svhs_new() {
 }
 
 
-# Executed rather than sourced, so this is the scaffolding call: either as a
-# file (`s-vhs.sh new demo.rec.sh`) or piped, which leaves BASH_SOURCE unset
-# (`curl -fsSL … | bash -s -- new demo.rec.sh`). A sourced library, in
-# contrast, is $0 of its caller. The subcommand is deliberately the only one:
-# s-vhs is a library, not a CLI.
+# Executed rather than sourced, so this is one of the two calls that need no
+# recording script: either as a file (`s-vhs.sh new demo.rec.sh`) or piped,
+# which leaves BASH_SOURCE unset (`curl -fsSL … | bash -s -- new demo.rec.sh`).
+# A sourced library, in contrast, is $0 of its caller. Scaffolding and
+# watching are deliberately the only subcommands: s-vhs is a library, not a
+# CLI.
 #
 # Dispatch cannot look at $1 alone — a sourced script inherits the positional
 # parameters of the recording script that sourced it.
 if [[ -z ${BASH_SOURCE[0]-} || ${BASH_SOURCE[0]} == "$0" ]]; then
-    if [[ ${1-} != 'new' ]]; then
-        printf 'usage: s-vhs.sh new [path]\n' >&2
-        exit 1
-    fi
-
-    _svhs_new "${2-}" || exit 1
+    case "${1-}" in
+        new)
+            _svhs_new "${2-}" || exit 1
+            ;;
+        watch)
+            # bash 3.2 (stock macOS) rejects $2 as unbound under set -u, so an
+            # omitted session is passed as no argument rather than as ''
+            svhs_watch ${2+"$2"} || exit 1
+            ;;
+        *)
+            printf 'usage: s-vhs.sh new [path]\n' >&2
+            printf '       s-vhs.sh watch [session]\n' >&2
+            exit 1
+            ;;
+    esac
     exit 0
 fi
 

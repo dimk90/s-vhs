@@ -344,9 +344,7 @@ Render
 
 ## Documentation
 
-
-
- For the architecture behind `tmux + asciinema + agg` and how `s-vhs` glues
+- For the architecture behind `tmux + asciinema + agg` and how `s-vhs` glues
   them together, see [INTRO.md](doc/INTRO.md).
 
   <p align="center">

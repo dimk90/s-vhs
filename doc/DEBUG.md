@@ -19,6 +19,9 @@ Show
 Only one recording can use that name at a time. Remove `SetSession` after
 finishing the investigation if recordings should run concurrently again.
 
+The live viewer below finds a default session on its own; every `capture-pane`
+command needs the name.
+
 ## Start Without Waiting for the Shell
 
 `Start` returns only once the shell's line editor starts reading, and fails
@@ -41,22 +44,17 @@ it appears twice. Use `no-wait` to inspect a stuck startup, not to record.
 
 ## Watch the Pane Live
 
-Run this viewer in another terminal. It may be started before the recording
-script; it remains blank until the `debug` session exists.
+`svhs_watch` shows the recorded pane in another terminal. Start it whenever —
+it waits for the session:
 
 ```bash
-(
-    trap 'printf "\033[0m\033[?25h\n"' EXIT
-    trap 'exit 130' INT TERM
+./s-vhs.sh watch debug
+```
 
-    printf '\033[2J\033[H\033[?25l'
+Without a local `s-vhs.sh`, the remote import runs it too:
 
-    while :; do
-        tmux -L s-vhs capture-pane -ep -t debug 2> /dev/null |
-            awk '{ printf "\033[%d;1H%s\033[0m\033[K", NR, $0 }'
-        sleep 0.1
-    done
-)
+```bash
+curl -fsSL https://dimk90.github.io/s-vhs/v0.3.0 | bash -s -- watch debug
 ```
 
 Then run the recording normally:
@@ -65,22 +63,33 @@ Then run the recording normally:
 ./demo.rec.sh
 ```
 
-Press `Ctrl-C` in the viewer to stop it. Its terminal should be at least as
-large as the recording's `SetCols` by `SetRows` grid; a smaller terminal wraps
-or clips the captured rows.
+With no session name the viewer follows the newest default `s-vhs-<pid>`
+session, so it keeps up with an edit-and-rerun loop even though every run is
+named after a new PID. A `SetSession` name has to be passed explicitly.
 
-The viewer is deliberately built from snapshots:
+Once the recording ends the viewer waits again instead of exiting. `Ctrl-C`
+stops it and hands the terminal back as it was.
+
+The viewer's terminal should be at least as large as the recording's `SetCols`
+by `SetRows` grid; in a smaller one every row is cut off at the right edge.
+
+The viewer is deliberately built from snapshots, and takes no tmux client of
+its own:
 
 - `tmux -L s-vhs` selects the dedicated s-vhs tmux server.
 - `capture-pane -p` writes the visible pane to stdout without creating a client.
 - `-e` retains ANSI text attributes, including 24-bit color.
-- `awk` repaints rows in place and erases stale text at each line's end. The
-  screen is cleared only once, avoiding the flicker caused by clearing every
-  0.2 seconds.
+- Rows are repainted in place and cleared to their end, ten times a second.
+  The screen is cleared only once, avoiding the flicker that clearing every
+  frame causes.
 
-Do not replace this with `watch --color` when debugging a truecolor TUI such as
-Pi. GNU watch can discard `38;2;R;G;B` color sequences even though basic prompt
-colors remain visible.
+A recording script that already sources the library can call the function
+itself, `svhs_watch 'debug'` — but it blocks until interrupted, so it belongs
+in a second terminal, not in the middle of a recording.
+
+Do not reach for `watch --color 'tmux -L s-vhs capture-pane -ep -t debug'` when
+debugging a truecolor TUI such as Pi. GNU watch can discard `38;2;R;G;B` color
+sequences even though basic prompt colors remain visible.
 
 ## Capture a Snapshot
 

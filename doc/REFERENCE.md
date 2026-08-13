@@ -62,7 +62,9 @@ Every command implemented in `s-vhs.sh`.
 
 ## Utility & CLI
 
-| Command               | Description                                                                                     |
-| --------------------- | ----------------------------------------------------------------------------------------------- |
-| `svhs_version`        | Print the version of the sourced `s-vhs.sh`                                                     |
-| `s-vhs.sh new [path]` | Write an executable recording script with a pinned import, or print it when the path is omitted |
+| Command                    | Description                                                                                                                                                                                                                                                               |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `svhs_version`             | Print the version of the sourced `s-vhs.sh`                                                                                                                                                                                                                               |
+| `svhs_watch [session]`     | Function form of `s-vhs.sh watch`, for use after sourcing `s-vhs.sh`                                                                                                                                                                                                       |
+| `s-vhs.sh new [path]`      | Write an executable recording script with a pinned import, or print it when the path is omitted                                                                                                                                                                           |
+| `s-vhs.sh watch [session]` | Watch a recording live from another terminal without attaching a tmux client; wait for a named session, or follow the newest `s-vhs-<pid>` session when omitted; return to waiting after it ends and run until `Ctrl-C`                                                     |
