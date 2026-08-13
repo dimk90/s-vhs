@@ -1,14 +1,21 @@
 #!/bin/bash
 #
-# S-VHS - shared helpers for agg + asciinema + tmux demo recordings.
+# S-VHS - a scriptable terminal recorder.
+# A thin wrapper around tmux + asciinema + output renderers (agg for GIF).
+#
+# Source this file from a recording script (*.rec.sh), or execute it:
+#   s-vhs.sh new demo.rec.sh   scaffold a recording script
+#   s-vhs.sh watch <name>      view a live recording session
 #
 # Homepage:  https://github.com/dimk90/s-vhs
 # License:   MIT
 # Copyright: (c) 2026 Dmitry Makarov
 #
 
-# Stop on an unhandled command failure (-e), use of an unset variable (-u),
-# or failure within a pipeline (-o pipefail), so the EXIT trap can clean up.
+# Abort on the first unhandled error, so the EXIT trap can clean up:
+#   -e           exit when a command fails and nothing checks its status
+#   -u           treat expansion of an unset variable as an error
+#   -o pipefail  a pipeline fails when any command in it fails
 set -euo pipefail
 
 
@@ -20,89 +27,80 @@ svhs_version() {
 }
 
 
-## Settings / Defaults
+## Settings / Defaults / Consts
 
 
-# A shared named socket isolates recordings from the user's default tmux server
+# Named tmux socket; keeps recordings off the user's default server
 _SVHS_TMUX_SOCKET='s-vhs'
 
-# The PID of the recording script keeps parallel recordings from colliding on
-# the default name; SetSession pins a fixed one when it should be attachable
+# The PID keeps parallel recordings apart; SetSession pins a fixed name
 _SVHS_SESSION="s-vhs-$$"
+
+# Output paths added by SetOutput
 _SVHS_OUTPUTS=()
 
-# Terminal geometry is in cells, not pixels
+# Terminal size in cells, not pixels
 _SVHS_COLS=100
 _SVHS_ROWS=40
 
-# Empty families let agg use its built-in default fonts.
-# The plain family is rendered through agg's text-font slot,
-# which keeps the bundled Symbols Nerd Font and emoji fallbacks
+# agg fonts, empty = its bundled defaults. FAMILY keeps the Nerd Font and
+# emoji fallbacks; FAMILY_EXACT replaces the whole chain, no fallbacks
 _SVHS_FONT_FAMILY=''
-
-# The exact one replaces the whole chain - no fallbacks to other fonts
 _SVHS_FONT_FAMILY_EXACT=''
 
-# Font size define output resolution ~ COLS*ROWS*FONT_SIZE
+# Output resolution ~ COLS x ROWS x FONT_SIZE
 _SVHS_FONT_SIZE=28
 _SVHS_LINE_HEIGHT=1.2
 
-# Headless recording cannot inspect the host theme; pin rendering instead
+# Render theme; headless recording has no host theme to inherit
 _SVHS_THEME='dracula'
 
-# Shell run inside the tmux session. s-vhs assembles the isolation flags and
-# injects the prompt itself, so the shell has to be one it knows;
-# bash is the safe default - present everywhere
+# Recorded shell; must be one s-vhs knows how to isolate and inject
+# a prompt into, and bash is present everywhere
 _SVHS_SHELL='bash'
 
-# Prompt of the recorded shell: a bundled theme, a literal prompt, or 'native'
-# for the user's own rc files. See SetPrompt
+# Prompt: a bundled theme, a literal string, or 'native' (see SetPrompt)
 _SVHS_PROMPT='arrow'
 _SVHS_PROMPT_MODE='theme'
 
 # Bundled themes, rendered per shell by _svhs_theme_prompt
 _SVHS_PROMPT_THEMES='arrow plain path powerline'
 
-# Glyphs the themes draw with, spelled as bytes to keep this file ASCII:
-# U+276F, the arrow, and U+E0B0, the powerline separator - a private-use glyph
-# agg draws from the Nerd Font it bundles
+# Theme glyphs as bytes to keep this file ASCII:
+# U+276F arrow, U+E0B0 powerline separator (from agg's bundled Nerd Font)
 _SVHS_PROMPT_ARROW=$'\xe2\x9d\xaf'
 _SVHS_POWERLINE_SEPARATOR=$'\xee\x82\xb0'
 
 # NAME=VALUE pairs exported into the recorded shell by Env
 _SVHS_ENV=()
 
-# Delays are in seconds
+# Delays in seconds
 _SVHS_TYPING_SPEED=0.07
 _SVHS_KEY_DELAY=0.0
 
-# How often tmux is polled, and how long the recorder may take to attach
+# tmux poll interval, and how long the recorder may take to attach
 _SVHS_POLL_INTERVAL=0.2
 _SVHS_ATTACH_TIMEOUT=5
 
-# The live viewer snapshots the pane rather than following it, so it redraws
-# faster than tmux is polled - a typed character has to show up as it lands
+# Viewer redraw interval; tighter than the tmux poll so a typed
+# character shows up as it lands
 _SVHS_WATCH_INTERVAL=0.1
 
-# The viewer takes the terminal over: the alternate screen leaves the screen it
-# was started on untouched, the cursor is hidden, and line wrapping is off, so
-# a row wider than that terminal is cut off instead of pushing the rows below
-# it down. Restoring puts all three back
+# Viewer escapes: ENTER switches to the alternate screen, hides the cursor
+# and disables line wrapping; RESTORE undoes all three
 _SVHS_WATCH_CLEAR=$'\033[2J\033[H'
 _SVHS_WATCH_ENTER=$'\033[?1049h\033[?25l\033[?7l'"$_SVHS_WATCH_CLEAR"
 _SVHS_WATCH_RESTORE=$'\033[0m\033[?7h\033[?25h\033[?1049l'
 
-# A native configuration can pull in plugins on startup, so the shell gets
-# more time to become ready for input than the recorder gets to attach
+# Shell readiness timeout; longer than ATTACH_TIMEOUT since a native
+# configuration may load plugins on startup
 _SVHS_SHELL_TIMEOUT=10
 
-# The recorder flushes every event, so a write lands within milliseconds and
-# is polled far more tightly than tmux
+# Cast-file write polling; the recorder flushes every event, so poll tightly
 _SVHS_WRITE_POLL_INTERVAL=0.01
 _SVHS_WRITE_TIMEOUT=5
 
-# The recorded shell's command line and the environment it needs, assembled
-# by Start from the configured shell and prompt
+# Recorded shell command line and environment, assembled by Start
 _SVHS_SHELL_COMMAND=()
 _SVHS_SHELL_ENV=()
 
@@ -1649,15 +1647,13 @@ _svhs_new() {
 }
 
 
-# Executed rather than sourced, so this is one of the two calls that need no
-# recording script: either as a file (`s-vhs.sh new demo.rec.sh`) or piped,
-# which leaves BASH_SOURCE unset (`curl -fsSL … | bash -s -- new demo.rec.sh`).
-# A sourced library, in contrast, is $0 of its caller. Scaffolding and
-# watching are deliberately the only subcommands: s-vhs is a library, not a
-# CLI.
-#
-# Dispatch cannot look at $1 alone — a sourced script inherits the positional
-# parameters of the recording script that sourced it.
+# Dispatch subcommands only when this file is executed, never when sourced:
+#   run directly  BASH_SOURCE[0] equals $0
+#   piped         BASH_SOURCE is unset (`curl … | bash -s -- new …`)
+#   sourced       $0 belongs to the caller
+# $1 alone cannot tell - a sourced library inherits the caller's positional
+# parameters. `new` and `watch` are deliberately the only subcommands:
+# s-vhs is a library, not a CLI.
 if [[ -z ${BASH_SOURCE[0]-} || ${BASH_SOURCE[0]} == "$0" ]]; then
     case "${1-}" in
         new)
@@ -1677,8 +1673,6 @@ if [[ -z ${BASH_SOURCE[0]-} || ${BASH_SOURCE[0]} == "$0" ]]; then
     exit 0
 fi
 
-# Installed in the sourcing script's shell, so any exit — including a
-# set -e failure mid-recording — tears down the tmux session and recorder
-# instead of leaving them running in the background. The handler is a no-op
-# until Start, so an exit before it, scaffolding included, tears down nothing.
+# Any exit of the sourcing script - including a set -e failure mid-recording -
+# tears down the tmux session and recorder. A no-op before Start
 trap _svhs_cleanup EXIT
