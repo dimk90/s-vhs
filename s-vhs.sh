@@ -743,21 +743,21 @@ Key() {
 # A modified key stays with Key and tmux notation (`Key C-r`), and three of
 # the names are spelled differently there: BSpace, IC and DC.
 #
-Enter()     { Key Enter ${@+"$@"}; }
-Tab()       { Key Tab ${@+"$@"}; }
-Space()     { Key Space ${@+"$@"}; }
-Backspace() { Key BSpace ${@+"$@"}; }
-Escape()    { Key Escape ${@+"$@"}; }
-Up()        { Key Up ${@+"$@"}; }
-Down()      { Key Down ${@+"$@"}; }
-Left()      { Key Left ${@+"$@"}; }
-Right()     { Key Right ${@+"$@"}; }
-PageUp()    { Key PageUp ${@+"$@"}; }
+Enter()     { Key Enter ${@+"$@"};    }
+Tab()       { Key Tab ${@+"$@"};      }
+Space()     { Key Space ${@+"$@"};    }
+Backspace() { Key BSpace ${@+"$@"};   }
+Escape()    { Key Escape ${@+"$@"};   }
+Up()        { Key Up ${@+"$@"};       }
+Down()      { Key Down ${@+"$@"};     }
+Left()      { Key Left ${@+"$@"};     }
+Right()     { Key Right ${@+"$@"};    }
+PageUp()    { Key PageUp ${@+"$@"};   }
 PageDown()  { Key PageDown ${@+"$@"}; }
-Home()      { Key Home ${@+"$@"}; }
-End()       { Key End ${@+"$@"}; }
-Insert()    { Key IC ${@+"$@"}; }
-Delete()    { Key DC ${@+"$@"}; }
+Home()      { Key Home ${@+"$@"};     }
+End()       { Key End ${@+"$@"};      }
+Insert()    { Key IC ${@+"$@"};       }
+Delete()    { Key DC ${@+"$@"};       }
 #
 # bash 3.2 (stock macOS) reports "$@" as unbound under set -u when the caller
 # passed nothing, so the arguments are guarded the same way an array is.

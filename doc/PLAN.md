@@ -17,7 +17,7 @@
   - [x] Document the helper and its session-selection behavior in README,
         DEBUG.md, and REFERENCE.md.
   - [x] Document simple `watch` command and its problem: missing 24-bit colors.
-  - [ ] Improve DEBUG.md structure and clearness, remove bloat.
+  - [x] Improve DEBUG.md structure and clearness, remove bloat.
 - [ ] Add remote import to "Quick Start" example with note about local import?
   - [ ] Note: ~"You can use source ./s-vhs.sh" if you going to keep it locally".
 - [x] Is it reasonable to have skill for `s-vhs` ?

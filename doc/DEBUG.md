@@ -1,152 +1,89 @@
 # Debugging Recording Scripts
 
-A recording runs inside a detached tmux session. The safest way to debug it is
-to inspect that pane without attaching another tmux client: this preserves the
-configured terminal size, cannot send accidental input, and does not interfere
-with the asciinema client used by `Show` and `Hide`.
+## Watch the Recording Live
 
-## Use a Predictable Session Name
+**A recording is quiet by design**: the script prints only a few `:::` lines
+while everything happens in a detached tmux session. When it hangs or draws
+the wrong thing, there is nothing on screen to explain why.
 
-Give the recording a fixed tmux target before `Start`:
+**Debug it by observing that tmux session from a second terminal**. Observing must
+not interfere with the recording - attaching a tmux client can resize the pane
+or disturb the asciinema recorder - so look through pane snapshots instead of
+attaching.
 
-```bash
-SetSession 'debug'
-
-Start
-Show
-```
-
-Only one recording can use that name at a time. Remove `SetSession` after
-finishing the investigation if recordings should run concurrently again.
-
-The live viewer below finds a default session on its own; every `capture-pane`
-command needs the name.
-
-## Start Without Waiting for the Shell
-
-`Start` returns only once the shell's line editor starts reading, and fails
-after ten seconds if that never happens. A `SetPrompt native` startup file that
-asks a question or turns the line editor off never gets there, and the failed
-`Start` takes the session with it, leaving nothing to look at.
-
-Start the session anyway with `no-wait`:
+A simple option is GNU `watch` around `capture-pane`. It needs a fixed session
+name, so set one before `Start`:
 
 ```bash
 SetSession 'debug'
-
-Start 'no-wait'
 ```
+> Only one recording can hold it at a time.
 
-The session then stays alive and the commands below show what its shell is
-waiting on. Input sent in this state races with the shell's startup - a typed
-command is echoed by the terminal driver and then again by the line editor, so
-it appears twice. Use `no-wait` to inspect a stuck startup, not to record.
-
-## Watch the Pane Live
-
-`svhs_watch` shows the recorded pane in another terminal. Start it whenever —
-it waits for the session:
+Then, in a second terminal:
 
 ```bash
-./s-vhs.sh watch debug
+watch --color 'tmux -L s-vhs capture-pane -ep -t debug'
+```
+
+This is fine for plain shell output, but GNU watch can drop 24-bit
+(`38;2;R;G;B`) color sequences, so truecolor TUIs come out miscolored.
+
+The better option is the built-in viewer:
+- it preserves 24-bit color, and
+- with no session name it automatically follows the newest s-vhs recording - no
+`SetSession` needed:
+
+```bash
+./s-vhs.sh watch
 ```
 
 Without a local `s-vhs.sh`, the remote import runs it too:
 
 ```bash
-curl -fsSL https://dimk90.github.io/s-vhs/v0.3.0 | bash -s -- watch debug
+curl -fsSL https://dimk90.github.io/s-vhs/latest | bash -s -- watch
 ```
 
-Then run the recording normally:
+Start the viewer whenever - it waits for a session to appear, keeps following
+across edit-and-rerun cycles, and stops on `Ctrl-C`. Make its terminal at
+least `SetCols` by `SetRows`, or every row is cut off at the right edge.
+
+## When `Start` Itself Times Out
+
+`Start` polls the new session until the shell's line editor starts reading,
+and fails with a timeout after ten seconds if that never happens - typically
+when the shell never reaches a prompt, e.g. zsh asking its first-run
+configuration question or a startup file waiting for input. The failed `Start`
+takes the session with it, leaving nothing to look at.
+
+To see what the shell is actually stuck on, disable the polling and watch:
 
 ```bash
-./demo.rec.sh
+Start 'no-wait'
 ```
 
-With no session name the viewer follows the newest default `s-vhs-<pid>`
-session, so it keeps up with an edit-and-rerun loop even though every run is
-named after a new PID. A `SetSession` name has to be passed explicitly.
+The session now stays alive, and the viewer shows whatever blocked the
+startup. Use `no-wait` only to inspect a stuck startup, not to record - input
+sent before the line editor is ready gets echoed twice.
 
-Once the recording ends the viewer waits again instead of exiting. `Ctrl-C`
-stops it and hands the terminal back as it was.
+## Localize Renderer Artifacts
 
-The viewer's terminal should be at least as large as the recording's `SetCols`
-by `SetRows` grid; in a smaller one every row is cut off at the right edge.
-
-The viewer is deliberately built from snapshots, and takes no tmux client of
-its own:
-
-- `tmux -L s-vhs` selects the dedicated s-vhs tmux server.
-- `capture-pane -p` writes the visible pane to stdout without creating a client.
-- `-e` retains ANSI text attributes, including 24-bit color.
-- Rows are repainted in place and cleared to their end, ten times a second.
-  The screen is cleared only once, avoiding the flicker that clearing every
-  frame causes.
-
-A recording script that already sources the library can call the function
-itself, `svhs_watch 'debug'` — but it blocks until interrupted, so it belongs
-in a second terminal, not in the middle of a recording.
-
-Do not reach for `watch --color 'tmux -L s-vhs capture-pane -ep -t debug'` when
-debugging a truecolor TUI such as Pi. GNU watch can discard `38;2;R;G;B` color
-sequences even though basic prompt colors remain visible.
-
-## Capture a Snapshot
-
-For a searchable, uncolored snapshot of the visible pane:
-
-```bash
-tmux -L s-vhs capture-pane -p -t debug
-```
-
-Include the entire tmux scrollback and save it for comparison:
-
-```bash
-tmux -L s-vhs capture-pane -p -S - -t debug > debug-pane.txt
-```
-
-Add `-e` when ANSI color and attributes need to be preserved. These commands
-fail once `Render` or the recording script's exit cleanup has removed the
-session.
-
-## Inspect What Was Recorded
-
-The live pane shows current state; a cast shows exactly what asciinema captured,
-including timing and terminal control sequences. Keep one alongside the normal
-output while debugging:
+When a rendered output such as a GIF shows artifacts, first find out whether
+the problem is in the recording or in the renderer. Keep a cast alongside the
+normal output:
 
 ```bash
 SetOutput 'debug.cast'
 SetOutput 'demo.gif'
 ```
 
-Replay it with timing and color:
+Replay the cast with timing and color:
 
 ```bash
 asciinema play debug.cast
 ```
 
-Or convert it to plain text for searching and diffs:
+Compare the replay with the rendered output. If the replay already shows the
+artifact, the recording itself is at fault -> debug the script with the live
+viewer above.
 
-```bash
-asciinema convert -f txt debug.cast -
-```
-
-The live viewer uses the current terminal's font and palette, while GIF output
-uses the font, size, line height, and theme configured for agg. Use the viewer
-to diagnose commands, input, redraws, and timing—not as a pixel preview of the
-rendered GIF.
-
-## Avoid Attaching a Client
-
-`Start` prints a `tmux attach` command, but an attached debugging client is not
-passive. A normal client may resize the pane, and even a read-only,
-size-ignoring client can interfere with recorder-client detection or be detached
-by `Hide`. Prefer `capture-pane` while investigating recording behavior.
-
-If a recording was killed with `SIGKILL` and left the fixed session behind,
-remove only that session before trying again:
-
-```bash
-tmux -L s-vhs kill-session -t debug
-```
+If the replay looks right, the problem is in the renderer (agg for GIF).
