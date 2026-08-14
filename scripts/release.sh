@@ -21,16 +21,17 @@ readonly _RELEASE_PUBLICATION_ATTEMPTS=90
 readonly _RELEASE_PUBLICATION_INTERVAL=10
 readonly _RELEASE_ALLOWED_PATHS=(
     CHANGELOG.md
-    doc/DEBUG.md
     doc/PLAN.md
     README.md
     s-vhs.sh
     examples/remote-import.rec.sh
 )
-readonly _RELEASE_REMOTE_IMPORT_FILES=(
+readonly _RELEASE_PINNED_IMPORT_FILES=(
     README.md
-    doc/DEBUG.md
     examples/remote-import.rec.sh
+)
+readonly _RELEASE_LATEST_IMPORT_FILES=(
+    doc/DEBUG.md
 )
 
 _RELEASE_BLOCKERS=()
@@ -196,6 +197,7 @@ _release_check_required_files() {
     for required_file in \
         .github/workflows/release.yml \
         CHANGELOG.md \
+        doc/DEBUG.md \
         doc/PLAN.md \
         doc/RELEASE.md \
         README.md \
@@ -245,8 +247,9 @@ _release_check_repository_state() {
     # Example:
     #   _release_check_repository_state
     #
-    local operations=()
-    local current_branch git_dir marker
+    local current_branch git_dir marker operation_detail
+
+    operation_detail=''
 
     current_branch="$(git symbolic-ref --quiet --short HEAD 2>/dev/null)"
     if [[ $current_branch == "$_RELEASE_DEVELOP_BRANCH" ]]; then
@@ -258,13 +261,14 @@ _release_check_repository_state() {
 
     git_dir="$(git rev-parse --absolute-git-dir)"
     for marker in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD BISECT_LOG rebase-apply rebase-merge; do
-        [[ -e ${git_dir}/${marker} ]] && operations+=("$marker")
+        if [[ -e ${git_dir}/${marker} ]]; then
+            operation_detail="${operation_detail}${operation_detail:+$'\n'}${marker}"
+        fi
     done
-    if ((${#operations[@]} == 0)); then
+    if [[ -z $operation_detail ]]; then
         _release_pass 'no merge, rebase, cherry-pick, revert, or bisect is in progress'
     else
-        _release_block 'a Git operation is in progress' \
-                       "$(printf '%s\n' ${operations[@]+"${operations[@]}"})"
+        _release_block 'a Git operation is in progress' "$operation_detail"
     fi
 }
 
@@ -280,21 +284,24 @@ _release_check_candidate_paths() {
     # Example:
     #   _release_check_candidate_paths
     #
-    local unexpected_paths=()
-    local path
+    local path unexpected_path_detail
+
+    unexpected_path_detail=''
 
     while IFS= read -r -d '' path; do
         _RELEASE_CANDIDATE_PATHS+=("$path")
-        _release_is_allowed_path "$path" || unexpected_paths+=("$path")
+        if ! _release_is_allowed_path "$path"; then
+            unexpected_path_detail="${unexpected_path_detail}${unexpected_path_detail:+$'\n'}${path}"
+        fi
     done < <(git diff HEAD --name-only -z
              git ls-files --others --exclude-standard -z)
 
     if ((${#_RELEASE_CANDIDATE_PATHS[@]} == 0)); then
         _RELEASE_CANDIDATE_MODE='committed'
         _release_pass 'the worktree is clean; checking the committed develop tree'
-    elif ((${#unexpected_paths[@]} > 0)); then
+    elif [[ -n $unexpected_path_detail ]]; then
         _release_block 'the worktree holds changes outside the release paths' \
-                       "$(printf '%s\n' ${unexpected_paths[@]+"${unexpected_paths[@]}"})"
+                       "$unexpected_path_detail"
     else
         _RELEASE_CANDIDATE_MODE='worktree'
         _release_pass "the worktree holds ${#_RELEASE_CANDIDATE_PATHS[@]} release path(s) and nothing else"
@@ -478,7 +485,8 @@ _release_check_plan() {
 
 _release_check_remote_imports() {
     #
-    # Block unless every release-pinned remote import names the target tag.
+    # Block unless immutable imports name the target tag and rolling imports
+    # retain the latest alias.
     #
     # Parameters:
     #   None.
@@ -486,26 +494,48 @@ _release_check_remote_imports() {
     # Example:
     #   _release_check_remote_imports
     #
-    local stale_urls=()
-    local file url
+    local file stale_url_detail url
     local url_count
 
-    for file in ${_RELEASE_REMOTE_IMPORT_FILES[@]+"${_RELEASE_REMOTE_IMPORT_FILES[@]}"}; do
-        stale_urls=()
+    for file in ${_RELEASE_PINNED_IMPORT_FILES[@]+"${_RELEASE_PINNED_IMPORT_FILES[@]}"}; do
+        stale_url_detail=''
         url_count=0
         while IFS= read -r url; do
             url_count=$((url_count + 1))
-            [[ ${url##*/} == "$_RELEASE_TARGET_TAG" ]] || stale_urls+=("$url")
+            if [[ ${url##*/} != "$_RELEASE_TARGET_TAG" ]]; then
+                stale_url_detail="${stale_url_detail}${stale_url_detail:+$'\n'}${url}"
+            fi
         done < <(grep -Eo \
-            'https://dimk90\.github\.io/s-vhs/v[0-9]+\.[0-9]+\.[0-9]+' "$file")
+            'https://dimk90\.github\.io/s-vhs/(latest|v[0-9]+\.[0-9]+\.[0-9]+)' "$file")
 
         if ((url_count == 0)); then
             _release_block "${file} contains no pinned remote import"
-        elif ((${#stale_urls[@]} > 0)); then
+        elif [[ -n $stale_url_detail ]]; then
             _release_block "${file} contains a remote import not pinned to ${_RELEASE_TARGET_TAG}" \
-                           "$(printf '%s\n' ${stale_urls[@]+"${stale_urls[@]}"})"
+                           "$stale_url_detail"
         else
             _release_pass "${file} pins ${url_count} remote import(s) to ${_RELEASE_TARGET_TAG}"
+        fi
+    done
+
+    for file in ${_RELEASE_LATEST_IMPORT_FILES[@]+"${_RELEASE_LATEST_IMPORT_FILES[@]}"}; do
+        stale_url_detail=''
+        url_count=0
+        while IFS= read -r url; do
+            url_count=$((url_count + 1))
+            if [[ ${url##*/} != 'latest' ]]; then
+                stale_url_detail="${stale_url_detail}${stale_url_detail:+$'\n'}${url}"
+            fi
+        done < <(grep -Eo \
+            'https://dimk90\.github\.io/s-vhs/(latest|v[0-9]+\.[0-9]+\.[0-9]+)' "$file")
+
+        if ((url_count == 0)); then
+            _release_block "${file} contains no latest remote import"
+        elif [[ -n $stale_url_detail ]]; then
+            _release_block "${file} contains a remote import that does not use latest" \
+                           "$stale_url_detail"
+        else
+            _release_pass "${file} retains ${url_count} latest remote import(s)"
         fi
     done
 }
@@ -580,8 +610,8 @@ _release_check_branch_synchronization() {
 
 _release_check_committed_candidate() {
     #
-    # Block unless the committed develop tree carries a release change set
-    # against origin/master.
+    # Block unless develop differs from origin/master and its latest commit
+    # carries the required release files.
     #
     # Parameters:
     #   None.
@@ -590,6 +620,7 @@ _release_check_committed_candidate() {
     #   _release_check_committed_candidate
     #
     local committed_candidate_paths=()
+    local latest_commit_paths=()
     local path
 
     while IFS= read -r -d '' path; do
@@ -604,8 +635,12 @@ _release_check_committed_candidate() {
         _release_pass \
             "the committed develop tree differs from origin/master in ${#committed_candidate_paths[@]} path(s)"
     fi
-    _release_check_required_candidates 'the committed release' 'from origin/master' \
-        ${committed_candidate_paths[@]+"${committed_candidate_paths[@]}"}
+
+    while IFS= read -r -d '' path; do
+        latest_commit_paths+=("$path")
+    done < <(git diff --name-only -z 'HEAD^' HEAD)
+    _release_check_required_candidates 'the latest committed release' '' \
+        ${latest_commit_paths[@]+"${latest_commit_paths[@]}"}
 }
 
 
@@ -872,7 +907,7 @@ _release_print_release_plan() {
               ${plan_lines[@]+"${plan_lines[@]}"}
 
     gum style --faint --margin '1 0 1 2' -- \
-              'Approval also confirms the changelog text, README and pinned imports,' \
+              'Approval also confirms the changelog text, README and remote imports,' \
               'recording scripts, and rendered examples were reviewed as required by doc/RELEASE.md.'
 }
 
@@ -915,10 +950,10 @@ _release_validate_release_tree() {
     if [[ $_RELEASE_CANDIDATE_MODE == 'committed' ]]; then
         _release_apply_command 'checking the committed candidate diff' \
                                git diff --check \
-                                   "refs/remotes/origin/${_RELEASE_MASTER_BRANCH}" \
-                                   "refs/heads/${_RELEASE_DEVELOP_BRANCH}"
+                                   "${_RELEASE_APPROVED_HEAD}^" \
+                                   "$_RELEASE_APPROVED_HEAD"
     else
-        _release_apply_command 'checking the candidate diff' git diff --check
+        _release_apply_command 'checking the candidate diff' git diff --check HEAD
     fi
     _release_run_project_checks
 }
@@ -1433,14 +1468,13 @@ _release_detail() {
     #   _release_detail "$(tail -n 20 "$_RELEASE_LOG_FILE")"
     #
     local detail="$1"
-    local lines=()
-    local line
+    local indented_detail line
 
     [[ -n $detail ]] || return 0
-    while IFS= read -r line || [[ -n $line ]]; do
-        lines+=("-> $line")
-    done <<< "$detail"
-    gum style --faint --margin '0 0 0 2' -- ${lines[@]+"${lines[@]}"}
+    indented_detail="$(printf '%s\n' "$detail" | while IFS= read -r line; do
+        printf '%s\n' "-> $line"
+    done)"
+    gum style --faint --margin '0 0 0 2' -- "$indented_detail"
 }
 
 
