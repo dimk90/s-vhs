@@ -1,10 +1,12 @@
-# S-VHS
+<p align="center">
+  <img width="500" src="examples/logo.gif" alt="Animated S-VHS logo">
+  <br>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
+  <a href="https://github.com/dimk90/s-vhs/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/dimk90/s-vhs/release.yml?label=Release%20%26%20Deploy&amp;style=flat-square" alt="Release &amp; Deploy"></a>
+  <a href="https://github.com/dimk90/s-vhs/tree/deploy"><img src="https://img.shields.io/github/v/release/dimk90/s-vhs?label=Deployed&amp;style=flat-square" alt="Deployed"></a>
+</p>
 
-<img src="examples/logo.gif" width="500px" alt="Animated S-VHS logo">
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![Release & Deploy](https://img.shields.io/github/actions/workflow/status/dimk90/s-vhs/release.yml?label=Release%20%26%20Deploy&style=flat-square)](https://github.com/dimk90/s-vhs/actions/workflows/release.yml)
-[![Deployed](https://img.shields.io/github/v/release/dimk90/s-vhs?label=Deployed&style=flat-square)](https://github.com/dimk90/s-vhs/tree/deploy)
+<br>
 
 A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superior:
 
