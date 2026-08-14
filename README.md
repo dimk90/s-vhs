@@ -31,17 +31,19 @@ A recording is a plain shell script that sources `s-vhs.sh`:
 ```bash
 #!/usr/bin/env bash
 
-source ./s-vhs.sh
+# Import s-vhs straight from GitHub - no local copy needed.
+# A local copy works too, use "source ./s-vhs.sh"
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.2.0) && wait "$!" || exit 1
 
 # Where should we write the GIF?
 SetOutput 'demo.gif'
 
-# Set up a 60x4 terminal with a 40px font.
+# Set up a 60x4 terminal with a 40px font
 SetCols 60
 SetRows 4
 SetFontSize 40
 
-# Start the terminal, then the recorder.
+# Start the terminal, then the recorder
 Start
 Show
 
@@ -52,13 +54,13 @@ Sleep 1 # Pause for dramatic effect...
 Type " Stay awhile and listen...'"
 Sleep 1
 
-# Run the command by pressing Enter.
+# Run the command by pressing Enter
 Enter
 
-# Admire the output for a bit.
+# Admire the output for a bit
 Sleep 5
 
-# Stop recording and write every requested output.
+# Stop recording and write every requested output
 Render
 ```
 
@@ -344,17 +346,16 @@ Render
 
 ## Documentation
 
+- For the full list of commands and settings, see [REFERENCE.md](doc/REFERENCE.md).
+
+- For debugging a recording script see [DEBUG.md](doc/DEBUG.md).
+
 - For the architecture behind `tmux + asciinema + agg` and how `s-vhs` glues
   them together, see [INTRO.md](doc/INTRO.md).
 
   <p align="center">
     <img src="doc/images/svhs-pipeline.svg" width="500px" alt="s-vhs pipeline">
   </p>
-
-- For debugging a recording script see [DEBUG.md](doc/DEBUG.md).
-
-- For the full list of commands and settings, see [REFERENCE.md](doc/REFERENCE.md).
-
 
 ## License
 
