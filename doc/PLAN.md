@@ -33,7 +33,7 @@
   - [x] README - agg is listed as a flat requirement, but it is only needed for GIF output; a
         .cast-only recording never invokes it. Worth marking as "for GIF output".
   - [x] Add table of output formats -> name/description/render-dependency+link to install instruction.
-  - [ ] Add example of animated SVG recording.
+  - [x] Add example of animated SVG recording.
 
 ## v0.4.0
 

@@ -314,6 +314,21 @@ Render
 > [!TIP]
 > Keep the version pinned so the same script always imports the same library.
 
+
+### Animated SVG Output
+
+```bash
+SetOutput 'multi-output.cast'
+SetOutput 'multi-output.gif'
+SetOutput 'multi-output.svg' # <---
+```
+
+The `.svg` written by that [recording]([`examples/multi-output.rec.sh`](examples/multi-output.rec.sh)) -
+animated by CSS, sharp at any zoom:
+
+<img src="examples/multi-output.svg" width="500px" alt="One recording rendered as an animated SVG">
+
+
 ### S-VHS in the Wild
 
 More than just a toy example:  
@@ -336,10 +351,11 @@ The extension of the path passed to `SetOutput` picks the format:
 ```bash
 SetOutput 'multi-output.cast'
 SetOutput 'multi-output.gif'
+SetOutput 'multi-output.svg'
 ```
 
-Keeping the `.cast` next to the GIF leaves the recording replayable with
-`asciinema play` and re-renderable at any size later — see
+Keeping the `.cast` next to the rendered files leaves the recording replayable
+with `asciinema play` and re-renderable at any size later — see
 [`examples/multi-output.rec.sh`](examples/multi-output.rec.sh).
 
 
