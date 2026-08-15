@@ -22,9 +22,11 @@ Every command implemented in `s-vhs.sh`.
 | `Env <name> <value>`         | —          | Export a variable into the recorded shell; repeatable                                           |
 
 [^svg-fonts]: An SVG names but does not embed fonts, so its appearance depends
-    on fonts installed on the viewer's system. JetBrains Mono matches `asg`'s
-    cell geometry; fonts with different advances can misalign box-drawing
-    characters.
+    on fonts installed on the viewer's system, falling back through a chain of
+    monospace faces that ends at `monospace`. `asg` draws the cursor and the
+    cell backgrounds on a fixed `0.6 × font-size` grid, so a face with a
+    `0.6 em` advance - JetBrains Mono, Cascadia Mono, Liberation Mono - keeps
+    text aligned with them; others drift further with every column.
 
 [^themes]: Named color themes are renderer-specific, and a name only one
     renderer knows fails at `Render`, after the recording has run. `asg`

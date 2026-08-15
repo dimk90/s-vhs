@@ -50,9 +50,17 @@ _SVHS_FONT_FAMILY=''
 _SVHS_FONT_FAMILY_EXACT=''
 
 # agg bundles these fallbacks; an SVG can only name fonts on the viewer's
-# system. Mirrors the tail of asg's default --font-family, so re-check
-# `asg --help` when bumping asg
-_SVHS_SVG_FONT_FALLBACKS="'Symbols Nerd Font Mono','Symbols Nerd Font',"
+# system, and it picks a face per glyph. Text faces must therefore come before
+# the symbol ones: 'Segoe UI Symbol' (Windows) and 'Apple Symbols' (macOS, iOS)
+# cover Latin in a proportional face, so a viewer without the recording's font
+# would draw the text off asg's fixed 0.6 x font-size cell, leaving the cursor
+# and the cell backgrounds behind. Ordered by advance: 0.600 em first, 0.602 em
+# next, Consolas (0.55 em) as the last monospace resort. The symbol tail mirrors
+# asg's default --font-family, so re-check `asg --help` when bumping asg
+_SVHS_SVG_FONT_FALLBACKS="'JetBrains Mono','Cascadia Mono','Noto Sans Mono',"
+_SVHS_SVG_FONT_FALLBACKS+="'Liberation Mono','Roboto Mono','Menlo',"
+_SVHS_SVG_FONT_FALLBACKS+="'DejaVu Sans Mono','SF Mono','Consolas',"
+_SVHS_SVG_FONT_FALLBACKS+="'Symbols Nerd Font Mono','Symbols Nerd Font',"
 _SVHS_SVG_FONT_FALLBACKS+="'Powerline Symbols','Apple Symbols','Segoe UI Symbol',"
 _SVHS_SVG_FONT_FALLBACKS+="'Noto Sans Symbols 2','Noto Sans Symbols','Apple Color Emoji',"
 _SVHS_SVG_FONT_FALLBACKS+="'Segoe UI Emoji','Noto Color Emoji',monospace"
