@@ -85,7 +85,6 @@ You should see a new file called `demo.gif` in the same directory:
 
 ## Installation
 
-
 `s-vhs` is a bash script, so all you need are its dependencies:
 - Install `tmux` and `asciinema`:
   ```bash
@@ -101,10 +100,10 @@ You should see a new file called `demo.gif` in the same directory:
   ```bash
   cargo install asg --locked
   ```
-  > [!IMPORTANT]
   > `asg` reads asciicast v3 only, so SVG output also needs `asciinema` 3 or newer.
 
-A cast-only recording invokes neither output renderer.
+Only the formats you request need their renderer - a cast-only recording
+invokes neither, see [Output Formats](#output-formats).
 
 > [!NOTE]
 > The provided instructions are for Arch Linux, but you can easily adapt them for your favorite distro ;)
@@ -281,13 +280,6 @@ Enter; Sleep 2
 > `RunOffRecord 'clear' 0.5` is the shorthand for a `Hide` + `Run` + `Show`
 > sandwich, see [`examples/run-off-record.rec.sh`](examples/run-off-record.rec.sh).
 
-### Multiple Outputs
-
-```bash
-SetOutput 'multi-output.cast'
-SetOutput 'multi-output.gif'
-```
-
 ### Remote Import
 
 Import an immutable release directly from GitHub via `curl` instead
@@ -321,6 +313,28 @@ More than just a toy example:
 📌 [pi-context-view](https://github.com/dimk90/pi-context-view): demo GIFs,
 such as [context-usage.rec.sh](https://github.com/dimk90/pi-context-view/blob/develop/scripts/recordings/context-usage.rec.sh).  
 📌 [S-VHS logo recording](examples/logo.rec.sh).
+
+## Output Formats
+
+The extension of the path passed to `SetOutput` picks the format:
+
+| Format  | Description                              | Render dependency                                       |
+| ------- | ---------------------------------------- | ------------------------------------------------------- |
+| `.cast` | Editable, replayable asciicast recording | None                                                    |
+| `.gif`  | Animated raster image                    | [`agg`](https://github.com/asciinema/agg#installation)  |
+| `.svg`  | Sharp, CSS-animated vector image         | [`asg`](https://github.com/kingsword09/asg#quick-start) |
+
+`SetOutput` is repeatable - one recording, several outputs:
+
+```bash
+SetOutput 'multi-output.cast'
+SetOutput 'multi-output.gif'
+```
+
+Keeping the `.cast` next to the GIF leaves the recording replayable with
+`asciinema play` and re-renderable at any size later — see
+[`examples/multi-output.rec.sh`](examples/multi-output.rec.sh).
+
 
 ## Recording Template
 
