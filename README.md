@@ -85,16 +85,24 @@ You should see a new file called `demo.gif` in the same directory:
 
 ## Installation
 
-`s-vhs` is a bash script, so all you need are its dependencies:
-- Install `tmux` and `asciinema`:
+`s-vhs` is a bash script, so all you need are its dependencies `tmux` and `asciinema`:
+
+```bash
+sudo pacman -S tmux asciinema
+```
+> The provided instructions are for Arch Linux, but you can easily adapt them for your favorite distro ;)
+
+Only the formats you request need their renderer - a cast-only recording
+invokes neither, see [Output Formats](#output-formats).
+
+- For GIF output, install
+  [`agg`](https://github.com/asciinema/agg#building):
   ```bash
-  sudo pacman -S tmux asciinema
+  cargo install --git https://github.com/asciinema/agg --locked
   ```
-- For GIF output, install `agg`: follow its
-  [official instructions](https://github.com/asciinema/agg#installation) or
-  ```bash
-  paru -S asciinema-agg
-  ```
+  > `agg` is not on crates.io (the `agg` crate there is an unrelated project),
+  > hence the `--git` install.
+
 - For animated SVG output, install
   [`asg`](https://github.com/kingsword09/asg#quick-start):
   ```bash
@@ -102,11 +110,10 @@ You should see a new file called `demo.gif` in the same directory:
   ```
   > `asg` reads asciicast v3 only, so SVG output also needs `asciinema` 3 or newer.
 
-Only the formats you request need their renderer - a cast-only recording
-invokes neither, see [Output Formats](#output-formats).
+> [!TIP]
+> Cargo installs both renderers into `~/.cargo/bin` - make sure it is on your
+>  `PATH` (rustup's installer arranges that; a distro-packaged `cargo` does not).
 
-> [!NOTE]
-> The provided instructions are for Arch Linux, but you can easily adapt them for your favorite distro ;)
 
 ## Examples
 
