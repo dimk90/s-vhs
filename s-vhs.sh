@@ -967,11 +967,13 @@ Render() {
         asg_font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
     fi
 
+    # A caller's `Render || exit 1` suspends set -e for this whole function, so
+    # check every output explicitly rather than announcing a failed render
     for output in "${_SVHS_OUTPUTS[@]}"; do
         case "$output" in
             *.cast)
                 if [[ $output != "$_SVHS_CAST" ]]; then
-                    cp -- "$_SVHS_CAST" "$output"
+                    cp -- "$_SVHS_CAST" "$output" || return 1
                 fi
                 ;;
             # bash 3.2 (stock macOS) rejects an empty array under set -u, so
@@ -981,14 +983,14 @@ Render() {
                     --font-size "$_SVHS_FONT_SIZE"            \
                     --line-height "$_SVHS_LINE_HEIGHT"        \
                     --theme "$_SVHS_THEME"                    \
-                    "$_SVHS_CAST" "$output"
+                    "$_SVHS_CAST" "$output" || return 1
                 ;;
             *.svg)
                 asg ${asg_font_args[@]+"${asg_font_args[@]}"} \
                     --font-size "$_SVHS_FONT_SIZE"            \
                     --line-height "$_SVHS_LINE_HEIGHT"        \
                     --theme "$_SVHS_THEME"                    \
-                    "$_SVHS_CAST" "$output"
+                    "$_SVHS_CAST" "$output" || return 1
                 ;;
         esac
 

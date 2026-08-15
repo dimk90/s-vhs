@@ -101,6 +101,8 @@ You should see a new file called `demo.gif` in the same directory:
   ```bash
   cargo install asg --locked
   ```
+  > [!IMPORTANT]
+  > `asg` reads asciicast v3 only, so SVG output also needs `asciinema` 3 or newer.
 
 A cast-only recording invokes neither output renderer.
 
