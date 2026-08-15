@@ -28,6 +28,15 @@ Every command implemented in `s-vhs.sh`.
 > [!WARNING]
 > At least one `SetOutput` is required.
 
+> TODO: move to footnote ?
+> [!NOTE]
+> Named color themes are renderer-specific, and a name only one renderer knows
+> fails at `Render`, after the recording has run. `asg` accepts `asciinema`,
+> `dracula`, `github-dark`, `github-light`, `monokai`, `solarized-dark` and
+> `solarized-light`; `kanagawa`, `kanagawa-dragon`, `kanagawa-light`, `nord`,
+> `gruvbox-dark` and `custom` are `agg`-only. Use a custom palette when one
+> recording requests both GIF and SVG.
+
 > [!NOTE]  (TODO: add theme list with visualizations)
 > Bundled prompt themes: `arrow`, `plain`, `path` or `powerline`.
 > A literal prompt in the shell's own syntax, or `native`. A theme and a

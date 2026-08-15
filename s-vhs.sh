@@ -957,7 +957,9 @@ Render() {
 
     if [[ -n $_SVHS_FONT_FAMILY ]]; then
         agg_font_args+=(--text-font-family "$_SVHS_FONT_FAMILY")
-        asg_font_args+=(--font-family "$_SVHS_FONT_FAMILY,$_SVHS_SVG_FONT_FALLBACKS")
+        # quote the family: unquoted CSS idents cannot start with a digit, and one
+        # invalid entry drops the whole stack ('0xProto Nerd Font', '3270 Nerd Font')
+        asg_font_args+=(--font-family "'$_SVHS_FONT_FAMILY',$_SVHS_SVG_FONT_FALLBACKS")
     elif [[ -n $_SVHS_FONT_FAMILY_EXACT ]]; then
         agg_font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
         asg_font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
