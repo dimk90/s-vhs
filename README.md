@@ -1,10 +1,10 @@
-<p align="center">
+<h1 align="center">
   <img width="500" src="examples/logo.gif" alt="Animated S-VHS logo">
   <br>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <a href="https://github.com/dimk90/s-vhs/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/dimk90/s-vhs/release.yml?label=Release%20%26%20Deploy&amp;style=flat-square" alt="Release &amp; Deploy"></a>
   <a href="https://github.com/dimk90/s-vhs/tree/deploy"><img src="https://img.shields.io/github/v/release/dimk90/s-vhs?label=Deployed&amp;style=flat-square" alt="Deployed"></a>
-</p>
+</h1>
 
 <br>
 
@@ -17,8 +17,14 @@ A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superi
   ([#69](https://github.com/charmbracelet/vhs/issues/69#issuecomment-3121533232)).
 - **Sized in rows and cols** - no dancing with pixel width and height
   ([#578](https://github.com/charmbracelet/vhs/issues/578)).
-- **No browser** - no headless Chromium downloaded behind your back, just a
-  wrapper around `tmux` + [asciinema](https://github.com/asciinema/asciinema) + [agg](https://github.com/asciinema/agg)
+- **Animated SVG output**
+  ([#644](https://github.com/charmbracelet/vhs/discussions/644),
+  [#109](https://github.com/charmbracelet/vhs/issues/109),
+  [#105](https://github.com/charmbracelet/vhs/issues/105)).
+- **No browser** - no headless Chromium downloaded behind your back, just
+  `tmux` + [asciinema](https://github.com/asciinema/asciinema) with
+  [agg](https://github.com/asciinema/agg) for GIF and
+  [asg](https://github.com/kingsword09/asg) for SVG
   ([#528](https://github.com/charmbracelet/vhs/issues/528),
   [#438](https://github.com/charmbracelet/vhs/issues/438),
   [#150](https://github.com/charmbracelet/vhs/issues/150),
@@ -85,10 +91,18 @@ You should see a new file called `demo.gif` in the same directory:
   ```bash
   sudo pacman -S tmux asciinema
   ```
-- Install `agg`: follow [official instructions](https://github.com/asciinema/agg#building) or
+- For GIF output, install `agg`: follow its
+  [official instructions](https://github.com/asciinema/agg#installation) or
   ```bash
   paru -S asciinema-agg
   ```
+- For animated SVG output, install
+  [`asg`](https://github.com/kingsword09/asg#quick-start):
+  ```bash
+  cargo install asg --locked
+  ```
+
+A cast-only recording invokes neither output renderer.
 
 > [!NOTE]
 > The provided instructions are for Arch Linux, but you can easily adapt them for your favorite distro ;)
@@ -352,8 +366,8 @@ Render
 
 - For debugging a recording script see [DEBUG.md](doc/DEBUG.md).
 
-- For the architecture behind `tmux + asciinema + agg` and how `s-vhs` glues
-  them together, see [INTRO.md](doc/INTRO.md).
+- For the architecture behind `tmux + asciinema + output renderers` and how
+  `s-vhs` glues them together, see [INTRO.md](doc/INTRO.md).
 
   <p align="center">
     <img src="doc/images/svhs-pipeline.svg" width="500px" alt="s-vhs pipeline">
