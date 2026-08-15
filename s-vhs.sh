@@ -49,7 +49,9 @@ _SVHS_ROWS=40
 _SVHS_FONT_FAMILY=''
 _SVHS_FONT_FAMILY_EXACT=''
 
-# agg bundles these fallbacks; SVGs can only name fonts on the viewer's system
+# agg bundles these fallbacks; an SVG can only name fonts on the viewer's
+# system. Mirrors the tail of asg's default --font-family, so re-check
+# `asg --help` when bumping asg
 _SVHS_SVG_FONT_FALLBACKS="'Symbols Nerd Font Mono','Symbols Nerd Font',"
 _SVHS_SVG_FONT_FALLBACKS+="'Powerline Symbols','Apple Symbols','Segoe UI Symbol',"
 _SVHS_SVG_FONT_FALLBACKS+="'Noto Sans Symbols 2','Noto Sans Symbols','Apple Color Emoji',"
@@ -957,7 +959,7 @@ Render() {
 
     if [[ -n $_SVHS_FONT_FAMILY ]]; then
         agg_font_args+=(--text-font-family "$_SVHS_FONT_FAMILY")
-        # quote the family: unquoted CSS idents cannot start with a digit, and one
+        # Quote the family: unquoted CSS idents cannot start with a digit, and one
         # invalid entry drops the whole stack ('0xProto Nerd Font', '3270 Nerd Font')
         asg_font_args+=(--font-family "'$_SVHS_FONT_FAMILY',$_SVHS_SVG_FONT_FALLBACKS")
     elif [[ -n $_SVHS_FONT_FAMILY_EXACT ]]; then
@@ -965,8 +967,6 @@ Render() {
         asg_font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
     fi
 
-    # bash 3.2 (stock macOS) rejects an empty array under set -u, so expand
-    # renderer font arguments only when a font family was configured
     for output in "${_SVHS_OUTPUTS[@]}"; do
         case "$output" in
             *.cast)
@@ -974,18 +974,20 @@ Render() {
                     cp -- "$_SVHS_CAST" "$output"
                 fi
                 ;;
+            # bash 3.2 (stock macOS) rejects an empty array under set -u, so
+            # expand renderer font arguments only when a family was configured
             *.gif)
                 agg ${agg_font_args[@]+"${agg_font_args[@]}"} \
-                    --font-size "$_SVHS_FONT_SIZE"           \
-                    --line-height "$_SVHS_LINE_HEIGHT"       \
-                    --theme "$_SVHS_THEME"                   \
+                    --font-size "$_SVHS_FONT_SIZE"            \
+                    --line-height "$_SVHS_LINE_HEIGHT"        \
+                    --theme "$_SVHS_THEME"                    \
                     "$_SVHS_CAST" "$output"
                 ;;
             *.svg)
                 asg ${asg_font_args[@]+"${asg_font_args[@]}"} \
-                    --font-size "$_SVHS_FONT_SIZE"           \
-                    --line-height "$_SVHS_LINE_HEIGHT"       \
-                    --theme "$_SVHS_THEME"                   \
+                    --font-size "$_SVHS_FONT_SIZE"            \
+                    --line-height "$_SVHS_LINE_HEIGHT"        \
+                    --theme "$_SVHS_THEME"                    \
                     "$_SVHS_CAST" "$output"
                 ;;
         esac

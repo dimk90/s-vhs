@@ -41,7 +41,7 @@ script and inspect or replay every requested output.
 ## Dependencies
 
 Core runtime: `bash`, `tmux`, `asciinema`.
-Output-specific runtime: `agg` for GIF output.
+Output-specific runtime: `agg` for GIF output, `asg` for SVG output.
 Dev: `shellcheck`.
 
 ## Conventions
