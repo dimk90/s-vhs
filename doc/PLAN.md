@@ -81,5 +81,6 @@
 - [ ] Add a `git` theme (bash/zsh command substitution, fish `__fish_git_prompt`)?
 - [ ] Color theme unification between `agg` and `asg`:
   - [ ] theme defined in s-vhs and pass colors via custom theme option.
+  - [ ] Add theme list with visualizations.
 - [ ] Optional GIF optimization step (see COMMANDS.md).
 - [ ] Print estimated resolution in `Start` ('e.g. ::: N Rows x M Cols x F FontSize -> Resolution W x H') ?
