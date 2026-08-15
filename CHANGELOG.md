@@ -3,6 +3,7 @@
 ## `[v0.3.0]` - Unreleased
 
 ### New
+* Add animated SVG output through `asg`.
 * Add `svhs_watch` and `s-vhs.sh watch [session]` to debug a recording's process.
 * Add `no-wait` argument to `Start`, for debugging a shell that never becomes ready.
 

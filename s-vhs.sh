@@ -1,7 +1,8 @@
 #!/bin/bash
 #
 # S-VHS - a scriptable terminal recorder.
-# A thin wrapper around tmux + asciinema + output renderers (agg for GIF).
+# A thin wrapper around tmux + asciinema + output renderers:
+# agg for GIF, asg for SVG.
 #
 # Source this file from a recording script (*.rec.sh), or execute it:
 #   s-vhs.sh new demo.rec.sh   scaffold a recording script
@@ -43,10 +44,16 @@ _SVHS_OUTPUTS=()
 _SVHS_COLS=100
 _SVHS_ROWS=40
 
-# agg fonts, empty = its bundled defaults. FAMILY keeps the Nerd Font and
+# Renderer fonts, empty = their defaults. FAMILY keeps the Nerd Font and
 # emoji fallbacks; FAMILY_EXACT replaces the whole chain, no fallbacks
 _SVHS_FONT_FAMILY=''
 _SVHS_FONT_FAMILY_EXACT=''
+
+# agg bundles these fallbacks; SVGs can only name fonts on the viewer's system
+_SVHS_SVG_FONT_FALLBACKS="'Symbols Nerd Font Mono','Symbols Nerd Font',"
+_SVHS_SVG_FONT_FALLBACKS+="'Powerline Symbols','Apple Symbols','Segoe UI Symbol',"
+_SVHS_SVG_FONT_FALLBACKS+="'Noto Sans Symbols 2','Noto Sans Symbols','Apple Color Emoji',"
+_SVHS_SVG_FONT_FALLBACKS+="'Segoe UI Emoji','Noto Color Emoji',monospace"
 
 # Output resolution ~ COLS x ROWS x FONT_SIZE
 _SVHS_FONT_SIZE=28
@@ -66,8 +73,9 @@ _SVHS_PROMPT_MODE='theme'
 # Bundled themes, rendered per shell by _svhs_theme_prompt
 _SVHS_PROMPT_THEMES='arrow plain path powerline'
 
-# Theme glyphs as bytes to keep this file ASCII:
-# U+276F arrow, U+E0B0 powerline separator (from agg's bundled Nerd Font)
+# Theme glyphs as bytes to keep this file ASCII. agg bundles their fallbacks;
+# asg names system fallbacks in the SVG
+# U+276F arrow, U+E0B0 powerline separator
 _SVHS_PROMPT_ARROW=$'\xe2\x9d\xaf'
 _SVHS_POWERLINE_SEPARATOR=$'\xee\x82\xb0'
 
@@ -145,10 +153,10 @@ TEMPLATE
 
 SetOutput() {
     #
-    # Add a cast or GIF output for the recording.
+    # Add a cast, GIF, or animated SVG output for the recording.
     #
     # Parameters:
-    #   $1 - output - path ending in .cast or .gif.
+    #   $1 - output - path ending in .cast, .gif, or .svg.
     #
     # Example:
     #   SetOutput 'demo.gif' || exit 1
@@ -158,7 +166,7 @@ SetOutput() {
     _svhs_require_configuration_phase 'SetOutput' || return 1
 
     case "$output" in
-        *.cast|*.gif) ;;
+        *.cast|*.gif|*.svg) ;;
         '')
             printf 'SetOutput: output path must not be empty\n' >&2
             return 1
@@ -349,10 +357,10 @@ SetLineHeight() {
 
 SetTheme() {
     #
-    # Set an agg theme name or custom palette value.
+    # Set a renderer theme name or custom palette value.
     #
     # Parameters:
-    #   $1 - theme - non-empty value passed to agg --theme.
+    #   $1 - theme - non-empty value passed to the renderer's --theme.
     #
     # Example:
     #   SetTheme 'kanagawa' || exit 1
@@ -923,7 +931,7 @@ Hide() {
 
 Render() {
     #
-    # End the recording, retain requested casts, and render requested GIFs.
+    # End the recording, retain requested casts, and render requested outputs.
     #
     # Parameters:
     #   None.
@@ -933,7 +941,8 @@ Render() {
     #
     local clean_lines=''
     local output
-    local font_args=()
+    local agg_font_args=()
+    local asg_font_args=()
 
     # As in Hide, drop the detach noise appended by the kill
     [[ -n $_SVHS_REC_PID ]] && clean_lines=$(wc -l < "$_SVHS_CAST")
@@ -946,9 +955,16 @@ Render() {
     fi
     _SVHS_REC_PID=''
 
-    [[ -n $_SVHS_FONT_FAMILY ]] && font_args+=(--text-font-family "$_SVHS_FONT_FAMILY")
-    [[ -n $_SVHS_FONT_FAMILY_EXACT ]] && font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
+    if [[ -n $_SVHS_FONT_FAMILY ]]; then
+        agg_font_args+=(--text-font-family "$_SVHS_FONT_FAMILY")
+        asg_font_args+=(--font-family "$_SVHS_FONT_FAMILY,$_SVHS_SVG_FONT_FALLBACKS")
+    elif [[ -n $_SVHS_FONT_FAMILY_EXACT ]]; then
+        agg_font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
+        asg_font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
+    fi
 
+    # bash 3.2 (stock macOS) rejects an empty array under set -u, so expand
+    # renderer font arguments only when a font family was configured
     for output in "${_SVHS_OUTPUTS[@]}"; do
         case "$output" in
             *.cast)
@@ -957,12 +973,17 @@ Render() {
                 fi
                 ;;
             *.gif)
-                # bash 3.2 (stock macOS) rejects an empty array under set -u,
-                # so expand font_args only when a font family was configured
-                agg ${font_args[@]+"${font_args[@]}"}  \
-                    --font-size "$_SVHS_FONT_SIZE"     \
-                    --line-height "$_SVHS_LINE_HEIGHT" \
-                    --theme "$_SVHS_THEME"             \
+                agg ${agg_font_args[@]+"${agg_font_args[@]}"} \
+                    --font-size "$_SVHS_FONT_SIZE"           \
+                    --line-height "$_SVHS_LINE_HEIGHT"       \
+                    --theme "$_SVHS_THEME"                   \
+                    "$_SVHS_CAST" "$output"
+                ;;
+            *.svg)
+                asg ${asg_font_args[@]+"${asg_font_args[@]}"} \
+                    --font-size "$_SVHS_FONT_SIZE"           \
+                    --line-height "$_SVHS_LINE_HEIGHT"       \
+                    --theme "$_SVHS_THEME"                   \
                     "$_SVHS_CAST" "$output"
                 ;;
         esac
@@ -1047,6 +1068,7 @@ _svhs_require_dependencies() {
     for output in "${_SVHS_OUTPUTS[@]}"; do
         case "$output" in
             *.gif) _svhs_require_command 'Start' 'agg' 'GIF output' || return 1 ;;
+            *.svg) _svhs_require_command 'Start' 'asg' 'SVG output' || return 1 ;;
         esac
     done
 }

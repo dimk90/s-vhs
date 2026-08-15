@@ -22,18 +22,18 @@
   - [x] Note: ~"You can use source ./s-vhs.sh" if you going to keep it locally".
 - [x] Is it reasonable to have skill for `s-vhs` ?
 - [ ] Implement animated SVG output format.
-  - [ ] Update readme header with one more bullet:
+  - [x] Update readme header with one more bullet:
     ```Markdown
     - **Animated SVG output**
       ([#644](https://github.com/charmbracelet/vhs/discussions/644),
       [#109](https://github.com/charmbracelet/vhs/issues/109),
       [#105](https://github.com/charmbracelet/vhs/issues/105)).
     ```
-  - [ ] Update installation instructions and dependencies description.
-  - [ ] README - agg is listed as a flat requirement, but it is only needed for GIF output; a
+  - [x] Update installation instructions and dependencies description.
+  - [x] README - agg is listed as a flat requirement, but it is only needed for GIF output; a
         .cast-only recording never invokes it. Worth marking as "for GIF output".
-  - [ ] Add table of output formats -> name/description/render-dependency.
-- [ ] Re-render all examples to animated SVG?
+  - [x] Add table of output formats -> name/description/render-dependency+link to install instruction.
+  - [ ] Add example of animated SVG recording.
 
 ## v0.4.0
 
@@ -79,3 +79,7 @@
   - [ ] catppuccin themes.
   - [ ] Add example with custom theme (hex colors).
 - [ ] Add a `git` theme (bash/zsh command substitution, fish `__fish_git_prompt`)?
+- [ ] Color theme unification between `agg` and `asg`:
+  - [ ] theme defined in s-vhs and pass colors via custom theme option.
+- [ ] Optional GIF optimization step (see COMMANDS.md).
+- [ ] Print estimated resolution in `Start` ('e.g. ::: N Rows x M Cols x F FontSize -> Resolution W x H') ?
