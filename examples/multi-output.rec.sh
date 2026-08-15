@@ -16,6 +16,7 @@ SetOutput "$SCRIPT_DIR/multi-output.svg"
 SetCols 44
 SetRows 4
 SetFontSize 40
+
 # An SVG names fonts instead of embedding them, so the viewer's system picks the
 # face, while asg lays every cell out on a fixed 0.6 x font-size grid. JetBrains
 # Mono is one of the few monospace fonts with exactly that advance, so its glyphs
@@ -29,6 +30,6 @@ Show
 
 Type 'echo "one recording, three outputs"'
 Enter
-Sleep 2
+Sleep 4
 
 Render
