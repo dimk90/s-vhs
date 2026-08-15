@@ -6,15 +6,15 @@ Every command implemented in `s-vhs.sh`.
 
 | Command                      | Default    | Description                                                                               |
 | ---------------------------- | ---------- | ----------------------------------------------------------------------------------------- |
-| `SetOutput <path.ext>`       | —          | Add an output; repeatable. `.cast` and `.gif` are supported                               |
+| `SetOutput <path.ext>`       | —          | Add an output; repeatable. `.cast`, `.gif` and `.svg` are supported                       |
 | `SetSession <name>`          | `s-vhs-$$` | Session name on the dedicated s-vhs tmux server                                           |
 | `SetCols <cols>`             | `100`      | Terminal width in character cells                                                         |
 | `SetRows <rows>`             | `40`       | Terminal height in character cells                                                        |
 | `SetFontSize <px>`           | `28`       | Rendered font size in pixels                                                              |
-| `SetFontFamily <family>`     | agg's      | Text font, keeping the Nerd Font and emoji fallbacks; excludes `SetFontFamilyExact`       |
-| `SetFontFamilyExact <list>`  | agg's      | Complete family list, bypassing all fallbacks; excludes `SetFontFamily`                   |
+| `SetFontFamily <family>`     | renderer's | Text font, keeping the Nerd Font and emoji fallbacks; excludes `SetFontFamilyExact`       |
+| `SetFontFamilyExact <list>`  | renderer's | Complete family list, bypassing all fallbacks; excludes `SetFontFamily`                   |
 | `SetLineHeight <multiplier>` | `1.2`      | Line-height multiplier passed to the renderer                                             |
-| `SetTheme <theme>`           | `dracula`  | agg theme name or custom palette                                                          |
+| `SetTheme <theme>`           | `dracula`  | Theme name or custom palette passed to each requested renderer                            |
 | `SetShell <shell>`           | `bash`     | Shell run inside the session: `bash`, `zsh` or `fish`; a missing shell falls back to bash |
 | `SetPrompt <prompt>`         | `arrow`    | Prompt theme, literal prompt, or `native`                                                 |
 | `SetTypingSpeed <seconds>`   | `0.07`     | Default delay between characters typed by `Type`                                          |
@@ -36,20 +36,21 @@ Every command implemented in `s-vhs.sh`.
 
 ## Core
 
-| Command                             | Description                                                                                                                                                         |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Command                             | Description                                                                                                                                                                                    |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Start [no-wait]`                   | Check dependencies, start the detached session on the dedicated s-vhs tmux server, wait until the shell's line editor starts reading, and print how to attach to it; `no-wait` skips that wait |
-| `Show`                              | Start recording; later calls append to the same cast                                                                                                                |
-| `Hide`                              | Stop recording, leaving the session alive                                                                                                                           |
-| `Type <text> [delay]`               | Emulate typing literal text, one character at a time                                                                                                                |
-| `Key <key-name> [count] [delay]`    | Press a tmux-named key (`Enter`, `Down`, `C-r`) `count` times                                                                                                       |
-| `Enter`, `Tab`, … `[count] [delay]` | Press one named key; same arguments as `Key`                                                                                                                        |
-| `Sleep <seconds>`                   | Pause the recording, holding the last frame on screen                                                                                                               |
-| `Wait <pattern> [timeout]`          | Poll the visible pane until a grep pattern appears (default: 15s)                                                                                                   |
-| `Run <command> [settle]`            | Type and run a command, then wait (default: 2s)                                                                                                                     |
-| `RunOffRecord <command> [settle]`   | Run a command off camera: `Hide` + `Run` + `Show`; fails when not recording                                                                                         |
-| `Render`                            | End the recording and write every requested output                                                                                                                  |
+| `Show`                              | Start recording; later calls append to the same cast                                                                                                                                           |
+| `Hide`                              | Stop recording, leaving the session alive                                                                                                                                                      |
+| `Type <text> [delay]`               | Emulate typing literal text, one character at a time                                                                                                                                           |
+| `Key <key-name> [count] [delay]`    | Press a tmux-named key (`Enter`, `Down`, `C-r`) `count` times                                                                                                                                  |
+| `Enter`, `Tab`, … `[count] [delay]` | Press one named key; same arguments as `Key`                                                                                                                                                   |
+| `Sleep <seconds>`                   | Pause the recording, holding the last frame on screen                                                                                                                                          |
+| `Wait <pattern> [timeout]`          | Poll the visible pane until a grep pattern appears (default: 15s)                                                                                                                              |
+| `Run <command> [settle]`            | Type and run a command, then wait (default: 2s)                                                                                                                                                |
+| `RunOffRecord <command> [settle]`   | Run a command off camera: `Hide` + `Run` + `Show`; fails when not recording                                                                                                                    |
+| `Render`                            | End the recording and write every requested output                                                                                                                                             |
 
+> TODO: move to footnote ?
 > [!NOTE] Named keys
 > `Enter`, `Tab`, `Space`, `Backspace`, `Escape`, `Up`, `Down`, `Left`,
 > `Right`, `PageUp`, `PageDown`, `Home`, `End`, `Insert`, `Delete`.
@@ -60,11 +61,15 @@ Every command implemented in `s-vhs.sh`.
 > `SetTypingSpeed` for `Type` and to `SetKeyDelay` for `Key`, which sleeps that
 > long after every one of its `[count]` presses (default: `1`).
 
+> [!NOTE]
+> Teardown is automatic: sourcing `s-vhs.sh` installs an `EXIT` trap that kills the
+> session and the recorder, so a failed script never leaves either running.
+
 ## Utility & CLI
 
-| Command                    | Description                                                                                                                                                                                                                                                               |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `svhs_version`             | Print the version of the sourced `s-vhs.sh`                                                                                                                                                                                                                               |
-| `svhs_watch [session]`     | Function form of `s-vhs.sh watch`, for use after sourcing `s-vhs.sh`                                                                                                                                                                                                       |
-| `s-vhs.sh new [path]`      | Write an executable recording script with a pinned import, or print it when the path is omitted                                                                                                                                                                           |
-| `s-vhs.sh watch [session]` | Watch a recording live from another terminal without attaching a tmux client; wait for a named session, or follow the newest `s-vhs-<pid>` session when omitted; return to waiting after it ends and run until `Ctrl-C`                                                     |
+| Command                    | Description                                                                                                                                                                                                             |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `svhs_version`             | Print the version of the sourced `s-vhs.sh`                                                                                                                                                                             |
+| `svhs_watch [session]`     | Function form of `s-vhs.sh watch`, for use after sourcing `s-vhs.sh`                                                                                                                                                    |
+| `s-vhs.sh new [path]`      | Write an executable recording script with a pinned import, or print it when the path is omitted                                                                                                                         |
+| `s-vhs.sh watch [session]` | Watch a recording live from another terminal without attaching a tmux client; wait for a named session, or follow the newest `s-vhs-<pid>` session when omitted; return to waiting after it ends and run until `Ctrl-C` |

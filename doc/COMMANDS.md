@@ -74,45 +74,6 @@ are implemented now; the remaining command names still describe the target API.
 
 [vhs-ref]: https://github.com/charmbracelet/vhs#vhs-command-reference
 
-> Add to final command reference: 
-> Teardown is automatic: sourcing `s-vhs.sh` installs an `EXIT` trap that kills the
-> session and the recorder, so a failed script never leaves either running.
-
-
-## Settings
-
-Source `s-vhs.sh` first, configure it exclusively through `Set*` functions, and
-call every setter before `Start`. Backing variables are private implementation
-details: recording scripts must not assign, export, or depend on them.
-
-Each setter validates an ordinary scalar value immediately. `Start` then checks
-that all required configuration, including at least one output, is present
-before creating the tmux session or recorder.
-
-```shell
-source ./s-vhs.sh
-
-SetOutput demo.gif
-SetCols 80
-SetRows 30
-SetFontSize 21
-
-Start
-```
-
-> Print estimated resolution in `Start` ('e.g. ::: N Rows x M Cols x F FontSize -> Resolution W x H') ?
-
-### Theme 🟡
-
-`SetTheme` accepts an `agg` theme name: `asciinema`, `dracula`, `github-dark`,
-`github-light`, `kanagawa`, `kanagawa-dragon`, `kanagawa-light`, `monokai`,
-`nord`, `solarized-dark`, `solarized-light`, `gruvbox-dark`, `custom`.
-
-Missing vs. VHS: an inline palette (VHS accepts a JSON theme object). `agg`
-takes one as `--theme` with comma-separated hex triplets — background, default
-text, then 8 (or 16) palette colors. `SetTheme` deliberately passes arbitrary
-non-empty values through rather than restricting them to the named themes, so
-ad-hoc palettes remain possible.
 
 ### Font stack 🟡
 
@@ -229,6 +190,7 @@ by all requested output formats.
 ```shell
 SetOutput doc/casts/demo.cast
 SetOutput doc/images/demo.gif
+SetOutput doc/images/demo.svg
 ```
 
 An explicitly requested `.cast` is retained at exactly that path and remains
@@ -238,7 +200,7 @@ removes it automatically.
 
 `Render` first finalizes the cast and then invokes only the tools required by
 non-cast outputs. A recording that requests only a `.cast` therefore invokes no
-renderer or converter—particularly, it does not require or run `agg`.
+renderer or converter—particularly, it does not require or run `agg` or `asg`.
 
 | VHS output                     | s-vhs                                            | Status |
 | ------------------------------ | ------------------------------------------------ | ------ |
@@ -248,11 +210,7 @@ renderer or converter—particularly, it does not require or run `agg`.
 | `.png` frame dir               | `SetOutput out.png`                              | 📋    |
 | `.ascii` / `.txt` golden files | `SetOutput out.txt`, via `asciinema convert`     | 📋    |
 | —                              | `SetOutput out.cast`, retained without rendering | ✅     |
-| —                              | `SetOutput out.svg`, planned via `termsvg`       | 📋    |
-
-The output extension selects the renderer or converter; there are no
-format-specific public setting variables. Animated SVG (`termsvg`) has no VHS
-equivalent ([#644](https://github.com/charmbracelet/vhs/discussions/644)).
+| —                              | `SetOutput out.svg`, rendered by `asg`           | ✅     |
 
 
 ### ScrollUp / ScrollDown 📋

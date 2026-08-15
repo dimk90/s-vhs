@@ -67,9 +67,9 @@ sent before the line editor is ready gets echoed twice.
 
 ## Localize Renderer Artifacts
 
-When a rendered output such as a GIF shows artifacts, first find out whether
-the problem is in the recording or in the renderer. Keep a cast alongside the
-normal output:
+When a rendered output such as a GIF or SVG shows artifacts, first find out
+whether the problem is in the recording or in the renderer. Keep a cast
+alongside the normal output:
 
 ```bash
 SetOutput 'debug.cast'
@@ -86,4 +86,5 @@ Compare the replay with the rendered output. If the replay already shows the
 artifact, the recording itself is at fault -> debug the script with the live
 viewer above.
 
-If the replay looks right, the problem is in the renderer (agg for GIF).
+If the replay looks right, the problem is in the renderer (`agg` for GIF or
+`asg` for SVG).
