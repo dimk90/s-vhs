@@ -24,7 +24,7 @@ set -euo pipefail
 
 
 svhs_version() {
-    printf '%s\n' '0.2.0'
+    printf '%s\n' '0.3.0'
 }
 
 
@@ -897,32 +897,9 @@ Hide() {
     # Example:
     #   Hide || exit 1
     #
-    local client
     local clean_lines
-    local lines_before
-    local deadline
 
-    # A segment ends at its last event, so a pause held before Hide would be
-    # dropped and its closing frame would flash by. Repainting the recorder's
-    # client writes an event with the same pixels at the current time, which
-    # gives that frame its duration back. refresh-client targets a client,
-    # never a session
-    client=$(tmux -L "$_SVHS_TMUX_SOCKET" list-clients \
-        -t "$_SVHS_SESSION" -F '#{client_name}' | head -1)
-    lines_before=$(wc -l < "$_SVHS_CAST")
-    tmux -L "$_SVHS_TMUX_SOCKET" refresh-client -t "$client"
-
-    # measuring the cast before the repaint reaches it would truncate the
-    # repaint away again, so wait for the file to grow instead of guessing;
-    # a line appears only once the event behind it is written whole
-    deadline=$((SECONDS + _SVHS_WRITE_TIMEOUT))
-    until [[ $(wc -l < "$_SVHS_CAST") -gt $lines_before ]]; do
-        if ((SECONDS >= deadline)); then
-            printf 'Hide: timeout waiting for the recorder to write\n' >&2
-            return 1
-        fi
-        sleep "$_SVHS_WRITE_POLL_INTERVAL"
-    done
+    _svhs_flush_frame 'Hide' || return 1
 
     # Detaching appends terminal-reset noise to the cast; remember the clean
     # length first and truncate back to it
@@ -954,8 +931,14 @@ Render() {
     local agg_font_args=()
     local asg_font_args=()
 
-    # As in Hide, drop the detach noise appended by the kill
-    [[ -n $_SVHS_REC_PID ]] && clean_lines=$(wc -l < "$_SVHS_CAST")
+    # As in Hide, the closing frame needs an event of its own - without it the
+    # Sleep before Render is dropped - and the kill's noise is truncated away
+    # afterwards. A finished recording is not worth discarding over its last
+    # frame, so a failed flush costs that frame and nothing else
+    if [[ -n $_SVHS_REC_PID ]]; then
+        _svhs_flush_frame 'Render' || true
+        clean_lines=$(wc -l < "$_SVHS_CAST")
+    fi
 
     tmux -L "$_SVHS_TMUX_SOCKET" kill-session -t "$_SVHS_SESSION"
 
@@ -1538,6 +1521,54 @@ _svhs_wait_for_shell() {
             return 1
         fi
         sleep "$_SVHS_POLL_INTERVAL"
+    done
+}
+
+
+_svhs_flush_frame() {
+    #
+    # Give the frame on screen the time held since the last output, by writing
+    # it into the cast as an event of its own. A cast ends at its last event,
+    # so a pause held before the recorder stops would otherwise be dropped and
+    # that frame would flash by.
+    #
+    # Parameters:
+    #   $1 - caller - public command name to report the failure under.
+    #
+    # Example:
+    #   _svhs_flush_frame 'Hide' || return 1
+    #
+    local caller="$1"
+    local client
+    local lines_before
+    local deadline
+
+    # Repainting the recorder's client writes an event with the same pixels at
+    # the current time. refresh-client targets a client, never a session
+    client=$(tmux -L "$_SVHS_TMUX_SOCKET" list-clients \
+        -t "$_SVHS_SESSION" -F '#{client_name}' 2> /dev/null | head -1)
+
+    # a session whose shell exited takes the recorder's client with it: there
+    # is nothing left to repaint, and waiting for a write would only stall
+    if [[ -z $client ]]; then
+        printf '%s: the recorder is no longer attached\n' "$caller" >&2
+        return 1
+    fi
+
+    lines_before=$(wc -l < "$_SVHS_CAST")
+    tmux -L "$_SVHS_TMUX_SOCKET" refresh-client -t "$client"
+
+    # measuring the cast before the repaint reaches it would truncate the
+    # repaint away again, so wait for the file to grow instead of guessing;
+    # a line appears only once the event behind it is written whole
+    deadline=$((SECONDS + _SVHS_WRITE_TIMEOUT))
+    until [[ $(wc -l < "$_SVHS_CAST") -gt $lines_before ]]; do
+        if ((SECONDS >= deadline)); then
+            printf '%s: timeout waiting for the recorder to write\n' \
+                "$caller" >&2
+            return 1
+        fi
+        sleep "$_SVHS_WRITE_POLL_INTERVAL"
     done
 }
 

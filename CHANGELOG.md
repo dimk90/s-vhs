@@ -11,6 +11,7 @@
 
 ### Fixed
 * `Start` now waits until the shell is ready for input.
+* `Render` keep the closing frame of a recording.
 
 
 ## `[v0.2.0]` - 06.08.2026
