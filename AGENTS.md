@@ -110,7 +110,8 @@ writing or running a `*.rec.sh` script. Project-specific points:
   addition gets one clear line in `CHANGELOG.md` under the unreleased
   version's `### New`, `### Changed` or `### Fixed` heading — what a user
   notices, not how it was implemented. Skip purely internal refactors, doc
-  touch-ups and formatting.
+  touch-ups, formatting and changes limited to `scripts/release.sh`, which is
+  release tooling rather than project behaviour.
 - **Examples.** A script under `examples/` renders at `SetFontSize 40` or
   larger (smaller looks soft once a README scales the GIF down) and keeps the
   default shell, which carries no personal configuration into the recording.

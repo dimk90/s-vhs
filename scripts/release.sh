@@ -1353,27 +1353,27 @@ _release_wait_for_publication() {
 
     # The inner Bash receives the URL as $1; $! belongs to its process substitution
     # shellcheck disable=SC2016
-    if ! _release_capture 'verifying the documented remote import' \
+    if ! _release_capture 'verifying the latest remote import' \
                           bash -c 'source <(curl -fsSL "$1") && wait "$!" || exit 1; svhs_version' \
-                               _ "$version_url"; then
-        _release_stop 'the documented remote import failed' \
+                               _ "$latest_url"; then
+        _release_stop 'the latest remote import failed' \
                       "$(tail -n 10 "$_RELEASE_LOG_FILE")"
     fi
     published_version="$(tr -d '\r\n' <"$_RELEASE_LOG_FILE")"
     if [[ $published_version != "$_RELEASE_TARGET_VERSION" ]]; then
-        _release_stop 'the versioned remote import reports an unexpected version' \
+        _release_stop 'the latest remote import reports an unexpected version' \
                       "found: ${published_version:-missing}; expected: ${_RELEASE_TARGET_VERSION}"
     fi
 
     _RELEASE_GITHUB_STATE='GitHub release and Pages imports verified'
-    _release_pass "remote import reports ${_RELEASE_TARGET_VERSION}"
+    _release_pass "latest remote import reports ${_RELEASE_TARGET_VERSION}"
 }
 
 
 _release_verify_published_file() {
     #
-    # Download a published library URL and require an exact byte match with the
-    # tagged s-vhs.sh in the current master worktree.
+    # Wait for a published library URL to exactly match the tagged s-vhs.sh in
+    # the current master worktree.
     #
     # Parameters:
     #   $1 - label - artifact described in output.
@@ -1386,12 +1386,39 @@ _release_verify_published_file() {
     local label="$1"
     local url="$2"
     local destination="$3"
+    local attempt request_url
+    local failure_detail='request failed'
 
-    _release_apply_command "downloading the ${label}" \
-                           curl -fsSL --retry 5 --retry-delay 2 \
-                                "$url" -o "$destination"
-    _release_apply_command "matching the ${label} to s-vhs.sh" \
-                           cmp s-vhs.sh "$destination"
+    for ((attempt = 1; attempt <= _RELEASE_PUBLICATION_ATTEMPTS; attempt++)); do
+        if [[ $url == *\?* ]]; then
+            request_url="${url}&attempt=${attempt}"
+        else
+            request_url="${url}?attempt=${attempt}"
+        fi
+        rm -f -- "$destination"
+
+        if curl -fsSL -H 'Cache-Control: no-cache' \
+                "$request_url" -o "$destination" \
+                >"$_RELEASE_LOG_FILE" 2>&1; then
+            if cmp -s s-vhs.sh "$destination"; then
+                _release_pass "${label} matches s-vhs.sh"
+                return 0
+            fi
+            failure_detail='HTTP 200, but the published bytes do not match s-vhs.sh'
+        else
+            failure_detail="$(tail -n 20 "$_RELEASE_LOG_FILE")"
+        fi
+
+        if ((attempt < _RELEASE_PUBLICATION_ATTEMPTS)); then
+            if ((attempt % 6 == 0)); then
+                _release_info "still waiting for the ${label} (attempt ${attempt})"
+            fi
+            sleep "$_RELEASE_PUBLICATION_INTERVAL"
+        fi
+    done
+
+    _release_stop "the ${label} did not publish matching content in time" \
+                  "$failure_detail"
 }
 
 
