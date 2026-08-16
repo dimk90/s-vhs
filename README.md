@@ -41,7 +41,7 @@ A recording is a plain shell script that sources `s-vhs.sh`:
 
 # Import s-vhs straight from GitHub - no local copy needed.
 # A local copy works too, use "source ./s-vhs.sh"
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.2.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.3.0) && wait "$!" || exit 1
 
 # Where should we write the GIF?
 SetOutput 'demo.gif'
@@ -294,7 +294,7 @@ of keeping a local `s-vhs.sh` next to the recording script:
 
 ```bash
 # Remote import instead of "source ./s-vhs.sh"
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.2.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.3.0) && wait "$!" || exit 1
 
 SetOutput "remote-import.gif"
 
@@ -323,7 +323,7 @@ SetOutput 'multi-output.gif'
 SetOutput 'multi-output.svg' # <---
 ```
 
-The `.svg` written by that [recording]([`examples/multi-output.rec.sh`](examples/multi-output.rec.sh)) -
+The `.svg` written by that [recording](examples/multi-output.rec.sh) -
 animated by CSS, sharp at any zoom:
 
 <img src="examples/multi-output.svg" width="500px" alt="One recording rendered as an animated SVG">
@@ -364,7 +364,7 @@ with `asciinema play` and re-renderable at any size later — see
 Start a new recording without downloading `s-vhs.sh`:
 
 ```bash
-curl -fsSL https://dimk90.github.io/s-vhs/v0.2.0 | bash -s -- new demo.rec.sh
+curl -fsSL https://dimk90.github.io/s-vhs/latest | bash -s -- new demo.rec.sh
 ```
 or if `s-vhs.sh` is already local:
 ```bash
@@ -376,7 +376,7 @@ It writes:
 ```bash
 #!/usr/bin/env bash
 
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.2.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.3.0) && wait "$!" || exit 1
 
 SetOutput 'demo.gif'
 

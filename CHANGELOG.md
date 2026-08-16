@@ -1,6 +1,6 @@
 # Changelog
 
-## `[v0.3.0]` - Unreleased
+## `[v0.3.0]` - 16.08.2026
 
 ### New
 * Add animated SVG output through `asg`.
