@@ -1,15 +1,26 @@
 # Release Instructions
 
+Release from `develop`, merge the reviewed release commit into `master`, and tag
+the resulting `master` merge commit. Pushing a stable `vX.Y.Z` tag starts the
+`Release & Deploy` workflow, which publishes the versioned and `latest` Pages
+imports before creating the GitHub release.
+
+## Prepare
+
+1. Finish, review, commit, and push the implementation intended for the release
+   to `develop`.
+
 1. Finalize the release documentation:
    - replace `Unreleased` for the version in `CHANGELOG.md` with the release
      date in `DD.MM.YYYY` format;
+   - make the changelog entries match the user-visible release notes;
    - remove the completed version section from `doc/PLAN.md`, leaving future
      work in the roadmap;
-   - verify that README commands, examples and the recording template are
+   - verify that README commands, examples, and the recording template are
      current.
 
 1. Point every literal pinned remote import URL at the tag being released — in
-   `README.md` and in `examples/remote-import.rec.sh`.
+   `README.md`, `doc/DEBUG.md`, and `examples/remote-import.rec.sh`.
 
 1. Bump the version literal in `svhs_version`.
 

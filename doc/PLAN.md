@@ -1,24 +1,5 @@
 # Plan
 
-## v0.3.0
-
-- [ ] Update `pi-context-view` recordings + add reference to the `s-vhs`.
-  - [ ] Add example "S-VHS in the Wild" to README.
-- [ ] Is it reasonable to have skill for `s-vhs` ?
-- [ ] Implement animated SVG output format.
-  - [ ] Update readme header with one more bullet:
-    ```Markdown
-    - **Animated SVG output**
-      ([#644](https://github.com/charmbracelet/vhs/discussions/644),
-      [#109](https://github.com/charmbracelet/vhs/issues/109),
-      [#105](https://github.com/charmbracelet/vhs/issues/105)).
-    ```
-  - [ ] Update installation instructions and dependencies description.
-  - [ ] README - agg is listed as a flat requirement, but it is only needed for GIF output; a
-        .cast-only recording never invokes it. Worth marking as "for GIF output".
-- [ ] Re-render all examples to animated SVG?
-- [ ] Test on macOS.
-
 ## v0.4.0
 
 - [ ] Make list of planned function which are easy to implement:
@@ -34,6 +15,7 @@
   - [ ] Add demo to README.
 - [ ] Publish link in the related VHS issues.
 - [ ] Update template (`s-vhs new`) with common settings (if any new).
+- [ ] Test on macOS + installation instruction.
 
 
 ## Backlog
@@ -54,6 +36,9 @@
 - [ ] Rended visualization for all available themes.
 - [ ] MP4 output (same `.cast`, different renderer):
   - [ ] MP4 — render with `ffmpeg`?
+- [ ] Color theme unification between `agg` and `asg`:
+  - [ ] theme defined in s-vhs and pass colors via custom theme option.
+  - [ ] Add theme list with visualizations.
 - [ ] Improve default fish colors: commands and completion colors, bold commands,...
   - [ ] Update shell to `fish` for all examples and re-render GIFs.
   - [ ] Add custom agg themes:
@@ -62,3 +47,5 @@
   - [ ] catppuccin themes.
   - [ ] Add example with custom theme (hex colors).
 - [ ] Add a `git` theme (bash/zsh command substitution, fish `__fish_git_prompt`)?
+- [ ] Optional GIF optimization step (see COMMANDS.md).
+- [ ] Print estimated resolution in `Start` ('e.g. ::: N Rows x M Cols x F FontSize -> Resolution W x H') ?

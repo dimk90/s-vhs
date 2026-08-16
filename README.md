@@ -1,6 +1,12 @@
-# S-VHS
+<h1 align="center">
+  <img width="500" src="examples/logo.gif" alt="Animated S-VHS logo">
+  <br>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
+  <a href="https://github.com/dimk90/s-vhs/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/dimk90/s-vhs/release.yml?label=Release%20%26%20Deploy&amp;style=flat-square" alt="Release &amp; Deploy"></a>
+  <a href="https://github.com/dimk90/s-vhs/tree/deploy"><img src="https://img.shields.io/github/v/release/dimk90/s-vhs?label=Deployed&amp;style=flat-square" alt="Deployed"></a>
+</h1>
 
-<img src="examples/logo.gif" width="500px" alt="Animated S-VHS logo">
+<br>
 
 A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superior:
 
@@ -11,8 +17,14 @@ A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superi
   ([#69](https://github.com/charmbracelet/vhs/issues/69#issuecomment-3121533232)).
 - **Sized in rows and cols** - no dancing with pixel width and height
   ([#578](https://github.com/charmbracelet/vhs/issues/578)).
-- **No browser** - no headless Chromium downloaded behind your back, just a
-  wrapper around `tmux` + `asciinema` + `agg`
+- **Animated SVG output**
+  ([#644](https://github.com/charmbracelet/vhs/discussions/644),
+  [#109](https://github.com/charmbracelet/vhs/issues/109),
+  [#105](https://github.com/charmbracelet/vhs/issues/105)).
+- **No browser** - no headless Chromium downloaded behind your back, just
+  `tmux` + [asciinema](https://github.com/asciinema/asciinema) with
+  [agg](https://github.com/asciinema/agg) for GIF and
+  [asg](https://github.com/kingsword09/asg) for SVG
   ([#528](https://github.com/charmbracelet/vhs/issues/528),
   [#438](https://github.com/charmbracelet/vhs/issues/438),
   [#150](https://github.com/charmbracelet/vhs/issues/150),
@@ -27,17 +39,19 @@ A recording is a plain shell script that sources `s-vhs.sh`:
 ```bash
 #!/usr/bin/env bash
 
-source ./s-vhs.sh
+# Import s-vhs straight from GitHub - no local copy needed.
+# A local copy works too, use "source ./s-vhs.sh"
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.3.0) && wait "$!" || exit 1
 
 # Where should we write the GIF?
 SetOutput 'demo.gif'
 
-# Set up a 60x4 terminal with a 40px font.
+# Set up a 60x4 terminal with a 40px font
 SetCols 60
 SetRows 4
 SetFontSize 40
 
-# Start the terminal, then the recorder.
+# Start the terminal, then the recorder
 Start
 Show
 
@@ -48,13 +62,13 @@ Sleep 1 # Pause for dramatic effect...
 Type " Stay awhile and listen...'"
 Sleep 1
 
-# Run the command by pressing Enter.
+# Run the command by pressing Enter
 Enter
 
-# Admire the output for a bit.
+# Admire the output for a bit
 Sleep 5
 
-# Stop recording and write every requested output.
+# Stop recording and write every requested output
 Render
 ```
 
@@ -71,19 +85,35 @@ You should see a new file called `demo.gif` in the same directory:
 
 ## Installation
 
+`s-vhs` is a bash script, so all you need are its dependencies `tmux` and `asciinema`:
 
-`s-vhs` is a bash script, so all you need are its dependencies:
-- Install `tmux` and `asciinema`:
-  ```bash
-  sudo pacman -S tmux asciinema
-  ```
-- Install `agg`: follow [official instructions](https://github.com/asciinema/agg#building) or
-  ```bash
-  paru -S asciinema-agg
-  ```
-
-> [!NOTE]
+```bash
+sudo pacman -S tmux asciinema
+```
 > The provided instructions are for Arch Linux, but you can easily adapt them for your favorite distro ;)
+
+Only the formats you request need their renderer - a cast-only recording
+invokes neither, see [Output Formats](#output-formats).
+
+- For GIF output, install
+  [`agg`](https://github.com/asciinema/agg#building):
+  ```bash
+  cargo install --git https://github.com/asciinema/agg --locked
+  ```
+  > `agg` is not on crates.io (the `agg` crate there is an unrelated project),
+  > hence the `--git` install.
+
+- For animated SVG output, install
+  [`asg`](https://github.com/kingsword09/asg#quick-start):
+  ```bash
+  cargo install asg --locked
+  ```
+  > `asg` reads asciicast v3 only, so SVG output also needs `asciinema` 3 or newer.
+
+> [!TIP]
+> Cargo installs both renderers into `~/.cargo/bin` - make sure it is on your
+>  `PATH` (rustup's installer arranges that; a distro-packaged `cargo` does not).
+
 
 ## Examples
 
@@ -257,13 +287,6 @@ Enter; Sleep 2
 > `RunOffRecord 'clear' 0.5` is the shorthand for a `Hide` + `Run` + `Show`
 > sandwich, see [`examples/run-off-record.rec.sh`](examples/run-off-record.rec.sh).
 
-### Multiple Outputs
-
-```bash
-SetOutput 'multi-output.cast'
-SetOutput 'multi-output.gif'
-```
-
 ### Remote Import
 
 Import an immutable release directly from GitHub via `curl` instead
@@ -271,7 +294,7 @@ of keeping a local `s-vhs.sh` next to the recording script:
 
 ```bash
 # Remote import instead of "source ./s-vhs.sh"
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.2.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.3.0) && wait "$!" || exit 1
 
 SetOutput "remote-import.gif"
 
@@ -291,17 +314,57 @@ Render
 > [!TIP]
 > Keep the version pinned so the same script always imports the same library.
 
+
+### Animated SVG Output
+
+```bash
+SetOutput 'multi-output.cast'
+SetOutput 'multi-output.gif'
+SetOutput 'multi-output.svg' # <---
+```
+
+The `.svg` written by that [recording](examples/multi-output.rec.sh) -
+animated by CSS, sharp at any zoom:
+
+<img src="examples/multi-output.svg" width="500px" alt="One recording rendered as an animated SVG">
+
+
 ### S-VHS in the Wild
 
-More than just a toy:
-- [S-VHS logo recording](examples/logo.rec.sh).
+More than just a toy example:  
+📌 [pi-context-view](https://github.com/dimk90/pi-context-view): demo GIFs,
+such as [context-usage.rec.sh](https://github.com/dimk90/pi-context-view/blob/develop/scripts/recordings/context-usage.rec.sh).  
+📌 [S-VHS logo recording](examples/logo.rec.sh).
+
+## Output Formats
+
+The extension of the path passed to `SetOutput` picks the format:
+
+| Format  | Description                              | Render dependency                                       |
+| ------- | ---------------------------------------- | ------------------------------------------------------- |
+| `.cast` | Editable, replayable asciicast recording | None                                                    |
+| `.gif`  | Animated raster image                    | [`agg`](https://github.com/asciinema/agg#installation)  |
+| `.svg`  | Sharp, CSS-animated vector image         | [`asg`](https://github.com/kingsword09/asg#quick-start) |
+
+`SetOutput` is repeatable - one recording, several outputs:
+
+```bash
+SetOutput 'multi-output.cast'
+SetOutput 'multi-output.gif'
+SetOutput 'multi-output.svg'
+```
+
+Keeping the `.cast` next to the rendered files leaves the recording replayable
+with `asciinema play` and re-renderable at any size later — see
+[`examples/multi-output.rec.sh`](examples/multi-output.rec.sh).
+
 
 ## Recording Template
 
 Start a new recording without downloading `s-vhs.sh`:
 
 ```bash
-curl -fsSL https://dimk90.github.io/s-vhs/v0.2.0 | bash -s -- new demo.rec.sh
+curl -fsSL https://dimk90.github.io/s-vhs/latest | bash -s -- new demo.rec.sh
 ```
 or if `s-vhs.sh` is already local:
 ```bash
@@ -313,7 +376,7 @@ It writes:
 ```bash
 #!/usr/bin/env bash
 
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.2.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.3.0) && wait "$!" || exit 1
 
 SetOutput 'demo.gif'
 
@@ -338,17 +401,16 @@ Render
 
 ## Documentation
 
-- For the architecture behind `tmux + asciinema + agg` and how `s-vhs` glues
-  them together, see [INTRO.md](doc/INTRO.md).
-
-  <img src="doc/images/svhs-pipeline.svg" width="400px" alt="s-vhs pipeline">
-
 - For the full list of commands and settings, see [REFERENCE.md](doc/REFERENCE.md).
 
-## Links
+- For debugging a recording script see [DEBUG.md](doc/DEBUG.md).
 
-- [asciinema](https://github.com/asciinema/asciinema) project ❤️
-- [agg](https://github.com/asciinema/agg) project ❤️
+- For the architecture behind `tmux + asciinema + output renderers` and how
+  `s-vhs` glues them together, see [INTRO.md](doc/INTRO.md).
+
+  <p align="center">
+    <img src="doc/images/svhs-pipeline.svg" width="500px" alt="s-vhs pipeline">
+  </p>
 
 ## License
 

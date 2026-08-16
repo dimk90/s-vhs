@@ -1,5 +1,19 @@
 # Changelog
 
+## `[v0.3.0]` - 16.08.2026
+
+### New
+* Add animated SVG output through `asg`.
+* Add `svhs_watch` and `s-vhs.sh watch [session]` to debug a recording's process.
+
+### Changed
+* Add `no-wait` argument to `Start`, for debugging a shell that never becomes ready.
+
+### Fixed
+* `Start` now waits until the shell is ready for input.
+* `Render` keep the closing frame of a recording.
+
+
 ## `[v0.2.0]` - 06.08.2026
 
 ### New

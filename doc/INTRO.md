@@ -14,8 +14,9 @@ a visual format.
 | ------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | **tmux**      | Terminal multiplexer      | Runs the shell in a detached session, keeps its screen state, and fixes its size in rows and columns.                   |
 | **asciinema** | Terminal session recorder | Attaches to the tmux session and stores terminal output, control sequences, geometry, and timestamps in a `.cast` file. |
-| **`.cast`**   | asciicast v2 file         | The recording itself - text plus timings, the hand-off point between recording and rendering.                           |
+| **`.cast`**   | asciicast v3 file         | The recording itself - text plus timings, the hand-off point between recording and rendering.                           |
 | **agg**       | asciinema GIF generator   | Replays the cast into GIF frames using the selected font, font size, line height, and color theme.                      |
+| **asg**       | asciinema SVG generator   | Replays the cast into a sharp, CSS-animated SVG using the selected font, font size, line height, and color theme.        |
 | **s-vhs**     | ~1k lines of bash         | Glues them together and gives you `Type`, `Key`, `Wait`, `Show`, `Render` instead of raw tmux commands.                 |
 
 ### Recording Script
@@ -63,7 +64,7 @@ Each command is a thin wrapper over one of the tools:
 | `Type`, `Key`   | `tmux send-keys` into the session                                         |
 | `Wait`          | `tmux capture-pane -p` piped through `grep` until the pattern appears     |
 | `Hide`          | `tmux detach-client` - the recorder stops, the session keeps running      |
-| `Render`        | `tmux kill-session`, then `agg demo.cast demo.gif` per requested GIF      |
+| `Render`        | `tmux kill-session`, then `agg` or `asg` per requested visual output      |
 
 > [!TIP]
 > Two shells are involved, and mixing them up is the classic first bug:
@@ -81,8 +82,8 @@ semantics: text, ANSI control sequences, rows, columns, and event timing, all
 without committing to a pixel resolution:
 
 ```jsonc
-{"version": 2, "width": 100, "height": 40, "timestamp": 1753996800}
-[0.42, "o", "$ echo hi\r\n"]   // at 0.42s the terminal printed this text
+{"version": 3, "term": {"cols": 100, "rows": 40}, "timestamp": 1753996800}
+[0.42, "o", "$ echo hi\r\n"]   // 0.42s after the previous event
 [0.55, "o", "hi\r\n"]
 ```
 
@@ -92,10 +93,10 @@ This separation has useful consequences:
 - fonts, themes, and pixel scale are chosen during rendering;
 - changing output resolution does not change the recorded timing.
 
-Today s-vhs can retain the cast directly or render it to GIF with `agg`. Other
-cast-compatible renderers or converters can occupy the same final stage - for
-example, an SVG or video renderer - without changing how tmux runs the terminal
-or how asciinema records it.
+Today s-vhs can retain the cast directly, render it to GIF with `agg`, or render
+it to animated SVG with `asg`. Other cast-compatible renderers or converters can
+occupy the same final stage - for example, a video renderer - without changing
+how tmux runs the terminal or how asciinema records it.
 
 ## Links
 

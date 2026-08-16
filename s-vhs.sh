@@ -1,17 +1,22 @@
 #!/bin/bash
 #
-# s-vhs — shared helpers for agg + asciinema + tmux demo recordings.
-# Meant to be sourced by a recording script; executing it only scaffolds one:
-# `s-vhs.sh new demo.rec.sh`.
+# S-VHS - a scriptable terminal recorder.
+# A thin wrapper around tmux + asciinema + output renderers:
+# agg for GIF, asg for SVG.
 #
-# Requires:  bash 3.2+ — the version macOS still ships as /bin/bash.
+# Source this file from a recording script (*.rec.sh), or execute it:
+#   s-vhs.sh new demo.rec.sh   scaffold a recording script
+#   s-vhs.sh watch <name>      view a live recording session
+#
 # Homepage:  https://github.com/dimk90/s-vhs
 # License:   MIT
 # Copyright: (c) 2026 Dmitry Makarov
 #
 
-# Stop on an unhandled command failure (-e), use of an unset variable (-u),
-# or failure within a pipeline (-o pipefail), so the EXIT trap can clean up.
+# Abort on the first unhandled error, so the EXIT trap can clean up:
+#   -e           exit when a command fails and nothing checks its status
+#   -u           treat expansion of an unset variable as an error
+#   -o pipefail  a pipeline fails when any command in it fails
 set -euo pipefail
 
 
@@ -19,77 +24,101 @@ set -euo pipefail
 
 
 svhs_version() {
-    printf '%s\n' '0.2.0'
+    printf '%s\n' '0.3.0'
 }
 
 
-## Settings / Defaults
+## Settings / Defaults / Consts
 
 
-# A shared named socket isolates recordings from the user's default tmux server
+# Named tmux socket; keeps recordings off the user's default server
 _SVHS_TMUX_SOCKET='s-vhs'
 
-# The PID of the recording script keeps parallel recordings from colliding on
-# the default name; SetSession pins a fixed one when it should be attachable
+# The PID keeps parallel recordings apart; SetSession pins a fixed name
 _SVHS_SESSION="s-vhs-$$"
+
+# Output paths added by SetOutput
 _SVHS_OUTPUTS=()
 
-# Terminal geometry is in cells, not pixels
+# Terminal size in cells, not pixels
 _SVHS_COLS=100
 _SVHS_ROWS=40
 
-# Empty families let agg use its built-in default fonts.
-# The plain family is rendered through agg's text-font slot,
-# which keeps the bundled Symbols Nerd Font and emoji fallbacks
+# Renderer fonts, empty = their defaults. FAMILY keeps the Nerd Font and
+# emoji fallbacks; FAMILY_EXACT replaces the whole chain, no fallbacks
 _SVHS_FONT_FAMILY=''
-
-# The exact one replaces the whole chain - no fallbacks to other fonts
 _SVHS_FONT_FAMILY_EXACT=''
 
-# Font size define output resolution ~ COLS*ROWS*FONT_SIZE
+# agg bundles these fallbacks; an SVG can only name fonts on the viewer's
+# system, and it picks a face per glyph. Text faces must therefore come before
+# the symbol ones: 'Segoe UI Symbol' (Windows) and 'Apple Symbols' (macOS, iOS)
+# cover Latin in a proportional face, so a viewer without the recording's font
+# would draw the text off asg's fixed 0.6 x font-size cell, leaving the cursor
+# and the cell backgrounds behind. Ordered by advance: 0.600 em first, 0.602 em
+# next, Consolas (0.55 em) as the last monospace resort. The symbol tail mirrors
+# asg's default --font-family, so re-check `asg --help` when bumping asg
+_SVHS_SVG_FONT_FALLBACKS="'JetBrains Mono','Cascadia Mono','Noto Sans Mono',"
+_SVHS_SVG_FONT_FALLBACKS+="'Liberation Mono','Roboto Mono','Menlo',"
+_SVHS_SVG_FONT_FALLBACKS+="'DejaVu Sans Mono','SF Mono','Consolas',"
+_SVHS_SVG_FONT_FALLBACKS+="'Symbols Nerd Font Mono','Symbols Nerd Font',"
+_SVHS_SVG_FONT_FALLBACKS+="'Powerline Symbols','Apple Symbols','Segoe UI Symbol',"
+_SVHS_SVG_FONT_FALLBACKS+="'Noto Sans Symbols 2','Noto Sans Symbols','Apple Color Emoji',"
+_SVHS_SVG_FONT_FALLBACKS+="'Segoe UI Emoji','Noto Color Emoji',monospace"
+
+# Output resolution ~ COLS x ROWS x FONT_SIZE
 _SVHS_FONT_SIZE=28
 _SVHS_LINE_HEIGHT=1.2
 
-# Headless recording cannot inspect the host theme; pin rendering instead
+# Render theme; headless recording has no host theme to inherit
 _SVHS_THEME='dracula'
 
-# Shell run inside the tmux session. s-vhs assembles the isolation flags and
-# injects the prompt itself, so the shell has to be one it knows;
-# bash is the safe default - present everywhere
+# Recorded shell; must be one s-vhs knows how to isolate and inject
+# a prompt into, and bash is present everywhere
 _SVHS_SHELL='bash'
 
-# Prompt of the recorded shell: a bundled theme, a literal prompt, or 'native'
-# for the user's own rc files. See SetPrompt
+# Prompt: a bundled theme, a literal string, or 'native' (see SetPrompt)
 _SVHS_PROMPT='arrow'
 _SVHS_PROMPT_MODE='theme'
 
 # Bundled themes, rendered per shell by _svhs_theme_prompt
 _SVHS_PROMPT_THEMES='arrow plain path powerline'
 
-# Glyphs the themes draw with, spelled as bytes to keep this file ASCII:
-# U+276F, the arrow, and U+E0B0, the powerline separator - a private-use glyph
-# agg draws from the Nerd Font it bundles
+# Theme glyphs as bytes to keep this file ASCII. agg bundles their fallbacks;
+# asg names system fallbacks in the SVG
+# U+276F arrow, U+E0B0 powerline separator
 _SVHS_PROMPT_ARROW=$'\xe2\x9d\xaf'
 _SVHS_POWERLINE_SEPARATOR=$'\xee\x82\xb0'
 
 # NAME=VALUE pairs exported into the recorded shell by Env
 _SVHS_ENV=()
 
-# Delays are in seconds
+# Delays in seconds
 _SVHS_TYPING_SPEED=0.07
 _SVHS_KEY_DELAY=0.0
 
-# How often tmux is polled, and how long the recorder may take to attach
+# tmux poll interval, and how long the recorder may take to attach
 _SVHS_POLL_INTERVAL=0.2
 _SVHS_ATTACH_TIMEOUT=5
 
-# The recorder flushes every event, so a write lands within milliseconds and
-# is polled far more tightly than tmux
+# Viewer redraw interval; tighter than the tmux poll so a typed
+# character shows up as it lands
+_SVHS_WATCH_INTERVAL=0.1
+
+# Viewer escapes: ENTER switches to the alternate screen, hides the cursor
+# and disables line wrapping; RESTORE undoes all three
+_SVHS_WATCH_CLEAR=$'\033[2J\033[H'
+_SVHS_WATCH_ENTER=$'\033[?1049h\033[?25l\033[?7l'"$_SVHS_WATCH_CLEAR"
+_SVHS_WATCH_RESTORE=$'\033[0m\033[?7h\033[?25h\033[?1049l'
+
+# Shell readiness timeout; longer than ATTACH_TIMEOUT since a native
+# configuration may load plugins on startup
+_SVHS_SHELL_TIMEOUT=10
+
+# Cast-file write polling; the recorder flushes every event, so poll tightly
 _SVHS_WRITE_POLL_INTERVAL=0.01
 _SVHS_WRITE_TIMEOUT=5
 
-# The recorded shell's command line and the environment it needs, assembled
-# by Start from the configured shell and prompt
+# Recorded shell command line and environment, assembled by Start
 _SVHS_SHELL_COMMAND=()
 _SVHS_SHELL_ENV=()
 
@@ -134,10 +163,10 @@ TEMPLATE
 
 SetOutput() {
     #
-    # Add a cast or GIF output for the recording.
+    # Add a cast, GIF, or animated SVG output for the recording.
     #
     # Parameters:
-    #   $1 - output - path ending in .cast or .gif.
+    #   $1 - output - path ending in .cast, .gif, or .svg.
     #
     # Example:
     #   SetOutput 'demo.gif' || exit 1
@@ -147,7 +176,7 @@ SetOutput() {
     _svhs_require_configuration_phase 'SetOutput' || return 1
 
     case "$output" in
-        *.cast|*.gif) ;;
+        *.cast|*.gif|*.svg) ;;
         '')
             printf 'SetOutput: output path must not be empty\n' >&2
             return 1
@@ -338,10 +367,10 @@ SetLineHeight() {
 
 SetTheme() {
     #
-    # Set an agg theme name or custom palette value.
+    # Set a renderer theme name or custom palette value.
     #
     # Parameters:
-    #   $1 - theme - non-empty value passed to agg --theme.
+    #   $1 - theme - non-empty value passed to the renderer's --theme.
     #
     # Example:
     #   SetTheme 'kanagawa' || exit 1
@@ -527,16 +556,29 @@ Start() {
     #
     # Start a fresh detached tmux session with the configured geometry, shell
     # and prompt on the dedicated s-vhs server, isolated from personal tmux
-    # config and without a status bar, and report how to attach to it.
+    # config and without a status bar, and report how to attach to it. It
+    # returns once the shell's line editor starts reading, so the first input
+    # cannot race its startup.
     #
     # Parameters:
-    #   None.
+    #   $1 - wait_mode - (optional) - 'no-wait' returns as soon as the shell
+    #        is spawned, leaving a session whose startup can be inspected.
     #
     # Example:
     #   Start || exit 1
+    #   Start 'no-wait' || exit 1
     #
+    local wait_mode="${1-}"
     local variable
     local env_args=()
+
+    case "$wait_mode" in
+        ''|no-wait) ;;
+        *)
+            printf 'Start: expected no-wait or no argument, got: %s\n' "$wait_mode" >&2
+            return 1
+            ;;
+    esac
 
     if [[ $_SVHS_STARTED == 1 ]]; then
         printf 'Start: session has already started\n' >&2
@@ -585,10 +627,51 @@ Start() {
     tmux -L "$_SVHS_TMUX_SOCKET" set -g extended-keys-format csi-u
     tmux -L "$_SVHS_TMUX_SOCKET" set-option -t "$_SVHS_SESSION" status off
 
+    if [[ $wait_mode != 'no-wait' ]]; then
+        _svhs_wait_for_shell || return 1
+    fi
+
     # The session runs on its own socket with the status bar off and a name
     # carrying a PID, so watching a recording live takes the printed command
     printf '::: Started session %s, attach with: tmux -L %s attach -t %s\n' \
         "$_SVHS_SESSION" "$_SVHS_TMUX_SOCKET" "$_SVHS_SESSION"
+}
+
+
+svhs_watch() {
+    #
+    # Watch a recording's pane live from another terminal, by repainting a
+    # snapshot of it several times a second. No tmux client is attached, so
+    # the viewer cannot resize the pane, send input to it, or interfere with
+    # the recorder. It waits for the session to appear, returns to waiting
+    # once the recording ends, and runs until interrupted with Ctrl-C.
+    #
+    # Parameters:
+    #   $1 - session - (optional) - session name to watch; without it, the
+    #        newest default s-vhs-<pid> session is picked, so the viewer can
+    #        be left running across recordings.
+    #
+    # Example:
+    #   svhs_watch 'demo'
+    #
+    local session="${1-}"
+
+    if [[ $# -ge 1 && -z $session ]]; then
+        printf 'svhs_watch: session name must not be empty\n' >&2
+        return 1
+    fi
+
+    _svhs_require_command 'svhs_watch' 'tmux' 'the live pane viewer' || return 1
+
+    # the viewer takes the terminal over, so its restoring EXIT trap runs in a
+    # subshell of its own rather than replacing the caller's _svhs_cleanup
+    (
+        trap 'printf "%s" "$_SVHS_WATCH_RESTORE"' EXIT
+        trap 'exit 130' INT TERM
+
+        printf '%s' "$_SVHS_WATCH_ENTER"
+        _svhs_watch_loop "$session"
+    )
 }
 
 
@@ -678,21 +761,21 @@ Key() {
 # A modified key stays with Key and tmux notation (`Key C-r`), and three of
 # the names are spelled differently there: BSpace, IC and DC.
 #
-Enter()     { Key Enter ${@+"$@"}; }
-Tab()       { Key Tab ${@+"$@"}; }
-Space()     { Key Space ${@+"$@"}; }
-Backspace() { Key BSpace ${@+"$@"}; }
-Escape()    { Key Escape ${@+"$@"}; }
-Up()        { Key Up ${@+"$@"}; }
-Down()      { Key Down ${@+"$@"}; }
-Left()      { Key Left ${@+"$@"}; }
-Right()     { Key Right ${@+"$@"}; }
-PageUp()    { Key PageUp ${@+"$@"}; }
+Enter()     { Key Enter ${@+"$@"};    }
+Tab()       { Key Tab ${@+"$@"};      }
+Space()     { Key Space ${@+"$@"};    }
+Backspace() { Key BSpace ${@+"$@"};   }
+Escape()    { Key Escape ${@+"$@"};   }
+Up()        { Key Up ${@+"$@"};       }
+Down()      { Key Down ${@+"$@"};     }
+Left()      { Key Left ${@+"$@"};     }
+Right()     { Key Right ${@+"$@"};    }
+PageUp()    { Key PageUp ${@+"$@"};   }
 PageDown()  { Key PageDown ${@+"$@"}; }
-Home()      { Key Home ${@+"$@"}; }
-End()       { Key End ${@+"$@"}; }
-Insert()    { Key IC ${@+"$@"}; }
-Delete()    { Key DC ${@+"$@"}; }
+Home()      { Key Home ${@+"$@"};     }
+End()       { Key End ${@+"$@"};      }
+Insert()    { Key IC ${@+"$@"};       }
+Delete()    { Key DC ${@+"$@"};       }
 #
 # bash 3.2 (stock macOS) reports "$@" as unbound under set -u when the caller
 # passed nothing, so the arguments are guarded the same way an array is.
@@ -814,32 +897,9 @@ Hide() {
     # Example:
     #   Hide || exit 1
     #
-    local client
     local clean_lines
-    local lines_before
-    local deadline
 
-    # A segment ends at its last event, so a pause held before Hide would be
-    # dropped and its closing frame would flash by. Repainting the recorder's
-    # client writes an event with the same pixels at the current time, which
-    # gives that frame its duration back. refresh-client targets a client,
-    # never a session
-    client=$(tmux -L "$_SVHS_TMUX_SOCKET" list-clients \
-        -t "$_SVHS_SESSION" -F '#{client_name}' | head -1)
-    lines_before=$(wc -l < "$_SVHS_CAST")
-    tmux -L "$_SVHS_TMUX_SOCKET" refresh-client -t "$client"
-
-    # measuring the cast before the repaint reaches it would truncate the
-    # repaint away again, so wait for the file to grow instead of guessing;
-    # a line appears only once the event behind it is written whole
-    deadline=$((SECONDS + _SVHS_WRITE_TIMEOUT))
-    until [[ $(wc -l < "$_SVHS_CAST") -gt $lines_before ]]; do
-        if ((SECONDS >= deadline)); then
-            printf 'Hide: timeout waiting for the recorder to write\n' >&2
-            return 1
-        fi
-        sleep "$_SVHS_WRITE_POLL_INTERVAL"
-    done
+    _svhs_flush_frame 'Hide' || return 1
 
     # Detaching appends terminal-reset noise to the cast; remember the clean
     # length first and truncate back to it
@@ -858,7 +918,7 @@ Hide() {
 
 Render() {
     #
-    # End the recording, retain requested casts, and render requested GIFs.
+    # End the recording, retain requested casts, and render requested outputs.
     #
     # Parameters:
     #   None.
@@ -868,10 +928,17 @@ Render() {
     #
     local clean_lines=''
     local output
-    local font_args=()
+    local agg_font_args=()
+    local asg_font_args=()
 
-    # As in Hide, drop the detach noise appended by the kill
-    [[ -n $_SVHS_REC_PID ]] && clean_lines=$(wc -l < "$_SVHS_CAST")
+    # As in Hide, the closing frame needs an event of its own - without it the
+    # Sleep before Render is dropped - and the kill's noise is truncated away
+    # afterwards. A finished recording is not worth discarding over its last
+    # frame, so a failed flush costs that frame and nothing else
+    if [[ -n $_SVHS_REC_PID ]]; then
+        _svhs_flush_frame 'Render' || true
+        clean_lines=$(wc -l < "$_SVHS_CAST")
+    fi
 
     tmux -L "$_SVHS_TMUX_SOCKET" kill-session -t "$_SVHS_SESSION"
 
@@ -881,24 +948,40 @@ Render() {
     fi
     _SVHS_REC_PID=''
 
-    [[ -n $_SVHS_FONT_FAMILY ]] && font_args+=(--text-font-family "$_SVHS_FONT_FAMILY")
-    [[ -n $_SVHS_FONT_FAMILY_EXACT ]] && font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
+    if [[ -n $_SVHS_FONT_FAMILY ]]; then
+        agg_font_args+=(--text-font-family "$_SVHS_FONT_FAMILY")
+        # Quote the family: unquoted CSS idents cannot start with a digit, and one
+        # invalid entry drops the whole stack ('0xProto Nerd Font', '3270 Nerd Font')
+        asg_font_args+=(--font-family "'$_SVHS_FONT_FAMILY',$_SVHS_SVG_FONT_FALLBACKS")
+    elif [[ -n $_SVHS_FONT_FAMILY_EXACT ]]; then
+        agg_font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
+        asg_font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
+    fi
 
+    # A caller's `Render || exit 1` suspends set -e for this whole function, so
+    # check every output explicitly rather than announcing a failed render
     for output in "${_SVHS_OUTPUTS[@]}"; do
         case "$output" in
             *.cast)
                 if [[ $output != "$_SVHS_CAST" ]]; then
-                    cp -- "$_SVHS_CAST" "$output"
+                    cp -- "$_SVHS_CAST" "$output" || return 1
                 fi
                 ;;
+            # bash 3.2 (stock macOS) rejects an empty array under set -u, so
+            # expand renderer font arguments only when a family was configured
             *.gif)
-                # bash 3.2 (stock macOS) rejects an empty array under set -u,
-                # so expand font_args only when a font family was configured
-                agg ${font_args[@]+"${font_args[@]}"}  \
-                    --font-size "$_SVHS_FONT_SIZE"     \
-                    --line-height "$_SVHS_LINE_HEIGHT" \
-                    --theme "$_SVHS_THEME"             \
-                    "$_SVHS_CAST" "$output"
+                agg ${agg_font_args[@]+"${agg_font_args[@]}"} \
+                    --font-size "$_SVHS_FONT_SIZE"            \
+                    --line-height "$_SVHS_LINE_HEIGHT"        \
+                    --theme "$_SVHS_THEME"                    \
+                    "$_SVHS_CAST" "$output" || return 1
+                ;;
+            *.svg)
+                asg ${asg_font_args[@]+"${asg_font_args[@]}"} \
+                    --font-size "$_SVHS_FONT_SIZE"            \
+                    --line-height "$_SVHS_LINE_HEIGHT"        \
+                    --theme "$_SVHS_THEME"                    \
+                    "$_SVHS_CAST" "$output" || return 1
                 ;;
         esac
 
@@ -944,18 +1027,20 @@ _svhs_require_command() {
     # Report an external dependency that is missing from PATH.
     #
     # Parameters:
-    #   $1 - command_name - executable the recording needs.
-    #   $2 - purpose - what it is needed for.
+    #   $1 - caller - public command name to report the failure under.
+    #   $2 - command_name - executable the recording needs.
+    #   $3 - purpose - what it is needed for.
     #
     # Example:
-    #   _svhs_require_command 'agg' 'GIF output' || return 1
+    #   _svhs_require_command 'Start' 'agg' 'GIF output' || return 1
     #
-    local command_name="$1"
-    local purpose="$2"
+    local caller="$1"
+    local command_name="$2"
+    local purpose="$3"
 
     if ! command -v "$command_name" > /dev/null 2>&1; then
-        printf 'Start: %s is not installed, required for %s\n' \
-            "$command_name" "$purpose" >&2
+        printf '%s: %s is not installed, required for %s\n' \
+            "$caller" "$command_name" "$purpose" >&2
         return 1
     fi
 }
@@ -974,12 +1059,13 @@ _svhs_require_dependencies() {
     #
     local output
 
-    _svhs_require_command 'tmux' 'the recording session' || return 1
-    _svhs_require_command 'asciinema' 'the recorder' || return 1
+    _svhs_require_command 'Start' 'tmux' 'the recording session' || return 1
+    _svhs_require_command 'Start' 'asciinema' 'the recorder' || return 1
 
     for output in "${_SVHS_OUTPUTS[@]}"; do
         case "$output" in
-            *.gif) _svhs_require_command 'agg' 'GIF output' || return 1 ;;
+            *.gif) _svhs_require_command 'Start' 'agg' 'GIF output' || return 1 ;;
+            *.svg) _svhs_require_command 'Start' 'asg' 'SVG output' || return 1 ;;
         esac
     done
 }
@@ -1003,6 +1089,109 @@ _svhs_session_exists() {
     tmux -L "$_SVHS_TMUX_SOCKET" list-sessions -F '#{session_name}' 2> /dev/null \
         | grep -q -x -F -- "$session" || return 1
     return 0
+}
+
+
+_svhs_watch_target() {
+    #
+    # Print the session the viewer should follow, or nothing when none is
+    # alive yet.
+    #
+    # Parameters:
+    #   $1 - session - session name to look for; empty picks the newest
+    #        default s-vhs-<pid> session.
+    #
+    # Example:
+    #   target=$(_svhs_watch_target 'demo')
+    #
+    local session="$1"
+
+    if [[ -n $session ]]; then
+        _svhs_session_exists "$session" && printf '%s\n' "$session"
+        return 0
+    fi
+
+    # the newest default session is the recording that just started; sorting
+    # by creation time and then by name keeps the pick independent of the
+    # order tmux happens to list them in, and a name says nothing about age
+    tmux -L "$_SVHS_TMUX_SOCKET" list-sessions \
+         -F '#{session_created} #{session_name}' 2> /dev/null \
+        | grep ' s-vhs-[0-9][0-9]*$'                          \
+        | sort -k1,1nr -k2,2                                  \
+        | head -n 1                                           \
+        | cut -d ' ' -f 2 || true
+}
+
+
+_svhs_watch_pane() {
+    #
+    # Repaint one session's visible pane until it is gone.
+    #
+    # Parameters:
+    #   $1 - session - session name to capture.
+    #
+    # Example:
+    #   _svhs_watch_pane 'demo'
+    #
+    local session="$1"
+    local frame
+
+    while :; do
+        # -p writes the pane to stdout without creating a client, -e keeps its
+        # ANSI attributes, 24-bit color included; a failing capture is the
+        # session ending, which returns the viewer to waiting
+        frame=$(tmux -L "$_SVHS_TMUX_SOCKET" capture-pane \
+            -e -p -t "$session" 2> /dev/null) || return 0
+
+        # each row is written at its own address and cleared to the end of the
+        # line, and the rows below the last one are dropped, so the picture
+        # never blinks the way clearing the screen per frame would
+        printf '%s\n' "$frame" | awk '
+            { printf "\033[%d;1H%s\033[0m\033[K", NR, $0 }
+            END { printf "\033[%d;1H\033[J", NR + 1 }'
+
+        sleep "$_SVHS_WATCH_INTERVAL"
+    done
+}
+
+
+_svhs_watch_loop() {
+    #
+    # Follow recordings until interrupted: wait for a session, paint it while
+    # it lives, and wait again once it ends, so a viewer left running picks up
+    # the next run of a recording script.
+    #
+    # Parameters:
+    #   $1 - session - session name to watch; empty follows default ones.
+    #
+    # Example:
+    #   _svhs_watch_loop 'demo'
+    #
+    local session="$1"
+    local target
+    local waiting=''
+
+    while :; do
+        target=$(_svhs_watch_target "$session")
+
+        if [[ -z $target ]]; then
+            # painted once per wait, so the message does not blink while the
+            # session is polled for
+            if [[ -z $waiting ]]; then
+                printf '%s::: Waiting for %s, Ctrl-C to exit\n' \
+                    "$_SVHS_WATCH_CLEAR" "${session:-an s-vhs session}"
+                waiting=1
+            fi
+            sleep "$_SVHS_POLL_INTERVAL"
+            continue
+        fi
+
+        # the frames themselves never clear the screen, so the wait message
+        # has to go before the first one of a session is painted
+        printf '%s' "$_SVHS_WATCH_CLEAR"
+        waiting=''
+        _svhs_watch_pane "$target"
+    done
 }
 
 
@@ -1262,6 +1451,128 @@ _svhs_prepare_cast() {
 }
 
 
+_svhs_tty_reads_input() {
+    #
+    # Return success when a terminal is in the mode a shell's line editor sets
+    # while it waits for input: noncanonical, with kernel echo off. It asks
+    # the terminal driver, not the screen, so it holds for every prompt -
+    # themed, literal, colored or empty.
+    #
+    # Parameters:
+    #   $1 - tty - terminal device to inspect.
+    #
+    # Example:
+    #   _svhs_tty_reads_input '/dev/pts/3' || return 1
+    #
+    local tty="$1"
+    local modes
+
+    # stty spells a disabled flag as -flag and wraps the list over several
+    # lines in both userlands; folding it into one padded line makes a flag
+    # match on whole words, so -echoprt cannot pass for -echo.
+    # stderr is redirected before the terminal, so a pane that vanished
+    # between the two silences the failing redirection as well
+    modes=$(stty -a 2> /dev/null < "$tty" | tr -s '[:space:]' ' ') || return 1
+    modes=" $modes "
+
+    [[ $modes == *' -icanon '* && $modes == *' -echo '* ]] || return 1
+    return 0
+}
+
+
+_svhs_wait_for_shell() {
+    #
+    # Wait until the session's shell is ready to accept input. A fresh pane
+    # starts in canonical, echoing mode, so input sent before the shell's line
+    # editor takes over is echoed by the terminal driver as well: the command
+    # appears twice and the opening frames differ from run to run.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_wait_for_shell || return 1
+    #
+    local deadline=$((SECONDS + _SVHS_SHELL_TIMEOUT))
+    local pane
+    local tty
+    local foreground
+
+    while :; do
+        # the session holds a single pane and dies together with the shell,
+        # so a failing query means the shell is gone
+        pane=$(tmux -L "$_SVHS_TMUX_SOCKET" display-message -p -t "$_SVHS_SESSION" \
+            '#{pane_tty} #{pane_current_command}' 2> /dev/null) || {
+            printf 'Start: the shell exited during startup\n' >&2
+            return 1
+        }
+        tty="${pane% *}"
+        foreground="${pane#* }"
+
+        # a program started by a native configuration can hold the terminal in
+        # that very mode, so the shell itself has to be in the foreground too
+        if [[ $foreground == "$_SVHS_SHELL" ]] && _svhs_tty_reads_input "$tty"; then
+            return 0
+        fi
+
+        if ((SECONDS >= deadline)); then
+            printf 'Start: %s is not ready for input after %s seconds\n' \
+                "$_SVHS_SHELL" "$_SVHS_SHELL_TIMEOUT" >&2
+            return 1
+        fi
+        sleep "$_SVHS_POLL_INTERVAL"
+    done
+}
+
+
+_svhs_flush_frame() {
+    #
+    # Give the frame on screen the time held since the last output, by writing
+    # it into the cast as an event of its own. A cast ends at its last event,
+    # so a pause held before the recorder stops would otherwise be dropped and
+    # that frame would flash by.
+    #
+    # Parameters:
+    #   $1 - caller - public command name to report the failure under.
+    #
+    # Example:
+    #   _svhs_flush_frame 'Hide' || return 1
+    #
+    local caller="$1"
+    local client
+    local lines_before
+    local deadline
+
+    # Repainting the recorder's client writes an event with the same pixels at
+    # the current time. refresh-client targets a client, never a session
+    client=$(tmux -L "$_SVHS_TMUX_SOCKET" list-clients \
+        -t "$_SVHS_SESSION" -F '#{client_name}' 2> /dev/null | head -1)
+
+    # a session whose shell exited takes the recorder's client with it: there
+    # is nothing left to repaint, and waiting for a write would only stall
+    if [[ -z $client ]]; then
+        printf '%s: the recorder is no longer attached\n' "$caller" >&2
+        return 1
+    fi
+
+    lines_before=$(wc -l < "$_SVHS_CAST")
+    tmux -L "$_SVHS_TMUX_SOCKET" refresh-client -t "$client"
+
+    # measuring the cast before the repaint reaches it would truncate the
+    # repaint away again, so wait for the file to grow instead of guessing;
+    # a line appears only once the event behind it is written whole
+    deadline=$((SECONDS + _SVHS_WRITE_TIMEOUT))
+    until [[ $(wc -l < "$_SVHS_CAST") -gt $lines_before ]]; do
+        if ((SECONDS >= deadline)); then
+            printf '%s: timeout waiting for the recorder to write\n' \
+                "$caller" >&2
+            return 1
+        fi
+        sleep "$_SVHS_WRITE_POLL_INTERVAL"
+    done
+}
+
+
 _svhs_truncate() {
     #
     # Shrink a file to its leading lines. One asciicast event is one line, so
@@ -1403,26 +1714,32 @@ _svhs_new() {
 }
 
 
-# Executed rather than sourced, so this is the scaffolding call: either as a
-# file (`s-vhs.sh new demo.rec.sh`) or piped, which leaves BASH_SOURCE unset
-# (`curl -fsSL … | bash -s -- new demo.rec.sh`). A sourced library, in
-# contrast, is $0 of its caller. The subcommand is deliberately the only one:
+# Dispatch subcommands only when this file is executed, never when sourced:
+#   run directly  BASH_SOURCE[0] equals $0
+#   piped         BASH_SOURCE is unset (`curl … | bash -s -- new …`)
+#   sourced       $0 belongs to the caller
+# $1 alone cannot tell - a sourced library inherits the caller's positional
+# parameters. `new` and `watch` are deliberately the only subcommands:
 # s-vhs is a library, not a CLI.
-#
-# Dispatch cannot look at $1 alone — a sourced script inherits the positional
-# parameters of the recording script that sourced it.
 if [[ -z ${BASH_SOURCE[0]-} || ${BASH_SOURCE[0]} == "$0" ]]; then
-    if [[ ${1-} != 'new' ]]; then
-        printf 'usage: s-vhs.sh new [path]\n' >&2
-        exit 1
-    fi
-
-    _svhs_new "${2-}" || exit 1
+    case "${1-}" in
+        new)
+            _svhs_new "${2-}" || exit 1
+            ;;
+        watch)
+            # bash 3.2 (stock macOS) rejects $2 as unbound under set -u, so an
+            # omitted session is passed as no argument rather than as ''
+            svhs_watch ${2+"$2"} || exit 1
+            ;;
+        *)
+            printf 'usage: s-vhs.sh new [path]\n' >&2
+            printf '       s-vhs.sh watch [session]\n' >&2
+            exit 1
+            ;;
+    esac
     exit 0
 fi
 
-# Installed in the sourcing script's shell, so any exit — including a
-# set -e failure mid-recording — tears down the tmux session and recorder
-# instead of leaving them running in the background. The handler is a no-op
-# until Start, so an exit before it, scaffolding included, tears down nothing.
+# Any exit of the sourcing script - including a set -e failure mid-recording -
+# tears down the tmux session and recorder. A no-op before Start
 trap _svhs_cleanup EXIT
