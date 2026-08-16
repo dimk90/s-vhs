@@ -275,8 +275,8 @@ _release_check_repository_state() {
 
 _release_check_candidate_paths() {
     #
-    # Classify the candidate as a worktree or committed change set and block
-    # when the worktree holds anything outside the release paths.
+    # Classify the candidate from release-path changes and warn about unrelated
+    # worktree changes that will remain outside the release commit.
     #
     # Parameters:
     #   None.
@@ -289,22 +289,25 @@ _release_check_candidate_paths() {
     unexpected_path_detail=''
 
     while IFS= read -r -d '' path; do
-        _RELEASE_CANDIDATE_PATHS+=("$path")
-        if ! _release_is_allowed_path "$path"; then
+        if _release_is_allowed_path "$path"; then
+            _RELEASE_CANDIDATE_PATHS+=("$path")
+        else
             unexpected_path_detail="${unexpected_path_detail}${unexpected_path_detail:+$'\n'}${path}"
         fi
     done < <(git diff HEAD --name-only -z
              git ls-files --others --exclude-standard -z)
 
+    if [[ -n $unexpected_path_detail ]]; then
+        _release_warn 'the worktree holds changes outside the release paths' \
+                      "$unexpected_path_detail"
+    fi
+
     if ((${#_RELEASE_CANDIDATE_PATHS[@]} == 0)); then
         _RELEASE_CANDIDATE_MODE='committed'
-        _release_pass 'the worktree is clean; checking the committed develop tree'
-    elif [[ -n $unexpected_path_detail ]]; then
-        _release_block 'the worktree holds changes outside the release paths' \
-                       "$unexpected_path_detail"
+        _release_pass 'the release paths are clean; checking the committed develop tree'
     else
         _RELEASE_CANDIDATE_MODE='worktree'
-        _release_pass "the worktree holds ${#_RELEASE_CANDIDATE_PATHS[@]} release path(s) and nothing else"
+        _release_pass "the worktree holds ${#_RELEASE_CANDIDATE_PATHS[@]} release path(s)"
         _release_check_required_candidates 'the prepared release' '' \
             ${_RELEASE_CANDIDATE_PATHS[@]+"${_RELEASE_CANDIDATE_PATHS[@]}"}
     fi
@@ -313,8 +316,8 @@ _release_check_candidate_paths() {
 
 _release_check_required_candidates() {
     #
-    # Block when a candidate change set leaves CHANGELOG.md or s-vhs.sh
-    # untouched.
+    # Block when a candidate change set leaves CHANGELOG.md untouched. The
+    # version may already have been bumped in s-vhs.sh before release prep.
     #
     # Parameters:
     #   $1 - subject - candidate description used in the blocker message.
@@ -328,22 +331,12 @@ _release_check_required_candidates() {
     local subject="$1"
     local scope="$2"
     shift 2
-    local paths=()
-    local required_candidate path candidate_found
+    local path
 
-    (($# == 0)) || paths=("$@")
-    for required_candidate in CHANGELOG.md s-vhs.sh; do
-        candidate_found=false
-        for path in ${paths[@]+"${paths[@]}"}; do
-            if [[ $path == "$required_candidate" ]]; then
-                candidate_found=true
-                break
-            fi
-        done
-        if [[ $candidate_found != true ]]; then
-            _release_block "${subject} does not change ${required_candidate}${scope:+ ${scope}}"
-        fi
+    for path in ${@+"$@"}; do
+        [[ $path == CHANGELOG.md ]] && return 0
     done
+    _release_block "${subject} does not change CHANGELOG.md${scope:+ ${scope}}"
 }
 
 
@@ -502,7 +495,8 @@ _release_check_remote_imports() {
         url_count=0
         while IFS= read -r url; do
             url_count=$((url_count + 1))
-            if [[ ${url##*/} != "$_RELEASE_TARGET_TAG" ]]; then
+            if [[ ${url##*/} != "$_RELEASE_TARGET_TAG" &&
+                  ! ($file == README.md && ${url##*/} == 'latest') ]]; then
                 stale_url_detail="${stale_url_detail}${stale_url_detail:+$'\n'}${url}"
             fi
         done < <(grep -Eo \
@@ -513,6 +507,8 @@ _release_check_remote_imports() {
         elif [[ -n $stale_url_detail ]]; then
             _release_block "${file} contains a remote import not pinned to ${_RELEASE_TARGET_TAG}" \
                            "$stale_url_detail"
+        elif [[ $file == README.md ]]; then
+            _release_pass "${file} uses ${url_count} current remote import(s)"
         else
             _release_pass "${file} pins ${url_count} remote import(s) to ${_RELEASE_TARGET_TAG}"
         fi
@@ -669,7 +665,8 @@ _release_check_master_ancestry() {
 
 _release_check_version_order() {
     #
-    # Block unless the target version is newer than every stable Git tag.
+    # Block unless the target version is newer than the highest stable tag on
+    # the GitHub origin.
     #
     # Parameters:
     #   None.
@@ -678,25 +675,31 @@ _release_check_version_order() {
     #   _release_check_version_order
     #
     local latest_version=''
-    local tag version
+    local remote_ref remote_tags tag version
 
     [[ -n $_RELEASE_TARGET_VERSION ]] || return 0
 
-    while IFS= read -r tag; do
+    if ! remote_tags="$(git ls-remote --tags --refs origin 'refs/tags/v*')"; then
+        _release_block 'unable to read stable tags from origin'
+        return 0
+    fi
+
+    while read -r _ remote_ref; do
+        tag="${remote_ref#refs/tags/}"
         [[ $tag =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || continue
         version="${tag#v}"
         if [[ -z $latest_version ]] || _release_version_is_newer "$version" "$latest_version"; then
             latest_version="$version"
         fi
-    done < <(git tag --list)
+    done <<< "$remote_tags"
 
     _RELEASE_LATEST_VERSION="$latest_version"
     if [[ -z $latest_version ]]; then
-        _release_pass "${_RELEASE_TARGET_TAG} will be the first stable tag"
+        _release_pass "${_RELEASE_TARGET_TAG} will be the first stable tag on GitHub"
     elif _release_version_is_newer "$_RELEASE_TARGET_VERSION" "$latest_version"; then
-        _release_pass "target is newer than v${latest_version}"
+        _release_pass "target is newer than GitHub's highest stable tag, v${latest_version}"
     else
-        _release_block "${_RELEASE_TARGET_TAG} is not newer than v${latest_version}"
+        _release_block "${_RELEASE_TARGET_TAG} is not newer than GitHub's highest stable tag, v${latest_version}"
     fi
 }
 
@@ -887,7 +890,7 @@ _release_print_release_plan() {
         "version      ${_RELEASE_TARGET_VERSION} (previous: ${previous_version})"
         "tag          ${_RELEASE_TARGET_TAG}"
         "branches     ${_RELEASE_DEVELOP_BRANCH} → ${_RELEASE_MASTER_BRANCH}"
-        "publication  GitHub release + versioned/latest Pages files"
+        "publication  GitHub Release + Pages Deploy / Remote Import"
         "candidate    ${candidate_summary}"
     )
     gum style --border rounded --border-foreground 212 --padding '0 2' --margin '1 0 0 0' -- \
@@ -953,7 +956,9 @@ _release_validate_release_tree() {
                                    "${_RELEASE_APPROVED_HEAD}^" \
                                    "$_RELEASE_APPROVED_HEAD"
     else
-        _release_apply_command 'checking the candidate diff' git diff --check HEAD
+        _release_apply_command 'checking the candidate diff' \
+                               git diff --check HEAD -- \
+                                   ${_RELEASE_CANDIDATE_PATHS[@]+"${_RELEASE_CANDIDATE_PATHS[@]}"}
     fi
     _release_run_project_checks
 }
@@ -1084,13 +1089,15 @@ _release_use_committed_release() {
     # Example:
     #   _release_use_committed_release
     #
+    local release_status
+
     _release_begin_step 'Use the committed release on develop'
     if [[ $(git rev-parse HEAD) != "$_RELEASE_APPROVED_HEAD" ]]; then
         _release_stop 'develop moved while validating the committed release'
     fi
-    if [[ -n $(git status --porcelain) ]]; then
-        _release_stop 'the committed release worktree is no longer clean' \
-                      "$(git status --short)"
+    release_status="$(_release_release_path_status)"
+    if [[ -n $release_status ]]; then
+        _release_stop 'the committed release paths are no longer clean' "$release_status"
     fi
     _RELEASE_RELEASE_COMMIT="$_RELEASE_APPROVED_HEAD"
     _release_pass "release commit: $(git log -1 --format='%h %s')"
@@ -1107,30 +1114,34 @@ _release_create_release_commit() {
     # Example:
     #   _release_create_release_commit
     #
-    local expected_paths staged_paths commit_message
+    local expected_paths staged_paths commit_message release_status
 
     _release_begin_step 'Commit the release on develop'
     if ! git add -- ${_RELEASE_CANDIDATE_PATHS[@]+"${_RELEASE_CANDIDATE_PATHS[@]}"}; then
         _release_stop 'unable to stage the reviewed release paths'
     fi
-    if ! git diff --quiet || [[ -n $(git ls-files --others --exclude-standard) ]]; then
-        _release_stop 'unstaged or untracked changes appeared after staging' \
+    if ! git diff --quiet -- \
+            ${_RELEASE_CANDIDATE_PATHS[@]+"${_RELEASE_CANDIDATE_PATHS[@]}"}; then
+        _release_stop 'unstaged changes appeared in the release paths after staging' \
                       "$(git status --short)"
     fi
     expected_paths="$(printf '%s\n' \
         ${_RELEASE_CANDIDATE_PATHS[@]+"${_RELEASE_CANDIDATE_PATHS[@]}"} | sort)"
-    staged_paths="$(git diff --cached --name-only | sort)"
+    staged_paths="$(git diff --cached --name-only -- \
+        ${_RELEASE_CANDIDATE_PATHS[@]+"${_RELEASE_CANDIDATE_PATHS[@]}"} | sort)"
     if [[ $staged_paths != "$expected_paths" ]]; then
         _release_stop 'the staged paths differ from the approved release paths' \
                       "$(git status --short)"
     fi
     commit_message="[doc] Release ${_RELEASE_TARGET_TAG}"
-    if ! git commit -m "$commit_message"; then
+    if ! git commit --only -m "$commit_message" -- \
+            ${_RELEASE_CANDIDATE_PATHS[@]+"${_RELEASE_CANDIDATE_PATHS[@]}"}; then
         _release_stop 'release commit failed'
     fi
-    if [[ -n $(git status --porcelain) ]]; then
-        _release_stop 'the worktree is not clean after the release commit' \
-                      "$(git status --short)"
+    release_status="$(_release_release_path_status)"
+    if [[ -n $release_status ]]; then
+        _release_stop 'the release paths are not clean after the release commit' \
+                      "$release_status"
     fi
     _RELEASE_RELEASE_COMMIT="$(git rev-parse HEAD)"
     _release_pass "release commit: $(git log -1 --format='%h %s')"
@@ -1180,7 +1191,7 @@ _release_merge_into_master() {
     # Example:
     #   _release_merge_into_master
     #
-    local master_parent first_parent second_parent
+    local master_parent first_parent second_parent release_status
 
     _release_begin_step 'Merge develop into master and revalidate'
     if ! git switch "$_RELEASE_MASTER_BRANCH"; then
@@ -1203,9 +1214,10 @@ _release_merge_into_master() {
         _release_stop 'the master merge tree differs from the reviewed release tree' \
                       "$(git diff --name-only "$_RELEASE_RELEASE_COMMIT" HEAD)"
     fi
-    if [[ -n $(git status --porcelain) ]]; then
-        _release_stop 'the master worktree is not clean after the merge' \
-                      "$(git status --short)"
+    release_status="$(_release_release_path_status)"
+    if [[ -n $release_status ]]; then
+        _release_stop 'the master release paths are not clean after the merge' \
+                      "$release_status"
     fi
     _release_run_project_checks
     _release_pass "tested master merge: ${_RELEASE_MERGE_COMMIT:0:12}"
@@ -1222,7 +1234,7 @@ _release_tag_master() {
     # Example:
     #   _release_tag_master
     #
-    local master_version tagged_commit
+    local master_version tagged_commit release_status
 
     _release_begin_step 'Tag the tested master commit'
     if ! _release_capture 'reading svhs_version on master' \
@@ -1235,8 +1247,10 @@ _release_tag_master() {
         _release_stop 'master svhs_version changed unexpectedly' \
                       "found: ${master_version}; expected: ${_RELEASE_TARGET_VERSION}"
     fi
-    if [[ -n $(git status --porcelain) || $(git rev-parse HEAD) != "$_RELEASE_MERGE_COMMIT" ]]; then
-        _release_stop 'master moved or became dirty before tagging'
+    release_status="$(_release_release_path_status)"
+    if [[ -n $release_status || $(git rev-parse HEAD) != "$_RELEASE_MERGE_COMMIT" ]]; then
+        _release_stop 'master moved or its release paths became dirty before tagging' \
+                      "$release_status"
     fi
     if ! git tag "$_RELEASE_TARGET_TAG"; then
         _release_stop "unable to create tag ${_RELEASE_TARGET_TAG}"
@@ -1383,7 +1397,7 @@ _release_verify_published_file() {
 
 _release_return_to_develop() {
     #
-    # Switch back to develop and verify it is clean at the release commit.
+    # Switch back to develop and verify its release paths at the release commit.
     #
     # Parameters:
     #   None.
@@ -1391,17 +1405,21 @@ _release_return_to_develop() {
     # Example:
     #   _release_return_to_develop
     #
+    local release_status
+
     _release_begin_step 'Return to develop'
     if ! git switch "$_RELEASE_DEVELOP_BRANCH"; then
         _release_stop 'unable to return to develop'
     fi
-    if [[ -n $(git status --porcelain) ]]; then
-        _release_stop 'develop is not clean after the release' "$(git status --short)"
+    release_status="$(_release_release_path_status)"
+    if [[ -n $release_status ]]; then
+        _release_stop 'develop release paths are not clean after the release' \
+                      "$release_status"
     fi
     if [[ $(git rev-parse HEAD) != "$_RELEASE_RELEASE_COMMIT" ]]; then
         _release_stop 'develop no longer identifies the release commit'
     fi
-    _release_pass "develop is clean at ${_RELEASE_RELEASE_COMMIT:0:12}"
+    _release_pass "develop release paths are clean at ${_RELEASE_RELEASE_COMMIT:0:12}"
 }
 
 
@@ -1454,6 +1472,25 @@ _release_info() {
     local message="$1"
 
     printf '%s %s\n' "$(gum style --foreground 244 '•')" "$message"
+}
+
+
+_release_warn() {
+    #
+    # Print a non-blocking sanity-check warning.
+    #
+    # Parameters:
+    #   $1 - message - concise warning description.
+    #   $2 - detail - (optional) - supporting output.
+    #
+    # Example:
+    #   _release_warn 'the worktree also contains unrelated changes'
+    #
+    local message="$1"
+    local detail="${2-}"
+
+    printf '%s %s\n' "$(gum style --foreground 214 '⚠')" "$message"
+    _release_detail "$detail"
 }
 
 
@@ -1623,6 +1660,25 @@ _release_version_is_newer() {
         return
     fi
     ((10#$candidate_patch > 10#$baseline_patch))
+}
+
+
+_release_release_path_status() {
+    #
+    # Print worktree and index status only for paths eligible for a release
+    # commit.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   status="$(_release_release_path_status)"
+    #
+    git status --porcelain=v1 --untracked-files=all -- \
+        ${_RELEASE_ALLOWED_PATHS[@]+"${_RELEASE_ALLOWED_PATHS[@]}"} \
+        ':(glob)examples/*.gif' \
+        ':(glob)examples/*.cast' \
+        ':(glob)doc/images/**'
 }
 
 
