@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="140" viewBox="0 0 640 140">
+<style>@font-face{font-family:'Press Start 2P';font-style:normal;font-weight:400;src:url('https://fonts.gstatic.com/s/pressstart2p/v16/e3t4euO8T-267oIAQAu6jDQyK3nVivM.woff2') format('woff2')}</style>
+<rect width="640" height="140" fill="#282d35"/>
+<text x="24" y="48" font-family="monospace" font-size="17" fill="#7f8794">4 - @font-face, remote src: URL</text>
+<text x="24" y="106" font-family="'Press Start 2P',monospace" font-size="26" fill="#b9c0cb">PIXEL FONT OK</text>
+</svg>

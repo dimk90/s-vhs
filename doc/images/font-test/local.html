@@ -1,0 +1,39 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>SVG font-loading test — local harness</title>
+<style>
+  body { background: #1c1f26; color: #b9c0cb; font: 15px/1.5 monospace; margin: 24px; }
+  h2 { font-size: 15px; font-weight: normal; color: #7f8794; margin: 24px 0 6px; }
+  .row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .row > div { border: 1px solid #3a4049; }
+  .row > div > p { margin: 0; padding: 4px 8px; color: #7f8794; }
+  img, object { display: block; width: 640px; height: 140px; }
+</style>
+
+<p>Left column is <code>&lt;img&gt;</code> (image context, no CSP).
+   Right column is <code>&lt;object&gt;</code> (document context, no CSP).
+   Blocky pixel letters = the font loaded.</p>
+
+<h2>1 — font by name only</h2>
+<div class="row">
+  <div><p>img</p><img src="by-name.svg" alt="by name, img"></div>
+  <div><p>object</p><object type="image/svg+xml" data="by-name.svg"></object></div>
+</div>
+
+<h2>2 — @font-face, data: URI</h2>
+<div class="row">
+  <div><p>img</p><img src="data-uri.svg" alt="data uri, img"></div>
+  <div><p>object</p><object type="image/svg+xml" data="data-uri.svg"></object></div>
+</div>
+
+<h2>3 — @import of the Google Fonts stylesheet</h2>
+<div class="row">
+  <div><p>img</p><img src="import-css.svg" alt="import, img"></div>
+  <div><p>object</p><object type="image/svg+xml" data="import-css.svg"></object></div>
+</div>
+
+<h2>4 — @font-face, remote src: URL</h2>
+<div class="row">
+  <div><p>img</p><img src="remote-url.svg" alt="remote url, img"></div>
+  <div><p>object</p><object type="image/svg+xml" data="remote-url.svg"></object></div>
+</div>
