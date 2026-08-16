@@ -2,7 +2,8 @@
 
 - ✅ - Implemented — works today.
 - 🟡 - Partial — works with caveats, or only via a lower-level call.
-- 📋 - Planned — not implemented yet.
+- 📋 - Planned — not implemented yet; `📋 v0.4.0` is scheduled for the next
+  release ([PLAN.md](PLAN.md)).
 - 🚫 - Not applicable — meaningless for the `tmux` + `asciinema` + renderer pipeline.
 
 The public configuration API is function-only: source `s-vhs.sh`, call all
@@ -12,8 +13,8 @@ are implemented now; the remaining command names still describe the target API.
 | VHS                                  | s-vhs (planned)                 | Today                     | Status      |
 | ------------------------------------ | ------------------------------- | ------------------------- | ----------- |
 | `Output out.gif`                     | `SetOutput out.gif`             | `SetOutput out.gif`       | ✅          |
-| `Output out.txt` / `.ascii`          | `SetOutput out.txt`             | —                         | 📋         |
-| `Require prog`                       | `Require`                       | —                         | 📋         |
+| `Output out.txt` / `.ascii`          | `SetOutput out.txt`             | —                         | 📋 v0.4.0  |
+| `Require prog`                       | `Require`                       | —                         | 📋 v0.4.0  |
 | `Type "text"`                        | `Type <text> [<delay>]`         | `Type`                    | ✅          |
 | `Ctrl+R`, `Alt+X`, `Ctrl+Shift+P`    | `Key <key> [<count>] [<delay>]` | `Key C-r`, `Key M-x`      | ✅          |
 | `Enter`, `Tab`, `Up`, … (named keys) | `Enter`, `Tab`, `Up`, …         | `Enter`, `Backspace`      | ✅          |
@@ -25,7 +26,7 @@ are implemented now; the remaining command names still describe the target API.
 | `Hide`                               | `Hide`                          | `Hide`                    | ✅          |
 | `Show`                               | `Show`                          | `Show`                    | ✅          |
 | `Screenshot out.png`                 | `Screenshot`                    | —                         | 📋         |
-| `Copy` / `Paste`                     | `Copy` / `Paste`                | —                         | 📋         |
+| `Copy` / `Paste`                     | `Copy` / `Paste`                | —                         | 📋 v0.4.0  |
 | `Env KEY "VAL"`                      | `Env`                           | `Env KEY VAL`             | ✅          |
 | `Source other.tape`                  | —                               | `source other.sh`         | ✅          |
 |                                      |                                 |                           |             |
@@ -37,31 +38,32 @@ are implemented now; the remaining command names still describe the target API.
 | `Set LineHeight 1.8`                 | `SetLineHeight`                 | `SetLineHeight` (`1.2`)   | ✅          |
 | `Set TypingSpeed 0.1`                | `SetTypingSpeed`                | `SetTypingSpeed` (`0.07`) | ✅          |
 | `Set Theme "…"`                      | `SetTheme`                      | `SetTheme` (`dracula`)    | 🟡         |
-| `Set Padding 20`                     | `SetPadding`                    | —                         | 📋         |
-| `Set Framerate 60`                   | `SetFramerate`                  | — (agg `30`)              | 📋         |
-| `Set PlaybackSpeed 2`                | `SetPlaybackSpeed`              | — (agg `1`)               | 📋         |
+| `Set Padding 20`                     | `SetPadding`                    | —                         | 📋 v0.4.0  |
+| `Set Framerate 60`                   | `SetFramerate`                  | — (agg `30`)              | 📋 v0.4.0  |
+| `Set PlaybackSpeed 2`                | `SetPlaybackSpeed`              | — (agg `1`)               | 📋 v0.4.0  |
 | `Set LoopOffset 5`                   | `SetLoopOffset`                 | —                         | 📋         |
 | `Set LetterSpacing 20`               | —                               | —                         | 🚫         |
 | `Set Margin` / `MarginFill`          | —                               | —                         | 🚫         |
-| `Set WindowBar`                      | —                               | —                         | 🚫         |
+| `Set WindowBar`                      | `SetWindowBar` (SVG only)       | —                         | 📋 v0.4.0  |
 | `Set BorderRadius`                   | —                               | —                         | 🚫         |
 | `Set CursorBlink`                    | —                               | —                         | 🚫         |
 |                                      |                                 |                           |             |
 | —                                    | `SetKeyDelay`                   | `SetKeyDelay` (`0.0`)     | ✅          |
 | —                                    | `SetSession`                    | `SetSession` (`s-vhs-$$`) | ✅          |
 | —                                    | `SetPrompt`                     | `SetPrompt` (`arrow`)     | ✅          |
-| —                                    | `SetIdleTimeLimit`              | — (agg `5`)               | 📋         |
-| —                                    | `SetLastFrameDuration`          | — (agg `3`)               | 📋         |
-| —                                    | `SetLoop`                       | — (agg loops)             | 📋         |
-| —                                    | `SetEmojiFontFamily`            | — (agg default chain)     | 📋         |
+| —                                    | `SetIdleTimeLimit`              | — (agg `5`)               | 📋 v0.4.0  |
+| —                                    | `SetLastFrameDuration`          | — (agg `3`)               | 📋 v0.4.0  |
+| —                                    | `SetLoop`                       | — (agg loops)             | 📋 v0.4.0  |
+| —                                    | `SetEmojiFontFamily`            | — (agg default chain)     | 📋 v0.4.0  |
 | —                                    | `SetFontFamilyExact`            | `SetFontFamilyExact`      | ✅          |
-| —                                    | `SetFontDir`                    | —                         | 📋         |
-| —                                    | `SetFontAntialiasing`           | — (agg `6`)               | 📋         |
-| —                                    | `SetFontHinting`                | — (agg `true`)            | 📋         |
-| —                                    | `SetRenderer`                   | — (agg `swash`)           | 📋         |
-| —                                    | `SetBoldIsBright`               | — (agg off)               | 📋         |
-| —                                    | `SetTitle`                      | —                         | 📋         |
-| —                                    | `SetQuiet`                      | —                         | 📋         |
+| —                                    | `SetFontDir`                    | —                         | 📋 v0.4.0  |
+| —                                    | `SetFontAntialiasing`           | — (agg `6`)               | 📋 v0.4.0  |
+| —                                    | `SetFontHinting`                | — (agg `true`)            | 📋 v0.4.0  |
+| —                                    | `SetEngine`                     | — (agg `swash`)           | 📋 v0.4.0  |
+| —                                    | `SetBoldIsBright`               | — (agg off)               | 📋 v0.4.0  |
+| —                                    | `SetCursor` (SVG only)          | — (cursor shown)          | 📋 v0.4.0  |
+| —                                    | `SetTitle`                      | —                         | 📋 v0.4.0  |
+| —                                    | `SetQuiet`                      | —                         | 📋 v0.4.0  |
 | —                                    | `SetOptimize`                   | —                         | 📋         |
 | —                                    | `SetOutput out.cast`            | `SetOutput out.cast`      | ✅          |
 |                                      |                                 |                           |             |
@@ -94,49 +96,58 @@ SetFontFamily 'Iosevka Term'                    # + Symbols Nerd Font, emoji
 SetFontFamilyExact 'JetBrainsMono Nerd Font Mono'   # this list and nothing else
 ```
 
-| Setting              | agg flag               | Status | Note                                        |
-| -------------------- | ---------------------- | ------ | ------------------------------------------- |
-| `SetFontFamily`      | `--text-font-family`   | ✅     | Keeps Nerd Font + emoji fallbacks.          |
-| `SetFontFamilyExact` | `--font-family`        | ✅     | No fallbacks, opt-in only.                  |
-| `SetEmojiFontFamily` | `--emoji-font-family`  | 📋    | Narrow or replace the emoji chain.          |
-| `SetFontDir`         | `--font-dir` (repeats) | 📋    | Repo-local fonts — reproducible CI renders. |
+| Setting              | agg flag               | Status    | Note                                        |
+| -------------------- | ---------------------- | --------- | ------------------------------------------- |
+| `SetFontFamily`      | `--text-font-family`   | ✅        | Keeps Nerd Font + emoji fallbacks.          |
+| `SetFontFamilyExact` | `--font-family`        | ✅        | No fallbacks, opt-in only.                  |
+| `SetEmojiFontFamily` | `--emoji-font-family`  | 📋 v0.4.0 | Narrow or replace the emoji chain.          |
+| `SetFontDir`         | `--font-dir` (repeats) | 📋 v0.4.0 | Repo-local fonts — reproducible CI renders. |
 
-The remaining glyph-quality knobs have no VHS equivalent:
+The remaining glyph-quality knobs have no VHS equivalent; all four are planned
+for v0.4.0, and all four are agg-only:
 
 | Setting               | agg flag              | Default | Why it matters                                                                                        |
 | --------------------- | --------------------- | ------- | ----------------------------------------------------------------------------------------------------- |
 | `SetFontAntialiasing` | `--font-antialiasing` | `6`     | Alpha-coverage levels in glyph masks; the sharpness-vs-file-size dial (`off` = 2 levels).             |
 | `SetFontHinting`      | `--font-hinting`      | `true`  | Swash only; matters at small font sizes.                                                              |
-| `SetRenderer`         | `--renderer`          | `swash` | COLRv1 emoji (recent Noto Color Emoji) only render under `resvg`; swash falls back to monochrome.     |
+| `SetEngine`           | `--renderer`          | `swash` | COLRv1 emoji (recent Noto Color Emoji) only render under `resvg`; swash falls back to monochrome.     |
 | `SetBoldIsBright`     | `--bold-is-bright`    | off     | agg is literal; most terminals show bold red as bright red, so demos look off next to the real thing. |
 
-### Padding 📋
+### Padding 📋 v0.4.0
 
-Missing. An earlier `Render 40` argument added the border with `magick`
-(preferred) or `ffmpeg`; it was removed because re-encoding the finished GIF
-costs sharpness and an extra dependency for a cosmetic frame. The code is kept
-in [HISTORY.md](HISTORY.md) and is planned to return as `SetPadding`
-([PLAN.md](PLAN.md), v0.4.0).
+`asg --padding` / `--padding-x` / `--padding-y` pad an SVG natively, so
+`SetPadding` lands for SVG in v0.4.0 and is reported as skipped for a GIF.
+
+The GIF side stays open: an earlier `Render 40` argument added the border with
+`magick` (preferred) or `ffmpeg`; it was removed because re-encoding the
+finished GIF costs sharpness and an extra dependency for a cosmetic frame. That
+code is kept in [HISTORY.md](HISTORY.md).
 
 > Check if there any way to pad without a second encode / `magick` artifacts.
 
 
-### Renderer pass-through 📋
+### Renderer pass-through 📋 v0.4.0
 
-Five settings are one `agg` flag each — a default plus a flag appended in
+Five settings are one renderer flag each — a default plus a flag appended in
 `Render`, no new logic:
 
-| Setting                | Flag                    |
-| ---------------------- | ----------------------- |
-| `SetFramerate`         | `--fps-cap`             |
-| `SetPlaybackSpeed`     | `--speed`               |
-| `SetIdleTimeLimit`     | `--idle-time-limit`     |
-| `SetLastFrameDuration` | `--last-frame-duration` |
-| `SetLoop`              | `--no-loop`             |
+| Setting                | agg                     | asg                 | Status      |
+| ---------------------- | ----------------------- | ------------------- | ----------- |
+| `SetFramerate`         | `--fps-cap`             | `--fps`             | 📋 v0.4.0  |
+| `SetPlaybackSpeed`     | `--speed`               | `--speed`           | 📋 v0.4.0  |
+| `SetIdleTimeLimit`     | `--idle-time-limit`     | `--idle-time-limit` | 📋 v0.4.0  |
+| `SetLoop`              | `--no-loop`             | `--no-loop`         | 📋 v0.4.0  |
+| `SetLastFrameDuration` | `--last-frame-duration` | —                   | 📋 v0.4.0  |
 
 The last three have no VHS equivalent but are already in effect through `agg`'s
 defaults, so today a script cannot change them — see the warning under
 [Sleep](#sleep-).
+
+A setting only one renderer supports — `SetLastFrameDuration`, `SetEngine`,
+`SetBoldIsBright` and the agg-only font knobs above; `SetPadding`,
+`SetWindowBar` and `SetCursor` on the asg side — is applied wherever the
+renderer supports it, and `Render` reports the output it was skipped for with a
+single `::: ` line rather than failing the recording.
 
 `SetLoopOffset` is the odd one out: `agg --select 5..` *drops* the first five
 seconds, while VHS's `LoopOffset` keeps every frame and only moves where the
@@ -150,7 +161,7 @@ loop starts. There is no cheap equivalent.
 > than baked into the cast at record time. Like every setter, it is still called
 > before `Start`; applying it later preserves the original cast metadata.
 
-### Recorder metadata 📋
+### Recorder metadata 📋 v0.4.0
 
 asciinema-side settings with no VHS counterpart. They do not change a single
 rendered frame, but the `.cast` is a first-class output here — it is replayable
@@ -175,9 +186,10 @@ opt-in and off by default.
 
 ### Not applicable 🚫
 
-`LetterSpacing`, `Margin`, `MarginFill`, `WindowBar`, `BorderRadius` are
-frame decorations that `agg` does not render, and `CursorBlink` is a property of
-the recorded terminal, not of the cast.
+`LetterSpacing`, `Margin`, `MarginFill` and `BorderRadius` are frame decorations
+that neither renderer draws, and `CursorBlink` is a property of the recorded
+terminal, not of the cast. `WindowBar` moved out of this list: `asg --window`
+draws a macOS-style bar, so `SetWindowBar` is planned for SVG output only.
 
 > Can bew added by .cast modification ?
 
@@ -202,15 +214,15 @@ removes it automatically.
 non-cast outputs. A recording that requests only a `.cast` therefore invokes no
 renderer or converter—particularly, it does not require or run `agg` or `asg`.
 
-| VHS output                     | s-vhs                                            | Status |
-| ------------------------------ | ------------------------------------------------ | ------ |
-| `.gif`                         | `SetOutput out.gif`, rendered by `agg`           | ✅     |
-| `.mp4`                         | `SetOutput out.mp4`, planned via `ffmpeg`        | 📋    |
-| `.webm`                        | `SetOutput out.webm`                             | 📋    |
-| `.png` frame dir               | `SetOutput out.png`                              | 📋    |
-| `.ascii` / `.txt` golden files | `SetOutput out.txt`, via `asciinema convert`     | 📋    |
-| —                              | `SetOutput out.cast`, retained without rendering | ✅     |
-| —                              | `SetOutput out.svg`, rendered by `asg`           | ✅     |
+| VHS output                     | s-vhs                                            | Status    |
+| ------------------------------ | ------------------------------------------------ | --------- |
+| `.gif`                         | `SetOutput out.gif`, rendered by `agg`           | ✅        |
+| `.mp4`                         | `SetOutput out.mp4`, planned via `ffmpeg`        | 📋       |
+| `.webm`                        | `SetOutput out.webm`                             | 📋       |
+| `.png` frame dir               | `SetOutput out.png`                              | 📋       |
+| `.ascii` / `.txt` golden files | `SetOutput out.txt`, via `asciinema convert`     | 📋 v0.4.0 |
+| —                              | `SetOutput out.cast`, retained without rendering | ✅        |
+| —                              | `SetOutput out.svg`, rendered by `asg`           | ✅        |
 
 
 ### ScrollUp / ScrollDown 📋

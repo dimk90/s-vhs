@@ -25,8 +25,8 @@ Pre-1.0: public names may still change, but every such change needs a
 | `s-vhs.sh`         | The whole implementation. Sourced library + two subcommands. |
 | `README.md`        | User-facing docs.                                            |
 | `CHANGELOG.md`     | One line per significant change, newest version on top.      |
-| `doc/REFERENCE.md` | Every command implemented today. Keep in sync.               |
-| `doc/COMMANDS.md`  | VHS parity table and target API design notes.                |
+| `doc/REFERENCE.md` | Commands today + planned settings. Keep in sync.             |
+| `doc/COMMANDS.md`  | Temporary dev notes: VHS parity and target API. Not public.  |
 | `doc/PLAN.md`      | Roadmap / checklist. Tick boxes when a task lands.           |
 | `doc/INTRO.md`     | How the pipeline works, for users.                           |
 | `doc/DEBUG.md`     | Debugging recording scripts (`watch`, live pane).            |
@@ -98,14 +98,20 @@ writing or running a `*.rec.sh` script. Project-specific points:
   Do not add a third one under `examples/`.
 - **Reference is part of the change.** Every added, removed, renamed or
   behaviour-changed public command must be reflected in `doc/REFERENCE.md` in
-  the same change — signature, default value and section (`## Settings`,
-  `## Core`, `## Utility`). It is a lookup table, not a guide: one line per
-  command, no rationale, examples or section prose; a rule about a single
+  the same change — signature, default value and section (`## Settings`, split
+  into `### Session` for what the cast records and `### Render` for what a
+  renderer applies to the outputs listed in its `Applies to` column; `## Core`;
+  `## Utility`). It is a lookup table, not a guide: one line per command, no
+  rationale, examples or section prose; a rule about a single
   command goes into that command's row even if the cell grows, and prose
   outside the tables is justified only for a rule global to a section
   ("every setting must be called before `Start`"). Rationale and design notes
-  belong in `README.md`, `doc/COMMANDS.md` or here; `doc/COMMANDS.md` tracks
-  VHS parity and the planned API.
+  belong in `README.md` or here.
+- **`doc/COMMANDS.md` is temporary.** Working notes tracking VHS parity and the
+  planned API while the surface is still filling in; it will be deleted once it
+  is done, so it is neither public documentation nor linked from `README.md`.
+  Anything that must outlive it belongs in `README.md`, `doc/REFERENCE.md` or
+  here.
 - **Changelog is part of the change.** Every significant fix, change or
   addition gets one clear line in `CHANGELOG.md` under the unreleased
   version's `### New`, `### Changed` or `### Fixed` heading — what a user

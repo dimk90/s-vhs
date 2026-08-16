@@ -2,10 +2,52 @@
 
 ## v0.4.0
 
-- [ ] Make list of planned function which are easy to implement:
-  - [ ] function ...
-  - [ ] ...
+- [x] Make list of planned functions (COMMANDS.md) which are easy to implement - low hanging fruit:
+  - [ ] `SetPlaybackSpeed <x>` - `agg --speed`, `asg --speed` (default `1`).
+  - [ ] `SetFramerate <fps>` - `agg --fps-cap`, `asg --fps` (default `30`).
+  - [ ] `SetIdleTimeLimit <secs>` - `--idle-time-limit` on both, applied in
+        `Render` so the cast keeps its own metadata.
+  - [ ] `SetLoop <on|off>` - `--no-loop` on both; both loop by default.
+  - [ ] `SetTitle <text>` - `asciinema rec -t`; only the first segment writes
+        metadata, the `--append` ones must not repeat it.
+  - [ ] `SetQuiet` - `asciinema rec -q`, `agg -q`, and the `::: ` lines.
+  - [ ] `Require <cmd>...` - wrapper over `_svhs_require_command`, called
+        before `Start`.
+  - [ ] `Copy <text>` / `Paste` - `tmux set-buffer` / `paste-buffer -p`
+        (bracketed paste); the tmux buffer, not the system clipboard.
+  - [ ] `SetOutput out.txt` - `asciinema convert -f txt` in `Render`, no new
+        dependency.
+  - Single-renderer knobs. Policy: apply such a setting where the renderer
+    supports it and report the skipped output with one `::: ` line in `Render`,
+    rather than failing the recording.
+    - [ ] `SetLastFrameDuration <secs>` - `agg --last-frame-duration`
+          (default `3`).
+    - [ ] `SetBoldIsBright <on|off>` - `agg --bold-is-bright` (default off).
+    - [ ] `SetEngine <swash|resvg>` - `agg --renderer` (default `swash`); named
+          `SetEngine` because `SetRenderer` reads as a choice between `agg` and
+          `asg`, which is what `SetOutput` already decides.
+    - [ ] `SetFontAntialiasing <levels|off>` - `agg --font-antialiasing`
+          (default `6`).
+    - [ ] `SetFontHinting <on|off>` - `agg --font-hinting` (default on).
+    - [ ] `SetFontDir <dir>` - `agg --font-dir`, repeatable like `Env`.
+    - [ ] `SetEmojiFontFamily <list>` - `agg --emoji-font-family`.
+    - [ ] `SetPadding <px>` - `asg --padding`; the GIF side needs a second
+          encode and stays out (see COMMANDS.md).
+    - [ ] `SetWindowBar <on|off>` - `asg --window`; VHS parity for SVG only.
+    - [ ] `SetCursor <on|off>` - `asg --no-cursor`.
+  - Not low hanging, stay planned: `ScrollUp` / `ScrollDown` (copy mode plus the
+    alternate-screen caveat), `Screenshot` (PNG needs a converter; a static SVG
+    frame via `asg --at` needs elapsed-cast-time bookkeeping), MP4,
+    `SetLoopOffset` (no agg/asg equivalent), `SetOptimize` (`gifsicle`
+    dependency), GIF padding (second encode).
 - [ ] Update existing examples and README if needed.
+- [ ] Review the "SVG usage issues" draft ([SVG.md](SVG.md)) - linked from the
+      README's *Animated SVG Output* section:
+  - [ ] Re-check every claim against the current `asg` release and trim what
+        upstream has since fixed.
+  - [ ] Fill the result table in [FONT-TEST.md](FONT-TEST.md) in a real browser
+        and replace the engine-dependent `data:` font row with the measurement.
+  - [ ] Decide whether it belongs in the README's *Documentation* list too.
 - [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:
   - https://github.com/charmbracelet/vhs/tree/main/examples/settings
   - https://github.com/charmbracelet/vhs/tree/main/examples/commands
@@ -32,7 +74,6 @@
         font. Skip bitmap-only faces (`.otb`, `.pcf`) — agg cannot use them,
         e.g. `Terminus` fails the same way as a missing font.
   - [ ] Remove `Iosevka Term` from examples.
-- [ ] Add `SetPadding X` function.
 - [ ] Rended visualization for all available themes.
 - [ ] MP4 output (same `.cast`, different renderer):
   - [ ] MP4 — render with `ffmpeg`?

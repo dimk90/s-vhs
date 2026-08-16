@@ -17,7 +17,7 @@ A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superi
   ([#69](https://github.com/charmbracelet/vhs/issues/69#issuecomment-3121533232)).
 - **Sized in rows and cols** - no dancing with pixel width and height
   ([#578](https://github.com/charmbracelet/vhs/issues/578)).
-- **Animated SVG output**
+- **[Animated SVG](#animated-svg-output) output**
   ([#644](https://github.com/charmbracelet/vhs/discussions/644),
   [#109](https://github.com/charmbracelet/vhs/issues/109),
   [#105](https://github.com/charmbracelet/vhs/issues/105)).
