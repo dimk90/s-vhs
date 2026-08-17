@@ -45,8 +45,8 @@
       README's *Animated SVG Output* section:
   - [ ] Re-check every claim against the current `asg` release and trim what
         upstream has since fixed.
-  - [ ] Fill the result table in [FONT-TEST.md](FONT-TEST.md) in a real browser
-        and replace the engine-dependent `data:` font row with the measurement.
+  - [x] Verify an embedded `data:` font in Firefox, Chrome and Safari on GitHub
+        and record the result in [EMBED-FONT.md](upstream/EMBED-FONT.md).
   - [ ] Decide whether it belongs in the README's *Documentation* list too.
 - [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:
   - https://github.com/charmbracelet/vhs/tree/main/examples/settings
