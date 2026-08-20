@@ -20,7 +20,7 @@
   - Single-renderer knobs. Policy: apply such a setting where the renderer
     supports it and report the skipped output with one `::: ` line in `Render`,
     rather than failing the recording.
-    - [ ] `SetLastFrameDuration <secs>` - `agg --last-frame-duration`
+    - [x] `SetLastFrameDuration <secs>` - `agg --last-frame-duration`
           (default `3`).
     - [ ] `SetBoldIsBright <on|off>` - `agg --bold-is-bright` (default off).
     - [ ] `SetEngine <swash|resvg>` - `agg --renderer` (default `swash`); named

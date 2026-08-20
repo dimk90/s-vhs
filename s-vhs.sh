@@ -77,9 +77,12 @@ _SVHS_LINE_HEIGHT=1.2
 _SVHS_THEME='dracula'
 
 # Timing applied by the renderers rather than baked into the cast
+_SVHS_PLAYBACK_SPEED=1
 _SVHS_FRAMERATE=30
 _SVHS_IDLE_TIME_LIMIT=5
 _SVHS_LOOP='on'
+_SVHS_LAST_FRAME_DURATION=3
+_SVHS_LAST_FRAME_DURATION_SET=0
 
 # Recorded shell; must be one s-vhs knows how to isolate and inject
 # a prompt into, and bash is present everywhere
@@ -499,6 +502,31 @@ SetLoop() {
     esac
 
     _SVHS_LOOP="$loop"
+}
+
+
+SetLastFrameDuration() {
+    #
+    # Set how long the last GIF frame is held before the loop restarts.
+    #
+    # Parameters:
+    #   $1 - last_frame_duration - non-negative number of seconds.
+    #
+    # Example:
+    #   SetLastFrameDuration 1.5 || exit 1
+    #
+    local last_frame_duration="${1-}"
+
+    _svhs_require_configuration_phase 'SetLastFrameDuration' || return 1
+
+    if ! _svhs_is_nonnegative_number "$last_frame_duration"; then
+        printf 'SetLastFrameDuration: expected a non-negative number, got: %s\n' \
+            "$last_frame_duration" >&2
+        return 1
+    fi
+
+    _SVHS_LAST_FRAME_DURATION="$last_frame_duration"
+    _SVHS_LAST_FRAME_DURATION_SET=1
 }
 
 
@@ -1228,15 +1256,16 @@ Render() {
             # bash 3.2 (stock macOS) rejects an empty array under set -u, so
             # expand optional renderer arguments only when they were set
             *.gif)
-                agg ${agg_font_args[@]+"${agg_font_args[@]}"}    \
-                    ${quiet_args[@]+"${quiet_args[@]}"}          \
-                    ${loop_args[@]+"${loop_args[@]}"}            \
-                    --font-size "$_SVHS_FONT_SIZE"               \
-                    --line-height "$_SVHS_LINE_HEIGHT"           \
-                    --theme "$_SVHS_THEME"                       \
-                    --speed "$_SVHS_PLAYBACK_SPEED"              \
-                    --fps-cap "$_SVHS_FRAMERATE"                 \
-                    --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT"   \
+                agg ${agg_font_args[@]+"${agg_font_args[@]}"}          \
+                    ${quiet_args[@]+"${quiet_args[@]}"}                \
+                    ${loop_args[@]+"${loop_args[@]}"}                  \
+                    --font-size "$_SVHS_FONT_SIZE"                     \
+                    --line-height "$_SVHS_LINE_HEIGHT"                 \
+                    --theme "$_SVHS_THEME"                             \
+                    --speed "$_SVHS_PLAYBACK_SPEED"                    \
+                    --fps-cap "$_SVHS_FRAMERATE"                       \
+                    --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT"         \
+                    --last-frame-duration "$_SVHS_LAST_FRAME_DURATION" \
                     "$_SVHS_CAST" "$output" || return 1
                 ;;
             *.svg)
@@ -1249,6 +1278,10 @@ Render() {
                     --fps "$_SVHS_FRAMERATE"                   \
                     --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT" \
                     "$_SVHS_CAST" "$output" || return 1
+                if [[ $_SVHS_LAST_FRAME_DURATION_SET == 1 && $_SVHS_QUIET == 0 ]]; then
+                    printf '::: SetLastFrameDuration: skipped for %s (not supported by SVG output)\n' \
+                        "$output"
+                fi
                 ;;
         esac
 

@@ -8,13 +8,17 @@
 * Add `SetIdleTimeLimit`: cap how long a pause is played back.
 * Add `SetLoop`: stop the rendered animation after one pass instead of repeating it.
 * Add `SetTitle`: store a title in the cast metadata for players to show.
-* Add `SetQuiet`: suppress recorder, text converter, GIF renderer and s-vhs informational output while keeping errors visible.
+* Add `SetQuiet`: suppress recorder, text converter, GIF renderer and s-vhs informational output.
 * Add `Require`: check recording-specific command dependencies before starting a session.
 * Add `Copy` and `Paste` commands.
 * Add plain-text `.txt` output through `asciinema convert`.
+* Add `SetLastFrameDuration`: control how long the last GIF frame is held before looping.
 
 ### Changed
 * SVG output now caps idle pauses at 5 seconds like GIF output.
+
+### Fixed
+* Initialize the default playback speed so rendering works without calling `SetPlaybackSpeed`.
 
 
 ## `[v0.3.0]` - 16.08.2026

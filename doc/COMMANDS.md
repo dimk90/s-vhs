@@ -52,7 +52,7 @@ are implemented now; the remaining command names still describe the target API.
 | —                                    | `SetSession`                    | `SetSession` (`s-vhs-$$`) | ✅          |
 | —                                    | `SetPrompt`                     | `SetPrompt` (`arrow`)     | ✅          |
 | —                                    | `SetIdleTimeLimit`              | `SetIdleTimeLimit` (`5`)  | ✅          |
-| —                                    | `SetLastFrameDuration`          | — (agg `3`)               | 📋 v0.4.0  |
+| —                                    | `SetLastFrameDuration`          | `SetLastFrameDuration`    | ✅          |
 | —                                    | `SetLoop`                       | `SetLoop` (`on`)          | ✅          |
 | —                                    | `SetEmojiFontFamily`            | — (agg default chain)     | 📋 v0.4.0  |
 | —                                    | `SetFontFamilyExact`            | `SetFontFamilyExact`      | ✅          |
@@ -126,12 +126,6 @@ code is kept in [HISTORY.md](HISTORY.md).
 
 ### Renderer pass-through 🟡
 
-
-| Setting                | agg                     | asg | Status     |
-| ---------------------- | ----------------------- | --- | ---------- |
-| `SetLastFrameDuration` | `--last-frame-duration` | —   | 📋 v0.4.0 |
-
-
 A setting only one renderer supports — `SetLastFrameDuration`, `SetEngine`,
 `SetBoldIsBright` and the agg-only font knobs above; `SetPadding`,
 `SetWindowBar` and `SetCursor` on the asg side — is applied wherever the
@@ -167,12 +161,12 @@ draws a macOS-style bar, so `SetWindowBar` is planned for SVG output only.
 ## Output
 
 
-| VHS output                     | s-vhs                                        | Status     |
-| ------------------------------ | -------------------------------------------- | ---------- |
-| `.mp4`                         | `SetOutput out.mp4`, planned via `ffmpeg`    | 📋        |
-| `.webm`                        | `SetOutput out.webm`                         | 📋        |
-| `.png` frame dir               | `SetOutput out.png`                          | 📋        |
-| `.ascii` / `.txt` golden files | `SetOutput out.txt`, via `asciinema convert` | ✅         |
+| VHS output                     | s-vhs                                        | Status |
+| ------------------------------ | -------------------------------------------- | ------ |
+| `.mp4`                         | `SetOutput out.mp4`, planned via `ffmpeg`    | 📋    |
+| `.webm`                        | `SetOutput out.webm`                         | 📋    |
+| `.png` frame dir               | `SetOutput out.png`                          | 📋    |
+| `.ascii` / `.txt` golden files | `SetOutput out.txt`, via `asciinema convert` | ✅     |
 
 
 ### ScrollUp / ScrollDown 📋

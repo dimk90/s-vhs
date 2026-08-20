@@ -54,7 +54,7 @@ and `Render` reports the rest.
 | `SetPlaybackSpeed <multiplier>`     | GIF, SVG      | `1`        | Playback speed of the rendered animation                                                        |
 | `SetIdleTimeLimit <seconds>`        | GIF, SVG      | `5`        | Cap on idle gaps, applied at render time so the cast keeps its own timing                       |
 | `SetLoop <on\|off>`                 | GIF, SVG      | `on`       | Repeat the animation instead of stopping after one pass                                         |
-| `SetLastFrameDuration <seconds>`    | GIF (planned) | `3`        | How long the last frame is held before the loop restarts                                        |
+| `SetLastFrameDuration <seconds>`    | GIF           | `3`        | How long the last frame is held before the loop restarts                                        |
 
 [^svg-fonts]: An SVG names but does not embed fonts, so its appearance depends
     on fonts installed on the viewer's system, falling back through a chain of
