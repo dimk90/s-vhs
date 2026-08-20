@@ -7,6 +7,8 @@
 * Add `SetFramerate`: cap the frames per second of the rendered animation.
 * Add `SetIdleTimeLimit`: cap how long a pause is played back.
 * Add `SetLoop`: stop the rendered animation after one pass instead of repeating it.
+* Add `SetTitle`: store a title in the cast metadata for players to show.
+* Add `SetQuiet`: suppress recorder, GIF renderer and s-vhs informational output while keeping errors visible.
 
 ### Changed
 * SVG output now caps idle pauses at 5 seconds like GIF output.

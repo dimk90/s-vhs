@@ -7,7 +7,7 @@ release, marked `(planned)`.
 
 ### Session
 
-Recorded into the cast itself, so every output shows them.
+Settings for the recording session, its cast metadata and its outputs.
 
 | Command                     | Default    | Description                                                                               |
 | --------------------------- | ---------- | ----------------------------------------------------------------------------------------- |
@@ -20,8 +20,8 @@ Recorded into the cast itself, so every output shows them.
 | `SetTypingSpeed <seconds>`  | `0.07`     | Default delay between characters typed by `Type`                                          |
 | `SetKeyDelay <seconds>`     | `0.0`      | Default pause after a key press sent by `Key`                                             |
 | `Env <name> <value>`        | —          | Export a variable into the recorded shell; repeatable                                     |
-| `SetTitle <text>` (planned) | —          | Title stored in the cast metadata and shown by players                                    |
-| `SetQuiet` (planned)        | `off`      | Suppress recorder and renderer chatter, keeping errors                                    |
+| `SetTitle <text>`           | —          | Title stored in the cast metadata and shown by players                                    |
+| `SetQuiet`                  | `off`      | Suppress recorder, GIF renderer and s-vhs `:::` messages, keeping errors                  |
 
 ### Render
 

@@ -40,6 +40,10 @@ _SVHS_SESSION="s-vhs-$$"
 # Output paths added by SetOutput
 _SVHS_OUTPUTS=()
 
+# Recorder metadata and diagnostic output
+_SVHS_TITLE=''
+_SVHS_QUIET=0
+
 # Terminal size in cells, not pixels
 _SVHS_COLS=100
 _SVHS_ROWS=40
@@ -494,6 +498,46 @@ SetLoop() {
 }
 
 
+SetTitle() {
+    #
+    # Set the title stored in the cast metadata and shown by players.
+    #
+    # Parameters:
+    #   $1 - title - non-empty cast title.
+    #
+    # Example:
+    #   SetTitle 'API demo' || exit 1
+    #
+    local title="${1-}"
+
+    _svhs_require_configuration_phase 'SetTitle' || return 1
+
+    if [[ -z $title ]]; then
+        printf 'SetTitle: title must not be empty\n' >&2
+        return 1
+    fi
+
+    _SVHS_TITLE="$title"
+}
+
+
+SetQuiet() {
+    #
+    # Suppress recorder, GIF renderer and s-vhs informational messages while
+    # keeping errors visible.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   SetQuiet || exit 1
+    #
+    _svhs_require_configuration_phase 'SetQuiet' || return 1
+
+    _SVHS_QUIET=1
+}
+
+
 SetShell() {
     #
     # Set the shell run inside the tmux session. s-vhs adds the isolation
@@ -520,7 +564,9 @@ SetShell() {
     esac
 
     if ! command -v "$shell" > /dev/null 2>&1; then
-        printf '::: SetShell: %s is not installed, falling back to bash\n' "$shell"
+        if [[ $_SVHS_QUIET == 0 ]]; then
+            printf '::: SetShell: %s is not installed, falling back to bash\n' "$shell"
+        fi
         shell='bash'
     fi
 
@@ -739,8 +785,10 @@ Start() {
 
     # The session runs on its own socket with the status bar off and a name
     # carrying a PID, so watching a recording live takes the printed command
-    printf '::: Started session %s, attach with: tmux -L %s attach -t %s\n' \
-        "$_SVHS_SESSION" "$_SVHS_TMUX_SOCKET" "$_SVHS_SESSION"
+    if [[ $_SVHS_QUIET == 0 ]]; then
+        printf '::: Started session %s, attach with: tmux -L %s attach -t %s\n' \
+            "$_SVHS_SESSION" "$_SVHS_TMUX_SOCKET" "$_SVHS_SESSION"
+    fi
 }
 
 
@@ -972,19 +1020,29 @@ Show() {
     #   Show || exit 1
     #
     local attach_command
+    local recorder_args=()
     # asciinema rejects --overwrite next to --append, so the flags are
     # exclusive: the first segment replaces a stale cast, later ones extend it
     local write_mode='--overwrite'
 
-    [[ -n $_SVHS_RECORDED ]] && write_mode='--append'
+    if [[ -n $_SVHS_RECORDED ]]; then
+        write_mode='--append'
+    elif [[ -n $_SVHS_TITLE ]]; then
+        # Metadata belongs to the cast header written by the first segment,
+        # so append segments must not repeat it
+        recorder_args+=(-t "$_SVHS_TITLE")
+    fi
+    [[ $_SVHS_QUIET == 1 ]] && recorder_args+=(-q)
+
     printf -v attach_command 'tmux -L %q attach -t %q' \
         "$_SVHS_TMUX_SOCKET" "$_SVHS_SESSION"
 
     # asciinema holds the foreground for the whole segment while the script
     # keeps driving the session, so it runs in the background and its PID is
     # kept for Hide and Render to stop it
-    asciinema rec --headless "$write_mode"                    \
-                  --window-size "${_SVHS_COLS}x${_SVHS_ROWS}" \
+    asciinema rec ${recorder_args[@]+"${recorder_args[@]}"}    \
+                  --headless "$write_mode"                     \
+                  --window-size "${_SVHS_COLS}x${_SVHS_ROWS}"  \
                   -c "$attach_command" "$_SVHS_CAST" &
     _SVHS_REC_PID=$!
     _SVHS_RECORDED=1
@@ -1035,6 +1093,7 @@ Render() {
     local clean_lines=''
     local output
     local agg_font_args=()
+    local agg_quiet_args=()
     local asg_font_args=()
     local loop_args=()
 
@@ -1065,6 +1124,7 @@ Render() {
         asg_font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
     fi
 
+    [[ $_SVHS_QUIET == 1 ]] && agg_quiet_args=(-q)
     # both renderers loop on their own and spell only the opt-out
     [[ $_SVHS_LOOP == 'off' ]] && loop_args=(--no-loop)
 
@@ -1078,16 +1138,17 @@ Render() {
                 fi
                 ;;
             # bash 3.2 (stock macOS) rejects an empty array under set -u, so
-            # expand the font and loop arguments only when they were set
+            # expand optional renderer arguments only when they were set
             *.gif)
-                agg ${agg_font_args[@]+"${agg_font_args[@]}"}  \
-                    ${loop_args[@]+"${loop_args[@]}"}          \
-                    --font-size "$_SVHS_FONT_SIZE"             \
-                    --line-height "$_SVHS_LINE_HEIGHT"         \
-                    --theme "$_SVHS_THEME"                     \
-                    --speed "$_SVHS_PLAYBACK_SPEED"            \
-                    --fps-cap "$_SVHS_FRAMERATE"               \
-                    --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT" \
+                agg ${agg_font_args[@]+"${agg_font_args[@]}"}    \
+                    ${agg_quiet_args[@]+"${agg_quiet_args[@]}"}  \
+                    ${loop_args[@]+"${loop_args[@]}"}            \
+                    --font-size "$_SVHS_FONT_SIZE"               \
+                    --line-height "$_SVHS_LINE_HEIGHT"           \
+                    --theme "$_SVHS_THEME"                       \
+                    --speed "$_SVHS_PLAYBACK_SPEED"              \
+                    --fps-cap "$_SVHS_FRAMERATE"                 \
+                    --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT"   \
                     "$_SVHS_CAST" "$output" || return 1
                 ;;
             *.svg)
@@ -1103,7 +1164,9 @@ Render() {
                 ;;
         esac
 
-        printf '::: Wrote %s\n' "$output"
+        if [[ $_SVHS_QUIET == 0 ]]; then
+            printf '::: Wrote %s\n' "$output"
+        fi
     done
 
     if [[ -n $_SVHS_TEMP_CAST ]]; then
@@ -1296,8 +1359,11 @@ _svhs_watch_loop() {
             # painted once per wait, so the message does not blink while the
             # session is polled for
             if [[ -z $waiting ]]; then
-                printf '%s::: Waiting for %s, Ctrl-C to exit\n' \
-                    "$_SVHS_WATCH_CLEAR" "${session:-an s-vhs session}"
+                printf '%s' "$_SVHS_WATCH_CLEAR"
+                if [[ $_SVHS_QUIET == 0 ]]; then
+                    printf '::: Waiting for %s, Ctrl-C to exit\n' \
+                        "${session:-an s-vhs session}"
+                fi
                 waiting=1
             fi
             sleep "$_SVHS_POLL_INTERVAL"

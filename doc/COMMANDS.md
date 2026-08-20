@@ -62,8 +62,8 @@ are implemented now; the remaining command names still describe the target API.
 | —                                    | `SetEngine`                     | — (agg `swash`)           | 📋 v0.4.0  |
 | —                                    | `SetBoldIsBright`               | — (agg off)               | 📋 v0.4.0  |
 | —                                    | `SetCursor` (SVG only)          | — (cursor shown)          | 📋 v0.4.0  |
-| —                                    | `SetTitle`                      | —                         | 📋 v0.4.0  |
-| —                                    | `SetQuiet`                      | —                         | 📋 v0.4.0  |
+| —                                    | `SetTitle`                      | `SetTitle`                | ✅          |
+| —                                    | `SetQuiet`                      | `SetQuiet` (`off`)        | ✅          |
 | —                                    | `SetOptimize`                   | —                         | 📋         |
 | —                                    | `SetOutput out.cast`            | `SetOutput out.cast`      | ✅          |
 |                                      |                                 |                           |             |
@@ -142,17 +142,6 @@ single `::: ` line rather than failing the recording.
 seconds, while VHS's `LoopOffset` keeps every frame and only moves where the
 loop starts. There is no cheap equivalent.
 
-
-### Recorder metadata 📋 v0.4.0
-
-asciinema-side settings with no VHS counterpart. They do not change a single
-rendered frame, but the `.cast` is a first-class output here — it is replayable
-with `asciinema play` and publishable to asciinema.org.
-
-| Setting    | asciinema flag | Note                                            |
-| ---------- | -------------- | ----------------------------------------------- |
-| `SetTitle` | `rec -t`       | Cast title, shown by players.                   |
-| `SetQuiet` | `rec -q`       | Suppress recorder chatter in the script output. |
 
 ### GIF optimization 📋
 

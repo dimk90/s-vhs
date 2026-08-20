@@ -8,9 +8,9 @@
   - [x] `SetIdleTimeLimit <secs>` - `--idle-time-limit` on both, applied in
         `Render` so the cast keeps its own metadata.
   - [x] `SetLoop <on|off>` - `--no-loop` on both; both loop by default.
-  - [ ] `SetTitle <text>` - `asciinema rec -t`; only the first segment writes
+  - [x] `SetTitle <text>` - `asciinema rec -t`; only the first segment writes
         metadata, the `--append` ones must not repeat it.
-  - [ ] `SetQuiet` - `asciinema rec -q`, `agg -q`, and the `::: ` lines.
+  - [x] `SetQuiet` - `asciinema rec -q`, `agg -q`, and the `::: ` lines.
   - [ ] `Require <cmd>...` - wrapper over `_svhs_require_command`, called
         before `Start`.
   - [ ] `Copy <text>` / `Paste` - `tmux set-buffer` / `paste-buffer -p`
