@@ -22,6 +22,7 @@ Settings for the recording session, its cast metadata and its outputs.
 | `Env <name> <value>`        | —          | Export a variable into the recorded shell; repeatable                                     |
 | `SetTitle <text>`           | —          | Title stored in the cast metadata and shown by players                                    |
 | `SetQuiet`                  | `off`      | Suppress recorder, GIF renderer and s-vhs `:::` messages, keeping errors                  |
+| `Require <cmd>...`          | —          | Fail unless every command is available on `PATH`                                          |
 
 ### Render
 

@@ -14,7 +14,7 @@ are implemented now; the remaining command names still describe the target API.
 | ------------------------------------ | ------------------------------- | ------------------------- | ----------- |
 | `Output out.gif`                     | `SetOutput out.gif`             | `SetOutput out.gif`       | ✅          |
 | `Output out.txt` / `.ascii`          | `SetOutput out.txt`             | —                         | 📋 v0.4.0  |
-| `Require prog`                       | `Require`                       | —                         | 📋 v0.4.0  |
+| `Require prog`                       | `Require`                       | `Require <cmd>...`        | ✅          |
 | `Type "text"`                        | `Type <text> [<delay>]`         | `Type`                    | ✅          |
 | `Ctrl+R`, `Alt+X`, `Ctrl+Shift+P`    | `Key <key> [<count>] [<delay>]` | `Key C-r`, `Key M-x`      | ✅          |
 | `Enter`, `Tab`, `Up`, … (named keys) | `Enter`, `Tab`, `Up`, …         | `Enter`, `Backspace`      | ✅          |

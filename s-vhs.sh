@@ -701,6 +701,36 @@ Env() {
 }
 
 
+Require() {
+    #
+    # Fail immediately unless every named command is available on PATH.
+    #
+    # Parameters:
+    #   $@ - command_names - one or more commands the recording needs.
+    #
+    # Example:
+    #   Require 'git' 'jq' || exit 1
+    #
+    local command_name
+
+    _svhs_require_configuration_phase 'Require' || return 1
+
+    if [[ $# -eq 0 ]]; then
+        printf 'Require: expected at least one command\n' >&2
+        return 1
+    fi
+
+    for command_name in "$@"; do
+        if [[ -z $command_name ]]; then
+            printf 'Require: command name must not be empty\n' >&2
+            return 1
+        fi
+
+        _svhs_require_command 'Require' "$command_name" 'the recording' || return 1
+    done
+}
+
+
 ## Session
 
 

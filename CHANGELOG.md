@@ -9,6 +9,7 @@
 * Add `SetLoop`: stop the rendered animation after one pass instead of repeating it.
 * Add `SetTitle`: store a title in the cast metadata for players to show.
 * Add `SetQuiet`: suppress recorder, GIF renderer and s-vhs informational output while keeping errors visible.
+* Add `Require`: check recording-specific command dependencies before starting a session.
 
 ### Changed
 * SVG output now caps idle pauses at 5 seconds like GIF output.

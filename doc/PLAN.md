@@ -11,7 +11,7 @@
   - [x] `SetTitle <text>` - `asciinema rec -t`; only the first segment writes
         metadata, the `--append` ones must not repeat it.
   - [x] `SetQuiet` - `asciinema rec -q`, `agg -q`, and the `::: ` lines.
-  - [ ] `Require <cmd>...` - wrapper over `_svhs_require_command`, called
+  - [x] `Require <cmd>...` - wrapper over `_svhs_require_command`, called
         before `Start`.
   - [ ] `Copy <text>` / `Paste` - `tmux set-buffer` / `paste-buffer -p`
         (bracketed paste); the tmux buffer, not the system clipboard.
@@ -35,6 +35,7 @@
           encode and stays out (see COMMANDS.md).
     - [ ] `SetWindowBar <on|off>` - `asg --window`; VHS parity for SVG only.
     - [ ] `SetCursor <on|off>` - `asg --no-cursor`.
+    - [ ] Decide if `WaitLine` needed.
 - [ ] Update existing examples and README if needed.
 - [ ] Review the "SVG usage issues" draft ([SVG.md](SVG.md)) - linked from the
       README's *Animated SVG Output* section:
@@ -50,7 +51,7 @@
   - [ ] Add new commands to [COMMANDS](doc/COMMANDS.md) if possible: e.g `Highlight`.
   - [ ] Add feature + issue ref (https://github.com/charmbracelet/vhs/issues/66) to README;
   - [ ] Add demo to README.
-- [ ] Publish link in the related VHS issues.
+- [ ] Update `pi-context-view` recording. Especially `Require`?
 - [ ] Update template (`s-vhs new`) with common settings (if any new).
 - [ ] Test on macOS + installation instruction.
 
