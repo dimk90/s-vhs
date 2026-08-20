@@ -101,6 +101,10 @@ _SVHS_POWERLINE_SEPARATOR=$'\xee\x82\xb0'
 # NAME=VALUE pairs exported into the recorded shell by Env
 _SVHS_ENV=()
 
+# Named per process so parallel recordings do not share copied text
+_SVHS_COPY_BUFFER="s-vhs-copy-$$"
+_SVHS_COPY_BUFFER_SET=0
+
 # Delays in seconds
 _SVHS_TYPING_SPEED=0.07
 _SVHS_KEY_DELAY=0.0
@@ -984,6 +988,55 @@ Type() {
         _svhs_send -l "${text:idx:1}"
         sleep "$delay"
     done
+}
+
+
+Copy() {
+    #
+    # Store text in this recording's tmux buffer without touching the system
+    # clipboard.
+    #
+    # Parameters:
+    #   $1 - text - non-empty text to copy.
+    #
+    # Example:
+    #   Copy 'pasted as one block' || exit 1
+    #
+    local text="${1-}"
+
+    if [[ -z $text ]]; then
+        printf 'Copy: text must not be empty\n' >&2
+        return 1
+    fi
+
+    # tmux treats an argument ending in ; as a command separator
+    if [[ $text == *';' ]]; then
+        text="${text%;}"'\;'
+    fi
+
+    tmux -L "$_SVHS_TMUX_SOCKET" set-buffer \
+        -b "$_SVHS_COPY_BUFFER" -- "$text" || return 1
+    _SVHS_COPY_BUFFER_SET=1
+}
+
+
+Paste() {
+    #
+    # Paste the text stored by Copy as a bracketed paste.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   Paste || exit 1
+    #
+    if [[ $_SVHS_COPY_BUFFER_SET == 0 ]]; then
+        printf 'Paste: no text has been copied\n' >&2
+        return 1
+    fi
+
+    tmux -L "$_SVHS_TMUX_SOCKET" paste-buffer -p \
+        -b "$_SVHS_COPY_BUFFER" -t "$_SVHS_SESSION"
 }
 
 
@@ -1890,6 +1943,10 @@ _svhs_cleanup() {
     fi
     if [[ -n $_SVHS_TEMP_CAST ]]; then
         rm -f -- "$_SVHS_TEMP_CAST"
+    fi
+    if [[ $_SVHS_COPY_BUFFER_SET == 1 ]]; then
+        tmux -L "$_SVHS_TMUX_SOCKET" delete-buffer \
+            -b "$_SVHS_COPY_BUFFER" 2> /dev/null || true
     fi
 }
 

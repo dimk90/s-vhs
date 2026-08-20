@@ -26,7 +26,7 @@ are implemented now; the remaining command names still describe the target API.
 | `Hide`                               | `Hide`                          | `Hide`                    | ✅          |
 | `Show`                               | `Show`                          | `Show`                    | ✅          |
 | `Screenshot out.png`                 | `Screenshot`                    | —                         | 📋         |
-| `Copy` / `Paste`                     | `Copy` / `Paste`                | —                         | 📋 v0.4.0  |
+| `Copy` / `Paste`                     | `Copy <text>` / `Paste`         | `Copy` / `Paste`          | ✅          |
 | `Env KEY "VAL"`                      | `Env`                           | `Env KEY VAL`             | ✅          |
 | `Source other.tape`                  | —                               | `source other.sh`         | ✅          |
 |                                      |                                 |                           |             |
@@ -210,12 +210,3 @@ or `agg --select <time>` to render a single frame out of the cast — though tha
 yields a one-frame GIF, not the PNG that VHS writes.
 
 > Convert GIF to PNG/JPG via ffmpeg/magick?
-
-## Copy / Paste 📋
-
-> TODO: remove
-
-Missing. tmux provides the primitives — `tmux set-buffer` and
-`tmux paste-buffer -p` (`-p` for bracketed paste, so TUIs see a real paste) — so
-this is mostly a naming decision. Note it would use the tmux buffer, not the
-system clipboard.

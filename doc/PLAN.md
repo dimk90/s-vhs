@@ -13,7 +13,7 @@
   - [x] `SetQuiet` - `asciinema rec -q`, `agg -q`, and the `::: ` lines.
   - [x] `Require <cmd>...` - wrapper over `_svhs_require_command`, called
         before `Start`.
-  - [ ] `Copy <text>` / `Paste` - `tmux set-buffer` / `paste-buffer -p`
+  - [x] `Copy <text>` / `Paste` - `tmux set-buffer` / `paste-buffer -p`
         (bracketed paste); the tmux buffer, not the system clipboard.
   - [ ] `SetOutput out.txt` - `asciinema convert -f txt` in `Render`, no new
         dependency.
