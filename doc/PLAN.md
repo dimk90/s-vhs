@@ -35,11 +35,6 @@
           encode and stays out (see COMMANDS.md).
     - [ ] `SetWindowBar <on|off>` - `asg --window`; VHS parity for SVG only.
     - [ ] `SetCursor <on|off>` - `asg --no-cursor`.
-  - Not low hanging, stay planned: `ScrollUp` / `ScrollDown` (copy mode plus the
-    alternate-screen caveat), `Screenshot` (PNG needs a converter; a static SVG
-    frame via `asg --at` needs elapsed-cast-time bookkeeping), MP4,
-    `SetLoopOffset` (no agg/asg equivalent), `SetOptimize` (`gifsicle`
-    dependency), GIF padding (second encode).
 - [ ] Update existing examples and README if needed.
 - [ ] Review the "SVG usage issues" draft ([SVG.md](SVG.md)) - linked from the
       README's *Animated SVG Output* section:
@@ -75,8 +70,9 @@
         e.g. `Terminus` fails the same way as a missing font.
   - [ ] Remove `Iosevka Term` from examples.
 - [ ] Rended visualization for all available themes.
-- [ ] MP4 output (same `.cast`, different renderer):
-  - [ ] MP4 — render with `ffmpeg`?
+- [ ] Video output (same `.cast`, different renderer):
+  - [ ] MP4 - render with `ffmpeg`?
+  - [ ] WEBP - `ffmpeg`? MP4 to WEBP?
 - [ ] Color theme unification between `agg` and `asg`:
   - [ ] theme defined in s-vhs and pass colors via custom theme option.
   - [ ] Add theme list with visualizations.

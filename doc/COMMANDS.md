@@ -96,10 +96,8 @@ SetFontFamily 'Iosevka Term'                    # + Symbols Nerd Font, emoji
 SetFontFamilyExact 'JetBrainsMono Nerd Font Mono'   # this list and nothing else
 ```
 
-| Setting              | agg flag               | Status    | Note                                        |
-| -------------------- | ---------------------- | --------- | ------------------------------------------- |
-| `SetFontFamily`      | `--text-font-family`   | ✅        | Keeps Nerd Font + emoji fallbacks.          |
-| `SetFontFamilyExact` | `--font-family`        | ✅        | No fallbacks, opt-in only.                  |
+| Setting              | agg flag               | Status     | Note                                        |
+| -------------------- | ---------------------- | ---------- | ------------------------------------------- |
 | `SetEmojiFontFamily` | `--emoji-font-family`  | 📋 v0.4.0 | Narrow or replace the emoji chain.          |
 | `SetFontDir`         | `--font-dir` (repeats) | 📋 v0.4.0 | Repo-local fonts — reproducible CI renders. |
 
@@ -131,13 +129,13 @@ code is kept in [HISTORY.md](HISTORY.md).
 Five settings are one renderer flag each — a default plus a flag appended in
 `Render`, no new logic:
 
-| Setting                | agg                     | asg                 | Status      |
-| ---------------------- | ----------------------- | ------------------- | ----------- |
-| `SetFramerate`         | `--fps-cap`             | `--fps`             | 📋 v0.4.0  |
-| `SetPlaybackSpeed`     | `--speed`               | `--speed`           | 📋 v0.4.0  |
-| `SetIdleTimeLimit`     | `--idle-time-limit`     | `--idle-time-limit` | 📋 v0.4.0  |
-| `SetLoop`              | `--no-loop`             | `--no-loop`         | 📋 v0.4.0  |
-| `SetLastFrameDuration` | `--last-frame-duration` | —                   | 📋 v0.4.0  |
+| Setting                | agg                     | asg                 | Status     |
+| ---------------------- | ----------------------- | ------------------- | ---------- |
+| `SetFramerate`         | `--fps-cap`             | `--fps`             | 📋 v0.4.0 |
+| `SetPlaybackSpeed`     | `--speed`               | `--speed`           | 📋 v0.4.0 |
+| `SetIdleTimeLimit`     | `--idle-time-limit`     | `--idle-time-limit` | 📋 v0.4.0 |
+| `SetLoop`              | `--no-loop`             | `--no-loop`         | 📋 v0.4.0 |
+| `SetLastFrameDuration` | `--last-frame-duration` | —                   | 📋 v0.4.0 |
 
 The last three have no VHS equivalent but are already in effect through `agg`'s
 defaults, so today a script cannot change them — see the warning under
@@ -195,34 +193,13 @@ draws a macOS-style bar, so `SetWindowBar` is planned for SVG output only.
 
 ## Output
 
-`SetOutput` is repeatable: each call adds one requested output rather than
-replacing earlier calls. Every recording uses one intermediate `.cast`, shared
-by all requested output formats.
 
-```shell
-SetOutput doc/casts/demo.cast
-SetOutput doc/images/demo.gif
-SetOutput doc/images/demo.svg
-```
-
-An explicitly requested `.cast` is retained at exactly that path and remains
-replayable with `asciinema play`. If no `.cast` output is requested, `s-vhs`
-records to a temporary cast, uses it to produce the requested outputs, and
-removes it automatically.
-
-`Render` first finalizes the cast and then invokes only the tools required by
-non-cast outputs. A recording that requests only a `.cast` therefore invokes no
-renderer or converter—particularly, it does not require or run `agg` or `asg`.
-
-| VHS output                     | s-vhs                                            | Status    |
-| ------------------------------ | ------------------------------------------------ | --------- |
-| `.gif`                         | `SetOutput out.gif`, rendered by `agg`           | ✅        |
-| `.mp4`                         | `SetOutput out.mp4`, planned via `ffmpeg`        | 📋       |
-| `.webm`                        | `SetOutput out.webm`                             | 📋       |
-| `.png` frame dir               | `SetOutput out.png`                              | 📋       |
-| `.ascii` / `.txt` golden files | `SetOutput out.txt`, via `asciinema convert`     | 📋 v0.4.0 |
-| —                              | `SetOutput out.cast`, retained without rendering | ✅        |
-| —                              | `SetOutput out.svg`, rendered by `asg`           | ✅        |
+| VHS output                     | s-vhs                                        | Status     |
+| ------------------------------ | -------------------------------------------- | ---------- |
+| `.mp4`                         | `SetOutput out.mp4`, planned via `ffmpeg`    | 📋        |
+| `.webm`                        | `SetOutput out.webm`                         | 📋        |
+| `.png` frame dir               | `SetOutput out.png`                          | 📋        |
+| `.ascii` / `.txt` golden files | `SetOutput out.txt`, via `asciinema convert` | 📋 v0.4.0 |
 
 
 ### ScrollUp / ScrollDown 📋
@@ -249,6 +226,8 @@ Differences from VHS:
   argument is the timeout.
 
 > Is `Wait+Line` useful ?
+> TODO: separate command?
+
 
 
 ## Screenshot 📋
@@ -260,6 +239,8 @@ yields a one-frame GIF, not the PNG that VHS writes.
 > Convert GIF to PNG/JPG via ffmpeg/magick?
 
 ## Copy / Paste 📋
+
+> TODO: remove
 
 Missing. tmux provides the primitives — `tmux set-buffer` and
 `tmux paste-buffer -p` (`-p` for bracketed paste, so TUIs see a real paste) — so
