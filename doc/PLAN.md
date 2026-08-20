@@ -3,11 +3,11 @@
 ## v0.4.0
 
 - [x] Make list of planned functions (COMMANDS.md) which are easy to implement - low hanging fruit:
-  - [ ] `SetPlaybackSpeed <x>` - `agg --speed`, `asg --speed` (default `1`).
-  - [ ] `SetFramerate <fps>` - `agg --fps-cap`, `asg --fps` (default `30`).
-  - [ ] `SetIdleTimeLimit <secs>` - `--idle-time-limit` on both, applied in
+  - [x] `SetPlaybackSpeed <x>` - `agg --speed`, `asg --speed` (default `1`).
+  - [x] `SetFramerate <fps>` - `agg --fps-cap`, `asg --fps` (default `30`).
+  - [x] `SetIdleTimeLimit <secs>` - `--idle-time-limit` on both, applied in
         `Render` so the cast keeps its own metadata.
-  - [ ] `SetLoop <on|off>` - `--no-loop` on both; both loop by default.
+  - [x] `SetLoop <on|off>` - `--no-loop` on both; both loop by default.
   - [ ] `SetTitle <text>` - `asciinema rec -t`; only the first segment writes
         metadata, the `--append` ones must not repeat it.
   - [ ] `SetQuiet` - `asciinema rec -q`, `agg -q`, and the `::: ` lines.

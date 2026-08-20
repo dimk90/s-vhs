@@ -329,9 +329,8 @@ animated by CSS, sharp at any zoom:
 <img src="examples/multi-output.svg" width="500px" alt="One recording rendered as an animated SVG">
 
 
-### S-VHS in the Wild
+## S-VHS in the Wild
 
-More than just a toy example:  
 📌 [pi-context-view](https://github.com/dimk90/pi-context-view): demo GIFs,
 such as [context-usage.rec.sh](https://github.com/dimk90/pi-context-view/blob/develop/scripts/recordings/context-usage.rec.sh).  
 📌 [S-VHS logo recording](examples/logo.rec.sh).

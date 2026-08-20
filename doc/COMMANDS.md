@@ -39,8 +39,8 @@ are implemented now; the remaining command names still describe the target API.
 | `Set TypingSpeed 0.1`                | `SetTypingSpeed`                | `SetTypingSpeed` (`0.07`) | ✅          |
 | `Set Theme "…"`                      | `SetTheme`                      | `SetTheme` (`dracula`)    | 🟡         |
 | `Set Padding 20`                     | `SetPadding`                    | —                         | 📋 v0.4.0  |
-| `Set Framerate 60`                   | `SetFramerate`                  | — (agg `30`)              | 📋 v0.4.0  |
-| `Set PlaybackSpeed 2`                | `SetPlaybackSpeed`              | — (agg `1`)               | 📋 v0.4.0  |
+| `Set Framerate 60`                   | `SetFramerate`                  | `SetFramerate` (`30`)     | ✅          |
+| `Set PlaybackSpeed 2`                | `SetPlaybackSpeed`              | `SetPlaybackSpeed` (`1`)  | ✅          |
 | `Set LoopOffset 5`                   | `SetLoopOffset`                 | —                         | 📋         |
 | `Set LetterSpacing 20`               | —                               | —                         | 🚫         |
 | `Set Margin` / `MarginFill`          | —                               | —                         | 🚫         |
@@ -51,9 +51,9 @@ are implemented now; the remaining command names still describe the target API.
 | —                                    | `SetKeyDelay`                   | `SetKeyDelay` (`0.0`)     | ✅          |
 | —                                    | `SetSession`                    | `SetSession` (`s-vhs-$$`) | ✅          |
 | —                                    | `SetPrompt`                     | `SetPrompt` (`arrow`)     | ✅          |
-| —                                    | `SetIdleTimeLimit`              | — (agg `5`)               | 📋 v0.4.0  |
+| —                                    | `SetIdleTimeLimit`              | `SetIdleTimeLimit` (`5`)  | ✅          |
 | —                                    | `SetLastFrameDuration`          | — (agg `3`)               | 📋 v0.4.0  |
-| —                                    | `SetLoop`                       | — (agg loops)             | 📋 v0.4.0  |
+| —                                    | `SetLoop`                       | `SetLoop` (`on`)          | ✅          |
 | —                                    | `SetEmojiFontFamily`            | — (agg default chain)     | 📋 v0.4.0  |
 | —                                    | `SetFontFamilyExact`            | `SetFontFamilyExact`      | ✅          |
 | —                                    | `SetFontDir`                    | —                         | 📋 v0.4.0  |
@@ -124,22 +124,13 @@ code is kept in [HISTORY.md](HISTORY.md).
 > Check if there any way to pad without a second encode / `magick` artifacts.
 
 
-### Renderer pass-through 📋 v0.4.0
+### Renderer pass-through 🟡
 
-Five settings are one renderer flag each — a default plus a flag appended in
-`Render`, no new logic:
 
-| Setting                | agg                     | asg                 | Status     |
-| ---------------------- | ----------------------- | ------------------- | ---------- |
-| `SetFramerate`         | `--fps-cap`             | `--fps`             | 📋 v0.4.0 |
-| `SetPlaybackSpeed`     | `--speed`               | `--speed`           | 📋 v0.4.0 |
-| `SetIdleTimeLimit`     | `--idle-time-limit`     | `--idle-time-limit` | 📋 v0.4.0 |
-| `SetLoop`              | `--no-loop`             | `--no-loop`         | 📋 v0.4.0 |
-| `SetLastFrameDuration` | `--last-frame-duration` | —                   | 📋 v0.4.0 |
+| Setting                | agg                     | asg | Status     |
+| ---------------------- | ----------------------- | --- | ---------- |
+| `SetLastFrameDuration` | `--last-frame-duration` | —   | 📋 v0.4.0 |
 
-The last three have no VHS equivalent but are already in effect through `agg`'s
-defaults, so today a script cannot change them — see the warning under
-[Sleep](#sleep-).
 
 A setting only one renderer supports — `SetLastFrameDuration`, `SetEngine`,
 `SetBoldIsBright` and the agg-only font knobs above; `SetPadding`,
@@ -151,13 +142,6 @@ single `::: ` line rather than failing the recording.
 seconds, while VHS's `LoopOffset` keeps every frame and only moves where the
 loop starts. There is no cheap equivalent.
 
-> [!NOTE]
-> Idle time is capped in **two** places. `asciinema rec -i <secs>` does not alter
-> the captured timing — it writes `idle_time_limit` into the cast header, which
-> `agg` then honours unless `--idle-time-limit` is given on the command line. So
-> `SetIdleTimeLimit` should be applied as a renderer flag in `Render`, rather
-> than baked into the cast at record time. Like every setter, it is still called
-> before `Start`; applying it later preserves the original cast metadata.
 
 ### Recorder metadata 📋 v0.4.0
 

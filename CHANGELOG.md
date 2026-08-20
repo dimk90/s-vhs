@@ -1,5 +1,17 @@
 # Changelog
 
+## `[v0.4.0]` - Unreleased
+
+### New
+* Add `SetPlaybackSpeed`: play the rendered animation faster or slower.
+* Add `SetFramerate`: cap the frames per second of the rendered animation.
+* Add `SetIdleTimeLimit`: cap how long a pause is played back.
+* Add `SetLoop`: stop the rendered animation after one pass instead of repeating it.
+
+### Changed
+* SVG output now caps idle pauses at 5 seconds like GIF output.
+
+
 ## `[v0.3.0]` - 16.08.2026
 
 ### New

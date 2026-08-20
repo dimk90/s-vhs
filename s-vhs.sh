@@ -72,6 +72,11 @@ _SVHS_LINE_HEIGHT=1.2
 # Render theme; headless recording has no host theme to inherit
 _SVHS_THEME='dracula'
 
+# Timing applied by the renderers rather than baked into the cast
+_SVHS_FRAMERATE=30
+_SVHS_IDLE_TIME_LIMIT=5
+_SVHS_LOOP='on'
+
 # Recorded shell; must be one s-vhs knows how to isolate and inject
 # a prompt into, and bash is present everywhere
 _SVHS_SHELL='bash'
@@ -385,6 +390,107 @@ SetTheme() {
     fi
 
     _SVHS_THEME="$theme"
+}
+
+
+SetPlaybackSpeed() {
+    #
+    # Set how fast the rendered animation plays back; the cast itself keeps
+    # the timing it was recorded with.
+    #
+    # Parameters:
+    #   $1 - playback_speed - positive multiplier; 2 plays twice as fast.
+    #
+    # Example:
+    #   SetPlaybackSpeed 2 || exit 1
+    #
+    local playback_speed="${1-}"
+
+    _svhs_require_configuration_phase 'SetPlaybackSpeed' || return 1
+
+    if ! _svhs_is_positive_number "$playback_speed"; then
+        printf 'SetPlaybackSpeed: expected a positive number, got: %s\n' \
+            "$playback_speed" >&2
+        return 1
+    fi
+
+    _SVHS_PLAYBACK_SPEED="$playback_speed"
+}
+
+
+SetFramerate() {
+    #
+    # Set the maximum number of rendered frames per second.
+    #
+    # Parameters:
+    #   $1 - framerate - positive integer frames per second.
+    #
+    # Example:
+    #   SetFramerate 60 || exit 1
+    #
+    local framerate="${1-}"
+
+    _svhs_require_configuration_phase 'SetFramerate' || return 1
+
+    if ! _svhs_is_positive_integer "$framerate"; then
+        printf 'SetFramerate: expected a positive integer, got: %s\n' \
+            "$framerate" >&2
+        return 1
+    fi
+
+    _SVHS_FRAMERATE="$framerate"
+}
+
+
+SetIdleTimeLimit() {
+    #
+    # Cap how long a pause is played back, so a wait for a slow command does
+    # not stall the animation. Applied while rendering, so the cast keeps
+    # every pause at its recorded length.
+    #
+    # Parameters:
+    #   $1 - idle_time_limit - positive number of seconds.
+    #
+    # Example:
+    #   SetIdleTimeLimit 2 || exit 1
+    #
+    local idle_time_limit="${1-}"
+
+    _svhs_require_configuration_phase 'SetIdleTimeLimit' || return 1
+
+    if ! _svhs_is_positive_number "$idle_time_limit"; then
+        printf 'SetIdleTimeLimit: expected a positive number, got: %s\n' \
+            "$idle_time_limit" >&2
+        return 1
+    fi
+
+    _SVHS_IDLE_TIME_LIMIT="$idle_time_limit"
+}
+
+
+SetLoop() {
+    #
+    # Repeat the rendered animation, or stop it after a single pass.
+    #
+    # Parameters:
+    #   $1 - loop - 'on' or 'off'.
+    #
+    # Example:
+    #   SetLoop 'off' || exit 1
+    #
+    local loop="${1-}"
+
+    _svhs_require_configuration_phase 'SetLoop' || return 1
+
+    case "$loop" in
+        on|off) ;;
+        *)
+            printf 'SetLoop: expected on or off, got: %s\n' "$loop" >&2
+            return 1
+            ;;
+    esac
+
+    _SVHS_LOOP="$loop"
 }
 
 
@@ -930,6 +1036,7 @@ Render() {
     local output
     local agg_font_args=()
     local asg_font_args=()
+    local loop_args=()
 
     # As in Hide, the closing frame needs an event of its own - without it the
     # Sleep before Render is dropped - and the kill's noise is truncated away
@@ -958,6 +1065,9 @@ Render() {
         asg_font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
     fi
 
+    # both renderers loop on their own and spell only the opt-out
+    [[ $_SVHS_LOOP == 'off' ]] && loop_args=(--no-loop)
+
     # A caller's `Render || exit 1` suspends set -e for this whole function, so
     # check every output explicitly rather than announcing a failed render
     for output in "${_SVHS_OUTPUTS[@]}"; do
@@ -968,19 +1078,27 @@ Render() {
                 fi
                 ;;
             # bash 3.2 (stock macOS) rejects an empty array under set -u, so
-            # expand renderer font arguments only when a family was configured
+            # expand the font and loop arguments only when they were set
             *.gif)
-                agg ${agg_font_args[@]+"${agg_font_args[@]}"} \
-                    --font-size "$_SVHS_FONT_SIZE"            \
-                    --line-height "$_SVHS_LINE_HEIGHT"        \
-                    --theme "$_SVHS_THEME"                    \
+                agg ${agg_font_args[@]+"${agg_font_args[@]}"}  \
+                    ${loop_args[@]+"${loop_args[@]}"}          \
+                    --font-size "$_SVHS_FONT_SIZE"             \
+                    --line-height "$_SVHS_LINE_HEIGHT"         \
+                    --theme "$_SVHS_THEME"                     \
+                    --speed "$_SVHS_PLAYBACK_SPEED"            \
+                    --fps-cap "$_SVHS_FRAMERATE"               \
+                    --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT" \
                     "$_SVHS_CAST" "$output" || return 1
                 ;;
             *.svg)
-                asg ${asg_font_args[@]+"${asg_font_args[@]}"} \
-                    --font-size "$_SVHS_FONT_SIZE"            \
-                    --line-height "$_SVHS_LINE_HEIGHT"        \
-                    --theme "$_SVHS_THEME"                    \
+                asg ${asg_font_args[@]+"${asg_font_args[@]}"}  \
+                    ${loop_args[@]+"${loop_args[@]}"}          \
+                    --font-size "$_SVHS_FONT_SIZE"             \
+                    --line-height "$_SVHS_LINE_HEIGHT"         \
+                    --theme "$_SVHS_THEME"                     \
+                    --speed "$_SVHS_PLAYBACK_SPEED"            \
+                    --fps "$_SVHS_FRAMERATE"                   \
+                    --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT" \
                     "$_SVHS_CAST" "$output" || return 1
                 ;;
         esac

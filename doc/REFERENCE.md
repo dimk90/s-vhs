@@ -33,27 +33,27 @@ One renderer per output format, named by the `Applies to` column:
 A setting the other renderer lacks is applied to the outputs that support it,
 and `Render` reports the rest.
 
-| Command                             | Applies to         | Default    | Description                                                                                     |
-| ----------------------------------- | ------------------ | ---------- | ----------------------------------------------------------------------------------------------- |
-| `SetFontSize <px>`                  | GIF, SVG           | `28`       | Rendered font size in pixels                                                                    |
-| `SetFontFamily <family>`            | GIF, SVG           | renderer's | Text font[^svg-fonts], keeping the Nerd Font and emoji fallbacks; excludes `SetFontFamilyExact` |
-| `SetFontFamilyExact <list>`         | GIF, SVG           | renderer's | Complete family list[^svg-fonts], bypassing all fallbacks; excludes `SetFontFamily`             |
-| `SetEmojiFontFamily <list>`         | GIF (planned)      | renderer's | Emoji family chain, narrowing or replacing the renderer's own                                   |
-| `SetFontDir <dir>`                  | GIF (planned)      | —          | Extra font directory searched by the renderer; repeatable                                       |
-| `SetFontAntialiasing <levels\|off>` | GIF (planned)      | `6`        | Alpha-coverage levels kept in text glyph masks; sharpness against file size                     |
-| `SetFontHinting <on\|off>`          | GIF (planned)      | `on`       | Font hinting; `swash` engine only, matters at small font sizes                                  |
-| `SetEngine <swash\|resvg>`          | GIF (planned)      | `swash`    | Frame rendering backend; `resvg` draws COLRv1 emoji in color                                    |
-| `SetLineHeight <multiplier>`        | GIF, SVG           | `1.2`      | Line-height multiplier passed to the renderer                                                   |
-| `SetTheme <theme>`                  | GIF, SVG           | `dracula`  | Theme name[^themes] or custom palette passed to each requested renderer                         |
-| `SetBoldIsBright <on\|off>`         | GIF (planned)      | `off`      | Draw bold text in the bright ANSI color, as most terminals do                                   |
-| `SetPadding <px>`                   | SVG (planned)      | `0`        | Padding around the terminal, in output pixels                                                   |
-| `SetWindowBar <on\|off>`            | SVG (planned)      | `off`      | macOS-style window decorations around the terminal                                              |
-| `SetCursor <on\|off>`               | SVG (planned)      | `on`       | Draw the terminal cursor                                                                        |
-| `SetFramerate <fps>`                | GIF, SVG (planned) | `30`       | Maximum number of rendered frames per second                                                    |
-| `SetPlaybackSpeed <multiplier>`     | GIF, SVG (planned) | `1`        | Playback speed of the rendered animation                                                        |
-| `SetIdleTimeLimit <seconds>`        | GIF, SVG (planned) | `5`        | Cap on idle gaps, applied at render time so the cast keeps its own timing                       |
-| `SetLoop <on\|off>`                 | GIF, SVG (planned) | `on`       | Repeat the animation instead of stopping after one pass                                         |
-| `SetLastFrameDuration <seconds>`    | GIF (planned)      | `3`        | How long the last frame is held before the loop restarts                                        |
+| Command                             | Applies to    | Default    | Description                                                                                     |
+| ----------------------------------- | ------------- | ---------- | ----------------------------------------------------------------------------------------------- |
+| `SetFontSize <px>`                  | GIF, SVG      | `28`       | Rendered font size in pixels                                                                    |
+| `SetFontFamily <family>`            | GIF, SVG      | renderer's | Text font[^svg-fonts], keeping the Nerd Font and emoji fallbacks; excludes `SetFontFamilyExact` |
+| `SetFontFamilyExact <list>`         | GIF, SVG      | renderer's | Complete family list[^svg-fonts], bypassing all fallbacks; excludes `SetFontFamily`             |
+| `SetEmojiFontFamily <list>`         | GIF (planned) | renderer's | Emoji family chain, narrowing or replacing the renderer's own                                   |
+| `SetFontDir <dir>`                  | GIF (planned) | —          | Extra font directory searched by the renderer; repeatable                                       |
+| `SetFontAntialiasing <levels\|off>` | GIF (planned) | `6`        | Alpha-coverage levels kept in text glyph masks; sharpness against file size                     |
+| `SetFontHinting <on\|off>`          | GIF (planned) | `on`       | Font hinting; `swash` engine only, matters at small font sizes                                  |
+| `SetEngine <swash\|resvg>`          | GIF (planned) | `swash`    | Frame rendering backend; `resvg` draws COLRv1 emoji in color                                    |
+| `SetLineHeight <multiplier>`        | GIF, SVG      | `1.2`      | Line-height multiplier passed to the renderer                                                   |
+| `SetTheme <theme>`                  | GIF, SVG      | `dracula`  | Theme name[^themes] or custom palette passed to each requested renderer                         |
+| `SetBoldIsBright <on\|off>`         | GIF (planned) | `off`      | Draw bold text in the bright ANSI color, as most terminals do                                   |
+| `SetPadding <px>`                   | SVG (planned) | `0`        | Padding around the terminal, in output pixels                                                   |
+| `SetWindowBar <on\|off>`            | SVG (planned) | `off`      | macOS-style window decorations around the terminal                                              |
+| `SetCursor <on\|off>`               | SVG (planned) | `on`       | Draw the terminal cursor                                                                        |
+| `SetFramerate <fps>`                | GIF, SVG      | `30`       | Maximum number of rendered frames per second                                                    |
+| `SetPlaybackSpeed <multiplier>`     | GIF, SVG      | `1`        | Playback speed of the rendered animation                                                        |
+| `SetIdleTimeLimit <seconds>`        | GIF, SVG      | `5`        | Cap on idle gaps, applied at render time so the cast keeps its own timing                       |
+| `SetLoop <on\|off>`                 | GIF, SVG      | `on`       | Repeat the animation instead of stopping after one pass                                         |
+| `SetLastFrameDuration <seconds>`    | GIF (planned) | `3`        | How long the last frame is held before the loop restarts                                        |
 
 [^svg-fonts]: An SVG names but does not embed fonts, so its appearance depends
     on fonts installed on the viewer's system, falling back through a chain of
