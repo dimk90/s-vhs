@@ -11,7 +11,7 @@ Settings for the recording session, its cast metadata and its outputs.
 
 | Command                     | Default    | Description                                                                               |
 | --------------------------- | ---------- | ----------------------------------------------------------------------------------------- |
-| `SetOutput <path.ext>`      | —          | Add an output; repeatable. `.cast`, `.gif` and `.svg`[^svg-fonts] are supported           |
+| `SetOutput <path.ext>`      | —          | Add an output; repeatable. `.cast`, `.txt`, `.gif` and `.svg`[^svg-fonts] are supported   |
 | `SetSession <name>`         | `s-vhs-$$` | Session name on the dedicated s-vhs tmux server                                           |
 | `SetCols <cols>`            | `100`      | Terminal width in character cells                                                         |
 | `SetRows <rows>`            | `40`       | Terminal height in character cells                                                        |
@@ -21,7 +21,7 @@ Settings for the recording session, its cast metadata and its outputs.
 | `SetKeyDelay <seconds>`     | `0.0`      | Default pause after a key press sent by `Key`                                             |
 | `Env <name> <value>`        | —          | Export a variable into the recorded shell; repeatable                                     |
 | `SetTitle <text>`           | —          | Title stored in the cast metadata and shown by players                                    |
-| `SetQuiet`                  | `off`      | Suppress recorder, GIF renderer and s-vhs `:::` messages, keeping errors                  |
+| `SetQuiet`                  | `off`      | Suppress recorder, text converter, GIF renderer and s-vhs `:::` messages, keeping errors |
 | `Require <cmd>...`          | —          | Fail unless every command is available on `PATH`                                          |
 
 ### Render

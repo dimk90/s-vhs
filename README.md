@@ -342,6 +342,7 @@ The extension of the path passed to `SetOutput` picks the format:
 | Format  | Description                              | Render dependency                                       |
 | ------- | ---------------------------------------- | ------------------------------------------------------- |
 | `.cast` | Editable, replayable asciicast recording | None                                                    |
+| `.txt`  | Plain-text terminal log                  | None                                                    |
 | `.gif`  | Animated raster image                    | [`agg`](https://github.com/asciinema/agg#installation)  |
 | `.svg`  | Sharp, CSS-animated vector image         | [`asg`](https://github.com/kingsword09/asg#quick-start) |
 

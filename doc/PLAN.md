@@ -15,7 +15,7 @@
         before `Start`.
   - [x] `Copy <text>` / `Paste` - `tmux set-buffer` / `paste-buffer -p`
         (bracketed paste); the tmux buffer, not the system clipboard.
-  - [ ] `SetOutput out.txt` - `asciinema convert -f txt` in `Render`, no new
+  - [x] `SetOutput out.txt` - `asciinema convert -f txt` in `Render`, no new
         dependency.
   - Single-renderer knobs. Policy: apply such a setting where the renderer
     supports it and report the skipped output with one `::: ` line in `Render`,

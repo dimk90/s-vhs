@@ -13,7 +13,7 @@ are implemented now; the remaining command names still describe the target API.
 | VHS                                  | s-vhs (planned)                 | Today                     | Status      |
 | ------------------------------------ | ------------------------------- | ------------------------- | ----------- |
 | `Output out.gif`                     | `SetOutput out.gif`             | `SetOutput out.gif`       | ✅          |
-| `Output out.txt` / `.ascii`          | `SetOutput out.txt`             | —                         | 📋 v0.4.0  |
+| `Output out.txt` / `.ascii`          | `SetOutput out.txt`             | `SetOutput out.txt`       | ✅          |
 | `Require prog`                       | `Require`                       | `Require <cmd>...`        | ✅          |
 | `Type "text"`                        | `Type <text> [<delay>]`         | `Type`                    | ✅          |
 | `Ctrl+R`, `Alt+X`, `Ctrl+Shift+P`    | `Key <key> [<count>] [<delay>]` | `Key C-r`, `Key M-x`      | ✅          |
@@ -172,7 +172,7 @@ draws a macOS-style bar, so `SetWindowBar` is planned for SVG output only.
 | `.mp4`                         | `SetOutput out.mp4`, planned via `ffmpeg`    | 📋        |
 | `.webm`                        | `SetOutput out.webm`                         | 📋        |
 | `.png` frame dir               | `SetOutput out.png`                          | 📋        |
-| `.ascii` / `.txt` golden files | `SetOutput out.txt`, via `asciinema convert` | 📋 v0.4.0 |
+| `.ascii` / `.txt` golden files | `SetOutput out.txt`, via `asciinema convert` | ✅         |
 
 
 ### ScrollUp / ScrollDown 📋

@@ -176,10 +176,10 @@ TEMPLATE
 
 SetOutput() {
     #
-    # Add a cast, GIF, or animated SVG output for the recording.
+    # Add a cast, plain-text, GIF, or animated SVG output for the recording.
     #
     # Parameters:
-    #   $1 - output - path ending in .cast, .gif, or .svg.
+    #   $1 - output - path ending in .cast, .txt, .gif, or .svg.
     #
     # Example:
     #   SetOutput 'demo.gif' || exit 1
@@ -189,7 +189,7 @@ SetOutput() {
     _svhs_require_configuration_phase 'SetOutput' || return 1
 
     case "$output" in
-        *.cast|*.gif|*.svg) ;;
+        *.cast|*.txt|*.gif|*.svg) ;;
         '')
             printf 'SetOutput: output path must not be empty\n' >&2
             return 1
@@ -527,8 +527,8 @@ SetTitle() {
 
 SetQuiet() {
     #
-    # Suppress recorder, GIF renderer and s-vhs informational messages while
-    # keeping errors visible.
+    # Suppress recorder, text converter, GIF renderer and s-vhs informational
+    # messages while keeping errors visible.
     #
     # Parameters:
     #   None.
@@ -1176,8 +1176,8 @@ Render() {
     local clean_lines=''
     local output
     local agg_font_args=()
-    local agg_quiet_args=()
     local asg_font_args=()
+    local quiet_args=()
     local loop_args=()
 
     # As in Hide, the closing frame needs an event of its own - without it the
@@ -1207,7 +1207,7 @@ Render() {
         asg_font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
     fi
 
-    [[ $_SVHS_QUIET == 1 ]] && agg_quiet_args=(-q)
+    [[ $_SVHS_QUIET == 1 ]] && quiet_args=(-q)
     # both renderers loop on their own and spell only the opt-out
     [[ $_SVHS_LOOP == 'off' ]] && loop_args=(--no-loop)
 
@@ -1220,11 +1220,16 @@ Render() {
                     cp -- "$_SVHS_CAST" "$output" || return 1
                 fi
                 ;;
+            *.txt)
+                asciinema convert -f txt --overwrite \
+                    ${quiet_args[@]+"${quiet_args[@]}"} \
+                    "$_SVHS_CAST" "$output" || return 1
+                ;;
             # bash 3.2 (stock macOS) rejects an empty array under set -u, so
             # expand optional renderer arguments only when they were set
             *.gif)
                 agg ${agg_font_args[@]+"${agg_font_args[@]}"}    \
-                    ${agg_quiet_args[@]+"${agg_quiet_args[@]}"}  \
+                    ${quiet_args[@]+"${quiet_args[@]}"}          \
                     ${loop_args[@]+"${loop_args[@]}"}            \
                     --font-size "$_SVHS_FONT_SIZE"               \
                     --line-height "$_SVHS_LINE_HEIGHT"           \
