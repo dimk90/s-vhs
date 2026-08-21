@@ -46,7 +46,7 @@ and `Render` reports the rest.
 | `SetEngine <swash\|resvg>`          | GIF (planned) | `swash`    | Frame rendering backend; `resvg` draws COLRv1 emoji in color                                    |
 | `SetLineHeight <multiplier>`        | GIF, SVG      | `1.2`      | Line-height multiplier passed to the renderer                                                   |
 | `SetTheme <theme>`                  | GIF, SVG      | `dracula`  | Theme name[^themes] or custom palette passed to each requested renderer                         |
-| `SetBoldIsBright <on\|off>`         | GIF (planned) | `off`      | Draw bold text in the bright ANSI color, as most terminals do                                   |
+| `SetBoldIsBright <on\|off>`         | GIF           | `off`      | Draw bold text in the bright ANSI color, as most terminals do                                   |
 | `SetPadding <px>`                   | SVG (planned) | `0`        | Padding around the terminal, in output pixels                                                   |
 | `SetWindowBar <on\|off>`            | SVG (planned) | `off`      | macOS-style window decorations around the terminal                                              |
 | `SetCursor <on\|off>`               | SVG (planned) | `on`       | Draw the terminal cursor                                                                        |

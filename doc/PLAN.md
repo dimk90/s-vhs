@@ -22,7 +22,7 @@
     rather than failing the recording.
     - [x] `SetLastFrameDuration <secs>` - `agg --last-frame-duration`
           (default `3`).
-    - [ ] `SetBoldIsBright <on|off>` - `agg --bold-is-bright` (default off).
+    - [x] `SetBoldIsBright <on|off>` - `agg --bold-is-bright` (default off).
     - [ ] `SetEngine <swash|resvg>` - `agg --renderer` (default `swash`); named
           `SetEngine` because `SetRenderer` reads as a choice between `agg` and
           `asg`, which is what `SetOutput` already decides.
@@ -47,17 +47,18 @@
 - [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:
   - https://github.com/charmbracelet/vhs/tree/main/examples/settings
   - https://github.com/charmbracelet/vhs/tree/main/examples/commands
-- [ ] Write advanced example with emulating mouse selection.
-  - [ ] Add new commands to [COMMANDS](doc/COMMANDS.md) if possible: e.g `Highlight`.
-  - [ ] Add feature + issue ref (https://github.com/charmbracelet/vhs/issues/66) to README;
-  - [ ] Add demo to README.
-- [ ] Update `pi-context-view` recording. Especially `Require`?
 - [ ] Update template (`s-vhs new`) with common settings (if any new).
 - [ ] Test on macOS + installation instruction.
 
 
 ## Backlog
 
+- [ ] Update `pi-context-view` recording. Especially `Require`?
+
+- [ ] Write advanced example with emulating mouse selection.
+  - [ ] Add new commands to [COMMANDS](doc/COMMANDS.md) if possible: e.g `Highlight`.
+  - [ ] Add feature + issue ref (https://github.com/charmbracelet/vhs/issues/66) to README;
+  - [ ] Add demo to README.
 - [ ] Fix default font problem: `Error: no faces matching font family options`.
   - `agg` bundles only the symbol and emoji fallbacks; the primary monospace
     text font must resolve from the system, so a host without any of agg's

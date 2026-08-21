@@ -76,6 +76,9 @@ _SVHS_LINE_HEIGHT=1.2
 # Render theme; headless recording has no host theme to inherit
 _SVHS_THEME='dracula'
 
+# Bold text in the bright ANSI color, the way most terminals show it
+_SVHS_BOLD_IS_BRIGHT='off'
+
 # Timing applied by the renderers rather than baked into the cast
 _SVHS_PLAYBACK_SPEED=1
 _SVHS_FRAMERATE=30
@@ -401,6 +404,34 @@ SetTheme() {
     fi
 
     _SVHS_THEME="$theme"
+}
+
+
+SetBoldIsBright() {
+    #
+    # Draw bold text in the bright ANSI color (0..7 -> 8..15), the way most
+    # terminals show it, instead of the literal color it was written with.
+    #
+    # Parameters:
+    #   $1 - bold_is_bright - 'on' or 'off'.
+    #
+    # Example:
+    #   SetBoldIsBright 'on' || exit 1
+    #
+    local bold_is_bright="${1-}"
+
+    _svhs_require_configuration_phase 'SetBoldIsBright' || return 1
+
+    case "$bold_is_bright" in
+        on|off) ;;
+        *)
+            printf 'SetBoldIsBright: expected on or off, got: %s\n' \
+                "$bold_is_bright" >&2
+            return 1
+            ;;
+    esac
+
+    _SVHS_BOLD_IS_BRIGHT="$bold_is_bright"
 }
 
 
@@ -1207,6 +1238,7 @@ Render() {
     local asg_font_args=()
     local quiet_args=()
     local loop_args=()
+    local bold_args=()
 
     # As in Hide, the closing frame needs an event of its own - without it the
     # Sleep before Render is dropped - and the kill's noise is truncated away
@@ -1238,6 +1270,8 @@ Render() {
     [[ $_SVHS_QUIET == 1 ]] && quiet_args=(-q)
     # both renderers loop on their own and spell only the opt-out
     [[ $_SVHS_LOOP == 'off' ]] && loop_args=(--no-loop)
+    # agg spells only the opt-in; its default is the literal color asg draws
+    [[ $_SVHS_BOLD_IS_BRIGHT == 'on' ]] && bold_args=(--bold-is-bright)
 
     # A caller's `Render || exit 1` suspends set -e for this whole function, so
     # check every output explicitly rather than announcing a failed render
@@ -1259,6 +1293,7 @@ Render() {
                 agg ${agg_font_args[@]+"${agg_font_args[@]}"}          \
                     ${quiet_args[@]+"${quiet_args[@]}"}                \
                     ${loop_args[@]+"${loop_args[@]}"}                  \
+                    ${bold_args[@]+"${bold_args[@]}"}                  \
                     --font-size "$_SVHS_FONT_SIZE"                     \
                     --line-height "$_SVHS_LINE_HEIGHT"                 \
                     --theme "$_SVHS_THEME"                             \
@@ -1280,6 +1315,11 @@ Render() {
                     "$_SVHS_CAST" "$output" || return 1
                 if [[ $_SVHS_LAST_FRAME_DURATION_SET == 1 && $_SVHS_QUIET == 0 ]]; then
                     printf '::: SetLastFrameDuration: skipped for %s (not supported by SVG output)\n' \
+                        "$output"
+                fi
+                # only 'on' is worth a line: 'off' is what an SVG draws anyway
+                if [[ $_SVHS_BOLD_IS_BRIGHT == 'on' && $_SVHS_QUIET == 0 ]]; then
+                    printf '::: SetBoldIsBright: skipped for %s (not supported by SVG output)\n' \
                         "$output"
                 fi
                 ;;

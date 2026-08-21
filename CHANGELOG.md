@@ -13,6 +13,7 @@
 * Add `Copy` and `Paste` commands.
 * Add plain-text `.txt` output through `asciinema convert`.
 * Add `SetLastFrameDuration`: control how long the last GIF frame is held before looping.
+* Add `SetBoldIsBright`: draw bold text in the bright ANSI color in GIF output, as most terminals do.
 
 ### Changed
 * SVG output now caps idle pauses at 5 seconds like GIF output.

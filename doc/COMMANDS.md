@@ -60,7 +60,7 @@ are implemented now; the remaining command names still describe the target API.
 | —                                    | `SetFontAntialiasing`           | — (agg `6`)               | 📋 v0.4.0  |
 | —                                    | `SetFontHinting`                | — (agg `true`)            | 📋 v0.4.0  |
 | —                                    | `SetEngine`                     | — (agg `swash`)           | 📋 v0.4.0  |
-| —                                    | `SetBoldIsBright`               | — (agg off)               | 📋 v0.4.0  |
+| —                                    | `SetBoldIsBright`               | `SetBoldIsBright` (`off`) | ✅          |
 | —                                    | `SetCursor` (SVG only)          | — (cursor shown)          | 📋 v0.4.0  |
 | —                                    | `SetTitle`                      | `SetTitle`                | ✅          |
 | —                                    | `SetQuiet`                      | `SetQuiet` (`off`)        | ✅          |
@@ -101,8 +101,8 @@ SetFontFamilyExact 'JetBrainsMono Nerd Font Mono'   # this list and nothing else
 | `SetEmojiFontFamily` | `--emoji-font-family`  | 📋 v0.4.0 | Narrow or replace the emoji chain.          |
 | `SetFontDir`         | `--font-dir` (repeats) | 📋 v0.4.0 | Repo-local fonts — reproducible CI renders. |
 
-The remaining glyph-quality knobs have no VHS equivalent; all four are planned
-for v0.4.0, and all four are agg-only:
+The remaining glyph-quality knobs have no VHS equivalent; all four land in
+v0.4.0 - `SetBoldIsBright` already has - and all four are agg-only:
 
 | Setting               | agg flag              | Default | Why it matters                                                                                        |
 | --------------------- | --------------------- | ------- | ----------------------------------------------------------------------------------------------------- |
