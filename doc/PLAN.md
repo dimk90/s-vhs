@@ -23,7 +23,7 @@
     - [x] `SetLastFrameDuration <secs>` - `agg --last-frame-duration`
           (default `3`).
     - [x] `SetBoldIsBright <on|off>` - `agg --bold-is-bright` (default off).
-    - [ ] `SetEngine <swash|resvg>` - `agg --renderer` (default `swash`); named
+    - [x] `SetEngine <swash|resvg>` - `agg --renderer` (default `swash`); named
           `SetEngine` because `SetRenderer` reads as a choice between `agg` and
           `asg`, which is what `SetOutput` already decides.
     - [ ] `SetFontAntialiasing <levels|off>` - `agg --font-antialiasing`

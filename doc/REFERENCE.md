@@ -43,7 +43,7 @@ and `Render` reports the rest.
 | `SetFontDir <dir>`                  | GIF (planned) | —          | Extra font directory searched by the renderer; repeatable                                       |
 | `SetFontAntialiasing <levels\|off>` | GIF (planned) | `6`        | Alpha-coverage levels kept in text glyph masks; sharpness against file size                     |
 | `SetFontHinting <on\|off>`          | GIF (planned) | `on`       | Font hinting; `swash` engine only, matters at small font sizes                                  |
-| `SetEngine <swash\|resvg>`          | GIF (planned) | `swash`    | Frame rendering backend; `resvg` draws COLRv1 emoji in color                                    |
+| `SetEngine <swash\|resvg>`          | GIF           | `swash`    | Frame rendering backend; `resvg` draws COLRv1 emoji in color                                    |
 | `SetLineHeight <multiplier>`        | GIF, SVG      | `1.2`      | Line-height multiplier passed to the renderer                                                   |
 | `SetTheme <theme>`                  | GIF, SVG      | `dracula`  | Theme name[^themes] or custom palette passed to each requested renderer                         |
 | `SetBoldIsBright <on\|off>`         | GIF           | `off`      | Draw bold text in the bright ANSI color, as most terminals do                                   |

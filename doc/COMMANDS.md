@@ -59,7 +59,7 @@ are implemented now; the remaining command names still describe the target API.
 | —                                    | `SetFontDir`                    | —                         | 📋 v0.4.0  |
 | —                                    | `SetFontAntialiasing`           | — (agg `6`)               | 📋 v0.4.0  |
 | —                                    | `SetFontHinting`                | — (agg `true`)            | 📋 v0.4.0  |
-| —                                    | `SetEngine`                     | — (agg `swash`)           | 📋 v0.4.0  |
+| —                                    | `SetEngine`                     | `SetEngine` (`swash`)     | ✅          |
 | —                                    | `SetBoldIsBright`               | `SetBoldIsBright` (`off`) | ✅          |
 | —                                    | `SetCursor` (SVG only)          | — (cursor shown)          | 📋 v0.4.0  |
 | —                                    | `SetTitle`                      | `SetTitle`                | ✅          |
@@ -102,7 +102,8 @@ SetFontFamilyExact 'JetBrainsMono Nerd Font Mono'   # this list and nothing else
 | `SetFontDir`         | `--font-dir` (repeats) | 📋 v0.4.0 | Repo-local fonts — reproducible CI renders. |
 
 The remaining glyph-quality knobs have no VHS equivalent; all four land in
-v0.4.0 - `SetBoldIsBright` already has - and all four are agg-only:
+v0.4.0 - `SetBoldIsBright` and `SetEngine` already have - and all four are
+agg-only:
 
 | Setting               | agg flag              | Default | Why it matters                                                                                        |
 | --------------------- | --------------------- | ------- | ----------------------------------------------------------------------------------------------------- |

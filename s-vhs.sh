@@ -79,6 +79,10 @@ _SVHS_THEME='dracula'
 # Bold text in the bright ANSI color, the way most terminals show it
 _SVHS_BOLD_IS_BRIGHT='off'
 
+# agg's frame rasterizer; only resvg draws COLRv1 emoji in color
+_SVHS_ENGINE='swash'
+_SVHS_ENGINE_SET=0
+
 # Timing applied by the renderers rather than baked into the cast
 _SVHS_PLAYBACK_SPEED=1
 _SVHS_FRAMERATE=30
@@ -432,6 +436,36 @@ SetBoldIsBright() {
     esac
 
     _SVHS_BOLD_IS_BRIGHT="$bold_is_bright"
+}
+
+
+SetEngine() {
+    #
+    # Select the backend the GIF renderer rasterizes frames with. 'resvg'
+    # draws COLRv1 emoji - recent Noto Color Emoji - in color, which 'swash'
+    # renders monochrome; 'swash' is the faster one and the only one font
+    # hinting applies to.
+    #
+    # Parameters:
+    #   $1 - engine - 'swash' or 'resvg'.
+    #
+    # Example:
+    #   SetEngine 'resvg' || exit 1
+    #
+    local engine="${1-}"
+
+    _svhs_require_configuration_phase 'SetEngine' || return 1
+
+    case "$engine" in
+        swash|resvg) ;;
+        *)
+            printf 'SetEngine: expected swash or resvg, got: %s\n' "$engine" >&2
+            return 1
+            ;;
+    esac
+
+    _SVHS_ENGINE="$engine"
+    _SVHS_ENGINE_SET=1
 }
 
 
@@ -1301,6 +1335,7 @@ Render() {
                     --fps-cap "$_SVHS_FRAMERATE"                       \
                     --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT"         \
                     --last-frame-duration "$_SVHS_LAST_FRAME_DURATION" \
+                    --renderer "$_SVHS_ENGINE"                         \
                     "$_SVHS_CAST" "$output" || return 1
                 ;;
             *.svg)
@@ -1320,6 +1355,10 @@ Render() {
                 # only 'on' is worth a line: 'off' is what an SVG draws anyway
                 if [[ $_SVHS_BOLD_IS_BRIGHT == 'on' && $_SVHS_QUIET == 0 ]]; then
                     printf '::: SetBoldIsBright: skipped for %s (not supported by SVG output)\n' \
+                        "$output"
+                fi
+                if [[ $_SVHS_ENGINE_SET == 1 && $_SVHS_QUIET == 0 ]]; then
+                    printf '::: SetEngine: skipped for %s (not supported by SVG output)\n' \
                         "$output"
                 fi
                 ;;
