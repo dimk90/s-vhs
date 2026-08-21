@@ -97,6 +97,15 @@ _SVHS_BOLD_IS_BRIGHT='off'
 _SVHS_ENGINE='swash'
 _SVHS_ENGINE_SET=0
 
+# SVG frame around the terminal: padding in output pixels, its per-axis
+# overrides - empty until set, so both follow _SVHS_PADDING - macOS-style
+# window decorations, and the terminal cursor
+_SVHS_PADDING=0
+_SVHS_PADDING_X=''
+_SVHS_PADDING_Y=''
+_SVHS_WINDOW_BAR='off'
+_SVHS_CURSOR='on'
+
 # Timing applied by the renderers rather than baked into the cast
 _SVHS_PLAYBACK_SPEED=1
 _SVHS_FRAMERATE=30
@@ -603,6 +612,135 @@ SetEngine() {
 
     _SVHS_ENGINE="$engine"
     _SVHS_ENGINE_SET=1
+}
+
+
+SetPadding() {
+    #
+    # Set the padding drawn around the terminal on both axes, in the theme's
+    # background color.
+    #
+    # Parameters:
+    #   $1 - padding - non-negative integer number of output pixels.
+    #
+    # Example:
+    #   SetPadding 20 || exit 1
+    #
+    local padding="${1-}"
+
+    _svhs_require_configuration_phase 'SetPadding' || return 1
+
+    if ! _svhs_is_nonnegative_integer "$padding"; then
+        printf 'SetPadding: expected a non-negative integer, got: %s\n' \
+            "$padding" >&2
+        return 1
+    fi
+
+    _SVHS_PADDING="$padding"
+}
+
+
+SetPaddingX() {
+    #
+    # Set the padding left and right of the terminal, overriding SetPadding
+    # on that axis.
+    #
+    # Parameters:
+    #   $1 - padding - non-negative integer number of output pixels.
+    #
+    # Example:
+    #   SetPaddingX 40 || exit 1
+    #
+    local padding="${1-}"
+
+    _svhs_require_configuration_phase 'SetPaddingX' || return 1
+
+    if ! _svhs_is_nonnegative_integer "$padding"; then
+        printf 'SetPaddingX: expected a non-negative integer, got: %s\n' \
+            "$padding" >&2
+        return 1
+    fi
+
+    _SVHS_PADDING_X="$padding"
+}
+
+
+SetPaddingY() {
+    #
+    # Set the padding above and below the terminal, overriding SetPadding on
+    # that axis.
+    #
+    # Parameters:
+    #   $1 - padding - non-negative integer number of output pixels.
+    #
+    # Example:
+    #   SetPaddingY 10 || exit 1
+    #
+    local padding="${1-}"
+
+    _svhs_require_configuration_phase 'SetPaddingY' || return 1
+
+    if ! _svhs_is_nonnegative_integer "$padding"; then
+        printf 'SetPaddingY: expected a non-negative integer, got: %s\n' \
+            "$padding" >&2
+        return 1
+    fi
+
+    _SVHS_PADDING_Y="$padding"
+}
+
+
+SetWindowBar() {
+    #
+    # Draw macOS-style window decorations - a bar with three buttons - above
+    # the terminal.
+    #
+    # Parameters:
+    #   $1 - window_bar - 'on' or 'off'.
+    #
+    # Example:
+    #   SetWindowBar 'on' || exit 1
+    #
+    local window_bar="${1-}"
+
+    _svhs_require_configuration_phase 'SetWindowBar' || return 1
+
+    case "$window_bar" in
+        on|off) ;;
+        *)
+            printf 'SetWindowBar: expected on or off, got: %s\n' "$window_bar" >&2
+            return 1
+            ;;
+    esac
+
+    _SVHS_WINDOW_BAR="$window_bar"
+}
+
+
+SetCursor() {
+    #
+    # Draw the terminal cursor; turning it off leaves the recorded text on
+    # screen without the block trailing it.
+    #
+    # Parameters:
+    #   $1 - cursor - 'on' or 'off'.
+    #
+    # Example:
+    #   SetCursor 'off' || exit 1
+    #
+    local cursor="${1-}"
+
+    _svhs_require_configuration_phase 'SetCursor' || return 1
+
+    case "$cursor" in
+        on|off) ;;
+        *)
+            printf 'SetCursor: expected on or off, got: %s\n' "$cursor" >&2
+            return 1
+            ;;
+    esac
+
+    _SVHS_CURSOR="$cursor"
 }
 
 
@@ -1410,6 +1548,7 @@ Render() {
     local hinting='true'
     local agg_font_args=()
     local asg_font_args=()
+    local asg_frame_args=()
     local quiet_args=()
     local loop_args=()
     local bold_args=()
@@ -1457,6 +1596,14 @@ Render() {
     # agg spells only the opt-in; its default is the literal color asg draws
     [[ $_SVHS_BOLD_IS_BRIGHT == 'on' ]] && bold_args=(--bold-is-bright)
 
+    # SVG-only frame: an axis override is named only once it was set, so both
+    # axes otherwise follow --padding, and asg spells a window bar as the
+    # opt-in and the cursor as the opt-out
+    [[ -n $_SVHS_PADDING_X ]] && asg_frame_args+=(--padding-x "$_SVHS_PADDING_X")
+    [[ -n $_SVHS_PADDING_Y ]] && asg_frame_args+=(--padding-y "$_SVHS_PADDING_Y")
+    [[ $_SVHS_WINDOW_BAR == 'on' ]] && asg_frame_args+=(--window)
+    [[ $_SVHS_CURSOR == 'off' ]] && asg_frame_args+=(--no-cursor)
+
     # A caller's `Render || exit 1` suspends set -e for this whole function, so
     # check every output explicitly rather than announcing a failed render
     for output in "${_SVHS_OUTPUTS[@]}"; do
@@ -1492,14 +1639,16 @@ Render() {
                 _svhs_report_gif_skips "$output"
                 ;;
             *.svg)
-                asg ${asg_font_args[@]+"${asg_font_args[@]}"}  \
-                    ${loop_args[@]+"${loop_args[@]}"}          \
-                    --font-size "$_SVHS_FONT_SIZE"             \
-                    --line-height "$_SVHS_LINE_HEIGHT"         \
-                    --theme "$_SVHS_THEME"                     \
-                    --speed "$_SVHS_PLAYBACK_SPEED"            \
-                    --fps "$_SVHS_FRAMERATE"                   \
-                    --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT" \
+                asg ${asg_font_args[@]+"${asg_font_args[@]}"}   \
+                    ${asg_frame_args[@]+"${asg_frame_args[@]}"} \
+                    ${loop_args[@]+"${loop_args[@]}"}           \
+                    --font-size "$_SVHS_FONT_SIZE"              \
+                    --line-height "$_SVHS_LINE_HEIGHT"          \
+                    --theme "$_SVHS_THEME"                      \
+                    --padding "$_SVHS_PADDING"                  \
+                    --speed "$_SVHS_PLAYBACK_SPEED"             \
+                    --fps "$_SVHS_FRAMERATE"                    \
+                    --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT"  \
                     "$_SVHS_CAST" "$output" || return 1
                 _svhs_report_svg_skips "$output"
                 ;;
@@ -1733,6 +1882,23 @@ _svhs_is_positive_integer() {
     local value="$1"
 
     [[ $value =~ ^[1-9][0-9]*$ ]] || return 1
+    return 0
+}
+
+
+_svhs_is_nonnegative_integer() {
+    #
+    # Return success when a value is an integer greater than or equal to zero.
+    #
+    # Parameters:
+    #   $1 - value - value to test.
+    #
+    # Example:
+    #   _svhs_is_nonnegative_integer '20' || exit 1
+    #
+    local value="$1"
+
+    [[ $value =~ ^(0|[1-9][0-9]*)$ ]] || return 1
     return 0
 }
 
@@ -2225,7 +2391,8 @@ _svhs_report_skipped() {
 
 _svhs_report_gif_skips() {
     #
-    # Report the settings the selected GIF engine ignores.
+    # Report the settings GIF output has no equivalent for, and the ones the
+    # selected engine ignores.
     #
     # Parameters:
     #   $1 - output - GIF path that was rendered.
@@ -2237,12 +2404,25 @@ _svhs_report_gif_skips() {
 
     # both knobs act on the glyph masks swash rasterizes; resvg draws text
     # through its own pipeline and takes neither
-    [[ $_SVHS_ENGINE != 'resvg' ]] && return 0
+    if [[ $_SVHS_ENGINE == 'resvg' ]]; then
+        [[ $_SVHS_FONT_ANTIALIASING_SET == 1 ]] &&
+            _svhs_report_skipped 'SetFontAntialiasing' "$output" 'the resvg engine'
+        [[ $_SVHS_FONT_HINTING_SET == 1 ]] &&
+            _svhs_report_skipped 'SetFontHinting' "$output" 'the resvg engine'
+    fi
 
-    [[ $_SVHS_FONT_ANTIALIASING_SET == 1 ]] &&
-        _svhs_report_skipped 'SetFontAntialiasing' "$output" 'the resvg engine'
-    [[ $_SVHS_FONT_HINTING_SET == 1 ]] &&
-        _svhs_report_skipped 'SetFontHinting' "$output" 'the resvg engine'
+    # a GIF is drawn without padding and without a window bar, and always with
+    # the cursor, so only a value that would have shown is worth a line
+    ((_SVHS_PADDING > 0)) &&
+        _svhs_report_skipped 'SetPadding' "$output" 'GIF output'
+    ((${_SVHS_PADDING_X:-0} > 0)) &&
+        _svhs_report_skipped 'SetPaddingX' "$output" 'GIF output'
+    ((${_SVHS_PADDING_Y:-0} > 0)) &&
+        _svhs_report_skipped 'SetPaddingY' "$output" 'GIF output'
+    [[ $_SVHS_WINDOW_BAR == 'on' ]] &&
+        _svhs_report_skipped 'SetWindowBar' "$output" 'GIF output'
+    [[ $_SVHS_CURSOR == 'off' ]] &&
+        _svhs_report_skipped 'SetCursor' "$output" 'GIF output'
     return 0
 }
 

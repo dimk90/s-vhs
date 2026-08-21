@@ -19,6 +19,9 @@
 * Add `SetFontDir`: render a GIF with fonts kept next to the recording script instead of installed ones.
 * Add `SetFontAntialiasing`: trade GIF glyph smoothness against file size.
 * Add `SetFontHinting`: fit glyph outlines to the pixel grid, keeping small GIF text legible.
+* Add `SetPadding`, `SetPaddingX` and `SetPaddingY`: pad the terminal in SVG output.
+* Add `SetWindowBar`: draw macOS-style window decorations above the terminal in SVG output.
+* Add `SetCursor`: hide the terminal cursor in SVG output.
 
 ### Changed
 * SVG output now caps idle pauses at 5 seconds like GIF output.

@@ -38,13 +38,13 @@ are implemented now; the remaining command names still describe the target API.
 | `Set LineHeight 1.8`                 | `SetLineHeight`                 | `SetLineHeight` (`1.2`)     | ✅          |
 | `Set TypingSpeed 0.1`                | `SetTypingSpeed`                | `SetTypingSpeed` (`0.07`)   | ✅          |
 | `Set Theme "…"`                      | `SetTheme`                      | `SetTheme` (`dracula`)      | 🟡         |
-| `Set Padding 20`                     | `SetPadding`                    | —                           | 📋 v0.4.0  |
+| `Set Padding 20`                     | `SetPadding` (SVG only)         | `SetPadding` (`0`)          | ✅          |
 | `Set Framerate 60`                   | `SetFramerate`                  | `SetFramerate` (`30`)       | ✅          |
 | `Set PlaybackSpeed 2`                | `SetPlaybackSpeed`              | `SetPlaybackSpeed` (`1`)    | ✅          |
 | `Set LoopOffset 5`                   | `SetLoopOffset`                 | —                           | 📋         |
 | `Set LetterSpacing 20`               | —                               | —                           | 🚫         |
 | `Set Margin` / `MarginFill`          | —                               | —                           | 🚫         |
-| `Set WindowBar`                      | `SetWindowBar` (SVG only)       | —                           | 📋 v0.4.0  |
+| `Set WindowBar`                      | `SetWindowBar` (SVG only)       | `SetWindowBar` (`off`)      | ✅          |
 | `Set BorderRadius`                   | —                               | —                           | 🚫         |
 | `Set CursorBlink`                    | —                               | —                           | 🚫         |
 |                                      |                                 |                             |             |
@@ -61,7 +61,9 @@ are implemented now; the remaining command names still describe the target API.
 | —                                    | `SetFontHinting`                | `SetFontHinting` (`on`)     | ✅          |
 | —                                    | `SetEngine`                     | `SetEngine` (`swash`)       | ✅          |
 | —                                    | `SetBoldIsBright`               | `SetBoldIsBright` (`off`)   | ✅          |
-| —                                    | `SetCursor` (SVG only)          | — (cursor shown)            | 📋 v0.4.0  |
+| —                                    | `SetCursor` (SVG only)          | `SetCursor` (`on`)          | ✅          |
+| —                                    | `SetPaddingX` (SVG only)        | `SetPaddingX`               | ✅          |
+| —                                    | `SetPaddingY` (SVG only)        | `SetPaddingY`               | ✅          |
 | —                                    | `SetTitle`                      | `SetTitle`                  | ✅          |
 | —                                    | `SetQuiet`                      | `SetQuiet` (`off`)          | ✅          |
 | —                                    | `SetOptimize`                   | —                           | 📋         |
@@ -75,19 +77,6 @@ are implemented now; the remaining command names still describe the target API.
 | `vhs new demo.tape` (CLI)            | `s-vhs.sh new`                  | `s-vhs.sh new`              | ✅          |
 
 [vhs-ref]: https://github.com/charmbracelet/vhs#vhs-command-reference
-
-
-### Padding 📋 v0.4.0
-
-`asg --padding` / `--padding-x` / `--padding-y` pad an SVG natively, so
-`SetPadding` lands for SVG in v0.4.0 and is reported as skipped for a GIF.
-
-The GIF side stays open: an earlier `Render 40` argument added the border with
-`magick` (preferred) or `ffmpeg`; it was removed because re-encoding the
-finished GIF costs sharpness and an extra dependency for a cosmetic frame. That
-code is kept in [HISTORY.md](HISTORY.md).
-
-> Check if there any way to pad without a second encode / `magick` artifacts.
 
 
 ### Renderer pass-through 🟡
@@ -120,19 +109,18 @@ opt-in and off by default.
 `LetterSpacing`, `Margin`, `MarginFill` and `BorderRadius` are frame decorations
 that neither renderer draws, and `CursorBlink` is a property of the recorded
 terminal, not of the cast. `WindowBar` moved out of this list: `asg --window`
-draws a macOS-style bar, so `SetWindowBar` is planned for SVG output only.
+draws a macOS-style bar, so `SetWindowBar` decorates SVG output only.
 
 > Can bew added by .cast modification ?
 
 ## Output
 
 
-| VHS output                     | s-vhs                                        | Status |
-| ------------------------------ | -------------------------------------------- | ------ |
-| `.mp4`                         | `SetOutput out.mp4`, planned via `ffmpeg`    | 📋    |
-| `.webm`                        | `SetOutput out.webm`                         | 📋    |
-| `.png` frame dir               | `SetOutput out.png`                          | 📋    |
-| `.ascii` / `.txt` golden files | `SetOutput out.txt`, via `asciinema convert` | ✅     |
+| VHS output       | s-vhs                                     | Status |
+| ---------------- | ----------------------------------------- | ------ |
+| `.mp4`           | `SetOutput out.mp4`, planned via `ffmpeg` | 📋    |
+| `.webm`          | `SetOutput out.webm`                      | 📋    |
+| `.png` frame dir | `SetOutput out.png`                       | 📋    |
 
 
 ### ScrollUp / ScrollDown 📋

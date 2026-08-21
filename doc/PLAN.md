@@ -32,10 +32,11 @@
     - [x] `SetFontDir <dir>` - `agg --font-dir`, repeatable like `Env`.
     - [x] `SetEmojiFontFamily <list>` - `agg --emoji-font-family`; replaces
           the emoji tail of the SVG font chain too.
-    - [ ] `SetPadding <px>` - `asg --padding`; the GIF side needs a second
-          encode and stays out (see COMMANDS.md).
-    - [ ] `SetWindowBar <on|off>` - `asg --window`; VHS parity for SVG only.
-    - [ ] `SetCursor <on|off>` - `asg --no-cursor`.
+    - [x] `SetPadding <px>` - `asg --padding`, with `SetPaddingX` /
+          `SetPaddingY` axis overrides; the GIF side needs a second encode and
+          stays out (see COMMANDS.md).
+    - [x] `SetWindowBar <on|off>` - `asg --window`; VHS parity for SVG only.
+    - [x] `SetCursor <on|off>` - `asg --no-cursor`.
     - [ ] Decide if `WaitLine` needed.
 - [ ] Update existing examples and README if needed.
 - [ ] Review the "SVG usage issues" draft ([SVG.md](SVG.md)) - linked from the
