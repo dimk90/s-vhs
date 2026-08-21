@@ -9,20 +9,20 @@ release, marked `(planned)`.
 
 Settings for the recording session, its cast metadata and its outputs.
 
-| Command                     | Default    | Description                                                                               |
-| --------------------------- | ---------- | ----------------------------------------------------------------------------------------- |
-| `SetOutput <path.ext>`      | —          | Add an output; repeatable. `.cast`, `.txt`, `.gif` and `.svg`[^svg-fonts] are supported   |
-| `SetSession <name>`         | `s-vhs-$$` | Session name on the dedicated s-vhs tmux server                                           |
-| `SetCols <cols>`            | `100`      | Terminal width in character cells                                                         |
-| `SetRows <rows>`            | `40`       | Terminal height in character cells                                                        |
-| `SetShell <shell>`          | `bash`     | Shell run inside the session: `bash`, `zsh` or `fish`; a missing shell falls back to bash |
-| `SetPrompt <prompt>`        | `arrow`    | Prompt theme, literal prompt, or `native`[^prompts]                                       |
-| `SetTypingSpeed <seconds>`  | `0.07`     | Default delay between characters typed by `Type`                                          |
-| `SetKeyDelay <seconds>`     | `0.0`      | Default pause after a key press sent by `Key`                                             |
-| `Env <name> <value>`        | —          | Export a variable into the recorded shell; repeatable                                     |
-| `SetTitle <text>`           | —          | Title stored in the cast metadata and shown by players                                    |
-| `SetQuiet`                  | `off`      | Suppress recorder, text converter, GIF renderer and s-vhs `:::` messages, keeping errors |
-| `Require <cmd>...`          | —          | Fail unless every command is available on `PATH`                                          |
+| Command                    | Default    | Description                                                                               |
+| -------------------------- | ---------- | ----------------------------------------------------------------------------------------- |
+| `SetOutput <path.ext>`     | —          | Add an output; repeatable. `.cast`, `.txt`, `.gif` and `.svg`[^svg-fonts] are supported   |
+| `SetSession <name>`        | `s-vhs-$$` | Session name on the dedicated s-vhs tmux server                                           |
+| `SetCols <cols>`           | `100`      | Terminal width in character cells                                                         |
+| `SetRows <rows>`           | `40`       | Terminal height in character cells                                                        |
+| `SetShell <shell>`         | `bash`     | Shell run inside the session: `bash`, `zsh` or `fish`; a missing shell falls back to bash |
+| `SetPrompt <prompt>`       | `arrow`    | Prompt theme, literal prompt, or `native`[^prompts]                                       |
+| `SetTypingSpeed <seconds>` | `0.07`     | Default delay between characters typed by `Type`                                          |
+| `SetKeyDelay <seconds>`    | `0.0`      | Default pause after a key press sent by `Key`                                             |
+| `Env <name> <value>`       | —          | Export a variable into the recorded shell; repeatable                                     |
+| `SetTitle <text>`          | —          | Title stored in the cast metadata and shown by players                                    |
+| `SetQuiet`                 | `off`      | Suppress recorder, text converter, GIF renderer and s-vhs `:::` messages, keeping errors  |
+| `Require <cmd>...`         | —          | Fail unless every command is available on `PATH`                                          |
 
 ### Render
 
@@ -34,27 +34,27 @@ One renderer per output format, named by the `Applies to` column:
 A setting the other renderer lacks is applied to the outputs that support it,
 and `Render` reports the rest.
 
-| Command                             | Applies to    | Default    | Description                                                                                     |
-| ----------------------------------- | ------------- | ---------- | ----------------------------------------------------------------------------------------------- |
-| `SetFontSize <px>`                  | GIF, SVG      | `28`       | Rendered font size in pixels                                                                    |
-| `SetFontFamily <family>`            | GIF, SVG      | renderer's | Text font[^svg-fonts], keeping the Nerd Font and emoji fallbacks; excludes `SetFontFamilyExact` |
-| `SetFontFamilyExact <list>`         | GIF, SVG      | renderer's | Complete family list[^svg-fonts], bypassing all fallbacks; excludes `SetFontFamily`             |
-| `SetEmojiFontFamily <list>`         | GIF (planned) | renderer's | Emoji family chain, narrowing or replacing the renderer's own                                   |
-| `SetFontDir <dir>`                  | GIF (planned) | —          | Extra font directory searched by the renderer; repeatable                                       |
-| `SetFontAntialiasing <levels\|off>` | GIF (planned) | `6`        | Alpha-coverage levels kept in text glyph masks; sharpness against file size                     |
-| `SetFontHinting <on\|off>`          | GIF (planned) | `on`       | Font hinting; `swash` engine only, matters at small font sizes                                  |
-| `SetEngine <swash\|resvg>`          | GIF           | `swash`    | Frame rendering backend; `resvg` draws COLRv1 emoji in color                                    |
-| `SetLineHeight <multiplier>`        | GIF, SVG      | `1.2`      | Line-height multiplier passed to the renderer                                                   |
-| `SetTheme <theme>`                  | GIF, SVG      | `dracula`  | Theme name[^themes] or custom palette passed to each requested renderer                         |
-| `SetBoldIsBright <on\|off>`         | GIF           | `off`      | Draw bold text in the bright ANSI color, as most terminals do                                   |
-| `SetPadding <px>`                   | SVG (planned) | `0`        | Padding around the terminal, in output pixels                                                   |
-| `SetWindowBar <on\|off>`            | SVG (planned) | `off`      | macOS-style window decorations around the terminal                                              |
-| `SetCursor <on\|off>`               | SVG (planned) | `on`       | Draw the terminal cursor                                                                        |
-| `SetFramerate <fps>`                | GIF, SVG      | `30`       | Maximum number of rendered frames per second                                                    |
-| `SetPlaybackSpeed <multiplier>`     | GIF, SVG      | `1`        | Playback speed of the rendered animation                                                        |
-| `SetIdleTimeLimit <seconds>`        | GIF, SVG      | `5`        | Cap on idle gaps, applied at render time so the cast keeps its own timing                       |
-| `SetLoop <on\|off>`                 | GIF, SVG      | `on`       | Repeat the animation instead of stopping after one pass                                         |
-| `SetLastFrameDuration <seconds>`    | GIF           | `3`        | How long the last frame is held before the loop restarts                                        |
+| Command                             | Applies to    | Default    | Description                                                                                                              |
+| ----------------------------------- | ------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `SetFontSize <px>`                  | GIF, SVG      | `28`       | Rendered font size in pixels                                                                                             |
+| `SetFontFamily <family>`            | GIF, SVG      | renderer's | Text font[^svg-fonts], keeping the Nerd Font and emoji fallbacks; excludes `SetFontFamilyExact`                          |
+| `SetFontFamilyExact <list>`         | GIF, SVG      | renderer's | Complete family list[^svg-fonts], bypassing all fallbacks; excludes `SetFontFamily` and `SetEmojiFontFamily`             |
+| `SetEmojiFontFamily <list>`         | GIF, SVG      | renderer's | Families emoji are drawn with[^svg-fonts], replacing the renderer's own chain; excludes `SetFontFamilyExact`             |
+| `SetFontDir <dir>`                  | GIF           | —          | Additional font directory searched by the renderer, which must exist; repeatable                                         |
+| `SetFontAntialiasing <levels\|off>` | GIF           | `6`        | Alpha-coverage levels (`2`..`256`, `off` = 2) kept in text glyph masks, sharpness against file size; `swash` engine only |
+| `SetFontHinting <on\|off>`          | GIF           | `on`       | Fit glyph outlines to the pixel grid, which matters at small font sizes; `swash` engine only                             |
+| `SetEngine <swash\|resvg>`          | GIF           | `swash`    | Frame rendering backend; `resvg` draws COLRv1 emoji in color                                                             |
+| `SetLineHeight <multiplier>`        | GIF, SVG      | `1.2`      | Line-height multiplier passed to the renderer                                                                            |
+| `SetTheme <theme>`                  | GIF, SVG      | `dracula`  | Theme name[^themes] or custom palette passed to each requested renderer                                                  |
+| `SetBoldIsBright <on\|off>`         | GIF           | `off`      | Draw bold text in the bright ANSI color, as most terminals do                                                            |
+| `SetPadding <px>`                   | SVG (planned) | `0`        | Padding around the terminal, in output pixels                                                                            |
+| `SetWindowBar <on\|off>`            | SVG (planned) | `off`      | macOS-style window decorations around the terminal                                                                       |
+| `SetCursor <on\|off>`               | SVG (planned) | `on`       | Draw the terminal cursor                                                                                                 |
+| `SetFramerate <fps>`                | GIF, SVG      | `30`       | Maximum number of rendered frames per second                                                                             |
+| `SetPlaybackSpeed <multiplier>`     | GIF, SVG      | `1`        | Playback speed of the rendered animation                                                                                 |
+| `SetIdleTimeLimit <seconds>`        | GIF, SVG      | `5`        | Cap on idle gaps, applied at render time so the cast keeps its own timing                                                |
+| `SetLoop <on\|off>`                 | GIF, SVG      | `on`       | Repeat the animation instead of stopping after one pass                                                                  |
+| `SetLastFrameDuration <seconds>`    | GIF           | `3`        | How long the last frame is held before the loop restarts                                                                 |
 
 [^svg-fonts]: An SVG names but does not embed fonts, so its appearance depends
     on fonts installed on the viewer's system, falling back through a chain of
@@ -91,7 +91,7 @@ and `Render` reports the rest.
 | `Show`                              | Start recording; later calls append to the same cast                                                                                                                                           |
 | `Hide`                              | Stop recording, leaving the session alive                                                                                                                                                      |
 | `Type <text> [delay]`               | Emulate typing literal text, one character at a time                                                                                                                                           |
-| `Copy <text>`                       | Store non-empty text in a recording-local tmux buffer without touching the system clipboard                                                                                                   |
+| `Copy <text>`                       | Store non-empty text in a recording-local tmux buffer without touching the system clipboard                                                                                                    |
 | `Paste`                             | Paste the text stored by `Copy` as a bracketed paste                                                                                                                                           |
 | `Key <key-name> [count] [delay]`    | Press a tmux-named key[^keys] (`Enter`, `Down`, `C-r`) `count` times                                                                                                                           |
 | `Enter`, `Tab`, … `[count] [delay]` | Press one named key[^keys]; same arguments as `Key`                                                                                                                                            |

@@ -15,6 +15,10 @@
 * Add `SetLastFrameDuration`: control how long the last GIF frame is held before looping.
 * Add `SetBoldIsBright`: draw bold text in the bright ANSI color in GIF output, as most terminals do.
 * Add `SetEngine`: pick the GIF frame renderer, `resvg` for color COLRv1 emoji.
+* Add `SetEmojiFontFamily`: pick the fonts emoji are drawn with, in GIF and SVG output.
+* Add `SetFontDir`: render a GIF with fonts kept next to the recording script instead of installed ones.
+* Add `SetFontAntialiasing`: trade GIF glyph smoothness against file size.
+* Add `SetFontHinting`: fit glyph outlines to the pixel grid, keeping small GIF text legible.
 
 ### Changed
 * SVG output now caps idle pauses at 5 seconds like GIF output.

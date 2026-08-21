@@ -26,11 +26,12 @@
     - [x] `SetEngine <swash|resvg>` - `agg --renderer` (default `swash`); named
           `SetEngine` because `SetRenderer` reads as a choice between `agg` and
           `asg`, which is what `SetOutput` already decides.
-    - [ ] `SetFontAntialiasing <levels|off>` - `agg --font-antialiasing`
+    - [x] `SetFontAntialiasing <levels|off>` - `agg --font-antialiasing`
           (default `6`).
-    - [ ] `SetFontHinting <on|off>` - `agg --font-hinting` (default on).
-    - [ ] `SetFontDir <dir>` - `agg --font-dir`, repeatable like `Env`.
-    - [ ] `SetEmojiFontFamily <list>` - `agg --emoji-font-family`.
+    - [x] `SetFontHinting <on|off>` - `agg --font-hinting` (default on).
+    - [x] `SetFontDir <dir>` - `agg --font-dir`, repeatable like `Env`.
+    - [x] `SetEmojiFontFamily <list>` - `agg --emoji-font-family`; replaces
+          the emoji tail of the SVG font chain too.
     - [ ] `SetPadding <px>` - `asg --padding`; the GIF side needs a second
           encode and stays out (see COMMANDS.md).
     - [ ] `SetWindowBar <on|off>` - `asg --window`; VHS parity for SVG only.
@@ -49,6 +50,7 @@
   - https://github.com/charmbracelet/vhs/tree/main/examples/commands
 - [ ] Update template (`s-vhs new`) with common settings (if any new).
 - [ ] Test on macOS + installation instruction.
+- [ ] Update skill for recordings?
 
 
 ## Backlog

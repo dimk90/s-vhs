@@ -49,9 +49,14 @@ _SVHS_COLS=100
 _SVHS_ROWS=40
 
 # Renderer fonts, empty = their defaults. FAMILY keeps the Nerd Font and
-# emoji fallbacks; FAMILY_EXACT replaces the whole chain, no fallbacks
+# emoji fallbacks; FAMILY_EXACT replaces the whole chain, no fallbacks;
+# EMOJI_FONT_FAMILY replaces the emoji fallbacks alone
 _SVHS_FONT_FAMILY=''
 _SVHS_FONT_FAMILY_EXACT=''
+_SVHS_EMOJI_FONT_FAMILY=''
+
+# Extra font directories added by SetFontDir, searched by the GIF renderer
+_SVHS_FONT_DIRS=()
 
 # agg bundles these fallbacks; an SVG can only name fonts on the viewer's
 # system, and it picks a face per glyph. Text faces must therefore come before
@@ -66,12 +71,21 @@ _SVHS_SVG_FONT_FALLBACKS+="'Liberation Mono','Roboto Mono','Menlo',"
 _SVHS_SVG_FONT_FALLBACKS+="'DejaVu Sans Mono','SF Mono','Consolas',"
 _SVHS_SVG_FONT_FALLBACKS+="'Symbols Nerd Font Mono','Symbols Nerd Font',"
 _SVHS_SVG_FONT_FALLBACKS+="'Powerline Symbols','Apple Symbols','Segoe UI Symbol',"
-_SVHS_SVG_FONT_FALLBACKS+="'Noto Sans Symbols 2','Noto Sans Symbols','Apple Color Emoji',"
-_SVHS_SVG_FONT_FALLBACKS+="'Segoe UI Emoji','Noto Color Emoji',monospace"
+_SVHS_SVG_FONT_FALLBACKS+="'Noto Sans Symbols 2','Noto Sans Symbols'"
+
+# Emoji tail of that chain, replaced by SetEmojiFontFamily
+_SVHS_SVG_EMOJI_FALLBACKS="'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji'"
 
 # Output resolution ~ COLS x ROWS x FONT_SIZE
 _SVHS_FONT_SIZE=28
 _SVHS_LINE_HEIGHT=1.2
+
+# Glyph rasterization, swash only: alpha-coverage levels kept in text glyph
+# masks, and outlines fitted to the pixel grid
+_SVHS_FONT_ANTIALIASING=6
+_SVHS_FONT_ANTIALIASING_SET=0
+_SVHS_FONT_HINTING='on'
+_SVHS_FONT_HINTING_SET=0
 
 # Render theme; headless recording has no host theme to inherit
 _SVHS_THEME='dracula'
@@ -337,8 +351,74 @@ SetFontFamilyExact() {
         printf 'SetFontFamilyExact: cannot be combined with SetFontFamily\n' >&2
         return 1
     fi
+    if [[ -n $_SVHS_EMOJI_FONT_FAMILY ]]; then
+        printf 'SetFontFamilyExact: cannot be combined with SetEmojiFontFamily\n' >&2
+        return 1
+    fi
 
     _SVHS_FONT_FAMILY_EXACT="$font_family"
+}
+
+
+SetEmojiFontFamily() {
+    #
+    # Set the families emoji are drawn with, in place of the renderer's own
+    # emoji chain. The GIF renderer picks the first family carrying the glyph;
+    # the SVG only names them, so the viewer's system decides.
+    #
+    # Parameters:
+    #   $1 - emoji_font_family - non-empty comma-separated family list.
+    #
+    # Example:
+    #   SetEmojiFontFamily 'Noto Color Emoji' || exit 1
+    #
+    local emoji_font_family="${1-}"
+
+    _svhs_require_configuration_phase 'SetEmojiFontFamily' || return 1
+
+    if [[ -z $emoji_font_family ]]; then
+        printf 'SetEmojiFontFamily: font family must not be empty\n' >&2
+        return 1
+    fi
+    # an exact list already names every family, emoji ones included, and agg
+    # rejects the two flags at once
+    if [[ -n $_SVHS_FONT_FAMILY_EXACT ]]; then
+        printf 'SetEmojiFontFamily: cannot be combined with SetFontFamilyExact\n' >&2
+        return 1
+    fi
+
+    _SVHS_EMOJI_FONT_FAMILY="$emoji_font_family"
+}
+
+
+SetFontDir() {
+    #
+    # Add a directory the GIF renderer searches for fonts on top of the
+    # installed ones; repeatable. Fonts kept next to the recording script
+    # render the same on a machine that has none of them installed.
+    #
+    # Parameters:
+    #   $1 - font_dir - existing directory holding font files.
+    #
+    # Example:
+    #   SetFontDir './fonts' || exit 1
+    #
+    local font_dir="${1-}"
+
+    _svhs_require_configuration_phase 'SetFontDir' || return 1
+
+    if [[ -z $font_dir ]]; then
+        printf 'SetFontDir: font directory must not be empty\n' >&2
+        return 1
+    fi
+    # agg passes over a directory that is not there, leaving a recording that
+    # differs only by its font, so a mistyped path is reported here instead
+    if [[ ! -d $font_dir ]]; then
+        printf 'SetFontDir: not a directory: %s\n' "$font_dir" >&2
+        return 1
+    fi
+
+    _SVHS_FONT_DIRS+=("$font_dir")
 }
 
 
@@ -362,6 +442,63 @@ SetFontSize() {
     fi
 
     _SVHS_FONT_SIZE="$font_size"
+}
+
+
+SetFontAntialiasing() {
+    #
+    # Set how many alpha-coverage levels the GIF renderer keeps in text glyph
+    # masks: fewer levels give harder glyph edges and a smaller file, 'off'
+    # being the two-level extreme.
+    #
+    # Parameters:
+    #   $1 - levels - number of levels from 2 to 256, or 'off' for 2.
+    #
+    # Example:
+    #   SetFontAntialiasing 16 || exit 1
+    #
+    local levels="${1-}"
+
+    _svhs_require_configuration_phase 'SetFontAntialiasing' || return 1
+
+    if [[ $levels != 'off' ]]; then
+        if ! _svhs_is_positive_integer "$levels" || ((levels < 2 || levels > 256)); then
+            printf 'SetFontAntialiasing: expected off or 2 to 256, got: %s\n' \
+                "$levels" >&2
+            return 1
+        fi
+    fi
+
+    _SVHS_FONT_ANTIALIASING="$levels"
+    _SVHS_FONT_ANTIALIASING_SET=1
+}
+
+
+SetFontHinting() {
+    #
+    # Fit glyph outlines to the pixel grid while rendering the GIF, which
+    # keeps small text legible; turning it off draws the font's own shapes.
+    #
+    # Parameters:
+    #   $1 - font_hinting - 'on' or 'off'.
+    #
+    # Example:
+    #   SetFontHinting 'off' || exit 1
+    #
+    local font_hinting="${1-}"
+
+    _svhs_require_configuration_phase 'SetFontHinting' || return 1
+
+    case "$font_hinting" in
+        on|off) ;;
+        *)
+            printf 'SetFontHinting: expected on or off, got: %s\n' "$font_hinting" >&2
+            return 1
+            ;;
+    esac
+
+    _SVHS_FONT_HINTING="$font_hinting"
+    _SVHS_FONT_HINTING_SET=1
 }
 
 
@@ -1268,6 +1405,9 @@ Render() {
     #
     local clean_lines=''
     local output
+    local font_dir
+    # agg spells hinting as a value rather than as a flag pair
+    local hinting='true'
     local agg_font_args=()
     local asg_font_args=()
     local quiet_args=()
@@ -1291,16 +1431,26 @@ Render() {
     fi
     _SVHS_REC_PID=''
 
-    if [[ -n $_SVHS_FONT_FAMILY ]]; then
-        agg_font_args+=(--text-font-family "$_SVHS_FONT_FAMILY")
-        # Quote the family: unquoted CSS idents cannot start with a digit, and one
-        # invalid entry drops the whole stack ('0xProto Nerd Font', '3270 Nerd Font')
-        asg_font_args+=(--font-family "'$_SVHS_FONT_FAMILY',$_SVHS_SVG_FONT_FALLBACKS")
-    elif [[ -n $_SVHS_FONT_FAMILY_EXACT ]]; then
+    if [[ -n $_SVHS_FONT_FAMILY_EXACT ]]; then
         agg_font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
         asg_font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
+    else
+        [[ -n $_SVHS_FONT_FAMILY ]] &&
+            agg_font_args+=(--text-font-family "$_SVHS_FONT_FAMILY")
+        [[ -n $_SVHS_EMOJI_FONT_FAMILY ]] &&
+            agg_font_args+=(--emoji-font-family "$_SVHS_EMOJI_FONT_FAMILY")
+        # the SVG chain is built as a whole, so it is only worth naming once
+        # one of its two configurable parts was set
+        if [[ -n $_SVHS_FONT_FAMILY || -n $_SVHS_EMOJI_FONT_FAMILY ]]; then
+            asg_font_args+=(--font-family "$(_svhs_svg_font_family)")
+        fi
     fi
 
+    for font_dir in ${_SVHS_FONT_DIRS[@]+"${_SVHS_FONT_DIRS[@]}"}; do
+        agg_font_args+=(--font-dir "$font_dir")
+    done
+
+    [[ $_SVHS_FONT_HINTING == 'off' ]] && hinting='false'
     [[ $_SVHS_QUIET == 1 ]] && quiet_args=(-q)
     # both renderers loop on their own and spell only the opt-out
     [[ $_SVHS_LOOP == 'off' ]] && loop_args=(--no-loop)
@@ -1335,8 +1485,11 @@ Render() {
                     --fps-cap "$_SVHS_FRAMERATE"                       \
                     --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT"         \
                     --last-frame-duration "$_SVHS_LAST_FRAME_DURATION" \
+                    --font-antialiasing "$_SVHS_FONT_ANTIALIASING"     \
+                    --font-hinting "$hinting"                          \
                     --renderer "$_SVHS_ENGINE"                         \
                     "$_SVHS_CAST" "$output" || return 1
+                _svhs_report_gif_skips "$output"
                 ;;
             *.svg)
                 asg ${asg_font_args[@]+"${asg_font_args[@]}"}  \
@@ -1348,19 +1501,7 @@ Render() {
                     --fps "$_SVHS_FRAMERATE"                   \
                     --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT" \
                     "$_SVHS_CAST" "$output" || return 1
-                if [[ $_SVHS_LAST_FRAME_DURATION_SET == 1 && $_SVHS_QUIET == 0 ]]; then
-                    printf '::: SetLastFrameDuration: skipped for %s (not supported by SVG output)\n' \
-                        "$output"
-                fi
-                # only 'on' is worth a line: 'off' is what an SVG draws anyway
-                if [[ $_SVHS_BOLD_IS_BRIGHT == 'on' && $_SVHS_QUIET == 0 ]]; then
-                    printf '::: SetBoldIsBright: skipped for %s (not supported by SVG output)\n' \
-                        "$output"
-                fi
-                if [[ $_SVHS_ENGINE_SET == 1 && $_SVHS_QUIET == 0 ]]; then
-                    printf '::: SetEngine: skipped for %s (not supported by SVG output)\n' \
-                        "$output"
-                fi
+                _svhs_report_svg_skips "$output"
                 ;;
         esac
 
@@ -2007,6 +2148,132 @@ _svhs_wait_for_client() {
         fi
         sleep "$_SVHS_POLL_INTERVAL"
     done
+}
+
+
+_svhs_svg_font_list() {
+    #
+    # Print a comma-separated family list as CSS family names, one quoted
+    # entry each. Unquoted CSS idents cannot start with a digit, and a single
+    # invalid entry drops the whole stack ('0xProto Nerd Font', '3270 Nerd
+    # Font').
+    #
+    # Parameters:
+    #   $1 - families - comma-separated family names.
+    #
+    # Example:
+    #   list=$(_svhs_svg_font_list 'Noto Color Emoji,Twemoji')
+    #
+    local families="$1"
+
+    # the spaces around a separator belong to neither name, so they are cut
+    # rather than quoted into one
+    printf "'%s'" "$(printf '%s' "$families" | sed "s/^ *//; s/ *\$//; s/ *, */','/g")"
+}
+
+
+_svhs_svg_font_family() {
+    #
+    # Print the font-family list for the SVG: the configured text font, the
+    # built-in text and symbol fallbacks, the emoji chain - the configured one
+    # when SetEmojiFontFamily was called - and the generic monospace last.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   chain=$(_svhs_svg_font_family)
+    #
+    local chain=''
+
+    [[ -n $_SVHS_FONT_FAMILY ]] && chain="$(_svhs_svg_font_list "$_SVHS_FONT_FAMILY"),"
+    chain+="$_SVHS_SVG_FONT_FALLBACKS,"
+
+    if [[ -n $_SVHS_EMOJI_FONT_FAMILY ]]; then
+        chain+="$(_svhs_svg_font_list "$_SVHS_EMOJI_FONT_FAMILY"),"
+    else
+        chain+="$_SVHS_SVG_EMOJI_FALLBACKS,"
+    fi
+
+    printf '%smonospace' "$chain"
+}
+
+
+_svhs_report_skipped() {
+    #
+    # Report a setting the renderer of one output has no equivalent for. A
+    # single line keeps the recording alive: the other outputs still carry it.
+    #
+    # Parameters:
+    #   $1 - setter - public setter name whose value was ignored.
+    #   $2 - output - output path it was ignored for.
+    #   $3 - renderer - what does not support it.
+    #
+    # Example:
+    #   _svhs_report_skipped 'SetEngine' 'demo.svg' 'SVG output'
+    #
+    local setter="$1"
+    local output="$2"
+    local renderer="$3"
+
+    [[ $_SVHS_QUIET == 1 ]] && return 0
+
+    printf '::: %s: skipped for %s (not supported by %s)\n' \
+        "$setter" "$output" "$renderer"
+}
+
+
+_svhs_report_gif_skips() {
+    #
+    # Report the settings the selected GIF engine ignores.
+    #
+    # Parameters:
+    #   $1 - output - GIF path that was rendered.
+    #
+    # Example:
+    #   _svhs_report_gif_skips 'demo.gif'
+    #
+    local output="$1"
+
+    # both knobs act on the glyph masks swash rasterizes; resvg draws text
+    # through its own pipeline and takes neither
+    [[ $_SVHS_ENGINE != 'resvg' ]] && return 0
+
+    [[ $_SVHS_FONT_ANTIALIASING_SET == 1 ]] &&
+        _svhs_report_skipped 'SetFontAntialiasing' "$output" 'the resvg engine'
+    [[ $_SVHS_FONT_HINTING_SET == 1 ]] &&
+        _svhs_report_skipped 'SetFontHinting' "$output" 'the resvg engine'
+    return 0
+}
+
+
+_svhs_report_svg_skips() {
+    #
+    # Report the settings SVG output has no equivalent for.
+    #
+    # Parameters:
+    #   $1 - output - SVG path that was rendered.
+    #
+    # Example:
+    #   _svhs_report_svg_skips 'demo.svg'
+    #
+    local output="$1"
+
+    [[ $_SVHS_LAST_FRAME_DURATION_SET == 1 ]] &&
+        _svhs_report_skipped 'SetLastFrameDuration' "$output" 'SVG output'
+    # only 'on' is worth a line: 'off' is what an SVG draws anyway
+    [[ $_SVHS_BOLD_IS_BRIGHT == 'on' ]] &&
+        _svhs_report_skipped 'SetBoldIsBright' "$output" 'SVG output'
+    [[ $_SVHS_ENGINE_SET == 1 ]] &&
+        _svhs_report_skipped 'SetEngine' "$output" 'SVG output'
+    [[ $_SVHS_FONT_ANTIALIASING_SET == 1 ]] &&
+        _svhs_report_skipped 'SetFontAntialiasing' "$output" 'SVG output'
+    [[ $_SVHS_FONT_HINTING_SET == 1 ]] &&
+        _svhs_report_skipped 'SetFontHinting' "$output" 'SVG output'
+    # an SVG names fonts instead of loading them, so a directory means nothing
+    [[ -n ${_SVHS_FONT_DIRS[*]-} ]] &&
+        _svhs_report_skipped 'SetFontDir' "$output" 'SVG output'
+    return 0
 }
 
 
