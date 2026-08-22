@@ -103,5 +103,5 @@ the terminal or how asciinema records it.
 ## Links
 
 - [README](../README.md) - install and the quick start.
-- [REFERENCE.md](REFERENCE.md) - every command, with defaults.
-- [examples/README.md](../examples) - the example catalogue.
+- [REFERENCE](REFERENCE.md) - every command, with defaults.
+- [Examples](../examples) - the example catalogue.

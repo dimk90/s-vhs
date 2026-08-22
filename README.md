@@ -512,6 +512,22 @@ Reduce what the renderer has to encode before optimizing it:
 
 - For the full list of commands and settings, see [REFERENCE.md](doc/REFERENCE.md).
 
+- For the agent skill with recording best practices, see
+  [SKILL.md](skills/s-vhs-recording/SKILL.md). Install it with
+  [`gh skill`](https://cli.github.com/manual/gh_skill_install), which places it
+  where Claude Code, pi, Codex and others look for it:
+
+  ```bash
+  gh skill install dimk90/s-vhs s-vhs-recording --agent claude-code --scope user
+  ```
+
+  or fetch the released copy with `curl`, here for
+  [Claude Code](https://claude.com/product/claude-code):
+
+  ```bash
+  mkdir -p ~/.claude/skills/s-vhs-recording && curl -fsSL https://dimk90.github.io/s-vhs/skill -o ~/.claude/skills/s-vhs-recording/SKILL.md
+  ```
+
 - For debugging a recording script, see [DEBUG.md](doc/DEBUG.md).
 
 - For the architecture behind `tmux + asciinema + output renderers` and how
