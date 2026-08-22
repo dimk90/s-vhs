@@ -37,7 +37,8 @@
           stays out (see COMMANDS.md).
     - [x] `SetWindowBar <on|off>` - `asg --window`; VHS parity for SVG only.
     - [x] `SetCursor <on|off>` - `asg --no-cursor`.
-    - [ ] Decide if `WaitLine` needed.
+    - [x] `WaitLine <pattern> [timeout]` - match only the cursor's current row;
+    - [ ] Discuss `SetOptimize`: benefit and way to implement.
 - [ ] Update existing examples and README if needed.
 - [ ] Review the "SVG usage issues" draft ([SVG.md](SVG.md)) - linked from the
       README's *Animated SVG Output* section:

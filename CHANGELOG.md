@@ -22,6 +22,7 @@
 * Add `SetPadding`, `SetPaddingX` and `SetPaddingY`: pad the terminal in SVG output.
 * Add `SetWindowBar`: draw macOS-style window decorations above the terminal in SVG output.
 * Add `SetCursor`: hide the terminal cursor in SVG output.
+* Add `WaitLine`: wait for a pattern on the cursor's current row.
 
 ### Changed
 * SVG output now caps idle pauses at 5 seconds like GIF output.

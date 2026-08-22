@@ -1443,16 +1443,27 @@ Wait() {
     #
     local pattern="$1"
     local timeout="${2:-15}"
-    local deadline=$((SECONDS + timeout))
 
-    until tmux -L "$_SVHS_TMUX_SOCKET" capture-pane \
-        -p -t "$_SVHS_SESSION" | grep -q "$pattern"; do
-        if ((SECONDS >= deadline)); then
-            printf 'timeout waiting for: %s\n' "$pattern" >&2
-            return 1
-        fi
-        sleep "$_SVHS_POLL_INTERVAL"
-    done
+    _svhs_wait_for_pattern 'Wait' 'screen' "$pattern" "$timeout"
+}
+
+
+WaitLine() {
+    #
+    # Poll the cursor's current row until a pattern appears, without matching
+    # an earlier occurrence elsewhere in the visible pane.
+    #
+    # Parameters:
+    #   $1 - pattern - grep pattern to wait for.
+    #   $2 - timeout - (optional) - seconds before giving up (default: 15).
+    #
+    # Example:
+    #   WaitLine '^Username:$' 30
+    #
+    local pattern="$1"
+    local timeout="${2:-15}"
+
+    _svhs_wait_for_pattern 'WaitLine' 'line' "$pattern" "$timeout"
 }
 
 
@@ -2168,6 +2179,44 @@ _svhs_tty_reads_input() {
 
     [[ $modes == *' -icanon '* && $modes == *' -echo '* ]] || return 1
     return 0
+}
+
+
+_svhs_wait_for_pattern() {
+    #
+    # Poll either the whole visible pane or its cursor row for a grep pattern.
+    #
+    # Parameters:
+    #   $1 - caller - public command name used in the timeout error.
+    #   $2 - scope - 'screen' or 'line'.
+    #   $3 - pattern - grep pattern to wait for.
+    #   $4 - timeout - seconds before giving up.
+    #
+    # Example:
+    #   _svhs_wait_for_pattern 'WaitLine' 'line' '^Username:$' 30
+    #
+    local caller="$1"
+    local scope="$2"
+    local pattern="$3"
+    local timeout="$4"
+    local deadline=$((SECONDS + timeout))
+    local capture_args=()
+
+    # The current row can sit above blank rows at the pane's bottom, so line
+    # scope follows the cursor instead of piping the full capture through tail
+    if [[ $scope == 'line' ]]; then
+        capture_args=(-S '#{cursor_y}' -E '#{cursor_y}')
+    fi
+
+    until tmux -L "$_SVHS_TMUX_SOCKET" capture-pane \
+        -p ${capture_args[@]+"${capture_args[@]}"} \
+        -t "$_SVHS_SESSION" | grep -q "$pattern"; do
+        if ((SECONDS >= deadline)); then
+            printf '%s: timeout waiting for: %s\n' "$caller" "$pattern" >&2
+            return 1
+        fi
+        sleep "$_SVHS_POLL_INTERVAL"
+    done
 }
 
 

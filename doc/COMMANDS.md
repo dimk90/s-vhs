@@ -10,71 +10,71 @@ The public configuration API is function-only: source `s-vhs.sh`, call all
 `Set*` functions, then start the session. Settings shown in the **Today** column
 are implemented now; the remaining command names still describe the target API.
 
-| VHS                                  | s-vhs (planned)                 | Today                       | Status      |
-| ------------------------------------ | ------------------------------- | --------------------------- | ----------- |
-| `Output out.gif`                     | `SetOutput out.gif`             | `SetOutput out.gif`         | ✅          |
-| `Output out.txt` / `.ascii`          | `SetOutput out.txt`             | `SetOutput out.txt`         | ✅          |
-| `Require prog`                       | `Require`                       | `Require <cmd>...`          | ✅          |
-| `Type "text"`                        | `Type <text> [<delay>]`         | `Type`                      | ✅          |
-| `Ctrl+R`, `Alt+X`, `Ctrl+Shift+P`    | `Key <key> [<count>] [<delay>]` | `Key C-r`, `Key M-x`        | ✅          |
-| `Enter`, `Tab`, `Up`, … (named keys) | `Enter`, `Tab`, `Up`, …         | `Enter`, `Backspace`        | ✅          |
-| `Enter 2`, `Backspace 18` (repeat)   | `Enter [<count>] [<time>]`, ... | `Backspace 18 0.05`         | ✅          |
-| `ScrollUp` / `ScrollDown`            | `ScrollUp` / `ScrollDown`       | —                           | 📋         |
-| `Sleep 2`                            | `Sleep`                         | `Sleep 2`                   | ✅          |
-| `Wait /regex/`                       | `Wait`                          | `Wait`                      | 🟡         |
-| `Wait+Line /regex/`                  | `Wait` + scope argument         | —                           | 📋 Useful? |
-| `Hide`                               | `Hide`                          | `Hide`                      | ✅          |
-| `Show`                               | `Show`                          | `Show`                      | ✅          |
-| `Screenshot out.png`                 | `Screenshot`                    | —                           | 📋         |
-| `Copy` / `Paste`                     | `Copy <text>` / `Paste`         | `Copy` / `Paste`            | ✅          |
-| `Env KEY "VAL"`                      | `Env`                           | `Env KEY VAL`               | ✅          |
-| `Source other.tape`                  | —                               | `source other.sh`           | ✅          |
-|                                      |                                 |                             |             |
-| `Set Shell fish`                     | `SetShell`                      | `SetShell` (`bash`)         | ✅          |
-| `Set FontSize 40`                    | `SetFontSize`                   | `SetFontSize` (`28`)        | ✅          |
-| `Set FontFamily "…"`                 | `SetFontFamily`                 | `SetFontFamily` (chain)     | ✅          |
-| `Set Width 1200`                     | `SetCols`                       | `SetCols` (`100`)           | ✅          |
-| `Set Height 600`                     | `SetRows`                       | `SetRows` (`40`)            | ✅          |
-| `Set LineHeight 1.8`                 | `SetLineHeight`                 | `SetLineHeight` (`1.2`)     | ✅          |
-| `Set TypingSpeed 0.1`                | `SetTypingSpeed`                | `SetTypingSpeed` (`0.07`)   | ✅          |
-| `Set Theme "…"`                      | `SetTheme`                      | `SetTheme` (`dracula`)      | 🟡         |
-| `Set Padding 20`                     | `SetPadding` (SVG only)         | `SetPadding` (`0`)          | ✅          |
-| `Set Framerate 60`                   | `SetFramerate`                  | `SetFramerate` (`30`)       | ✅          |
-| `Set PlaybackSpeed 2`                | `SetPlaybackSpeed`              | `SetPlaybackSpeed` (`1`)    | ✅          |
-| `Set LoopOffset 5`                   | `SetLoopOffset`                 | —                           | 📋         |
-| `Set LetterSpacing 20`               | —                               | —                           | 🚫         |
-| `Set Margin` / `MarginFill`          | —                               | —                           | 🚫         |
-| `Set WindowBar`                      | `SetWindowBar` (SVG only)       | `SetWindowBar` (`off`)      | ✅          |
-| `Set BorderRadius`                   | —                               | —                           | 🚫         |
-| `Set CursorBlink`                    | —                               | —                           | 🚫         |
-|                                      |                                 |                             |             |
-| —                                    | `SetKeyDelay`                   | `SetKeyDelay` (`0.0`)       | ✅          |
-| —                                    | `SetSession`                    | `SetSession` (`s-vhs-$$`)   | ✅          |
-| —                                    | `SetPrompt`                     | `SetPrompt` (`arrow`)       | ✅          |
-| —                                    | `SetIdleTimeLimit`              | `SetIdleTimeLimit` (`5`)    | ✅          |
-| —                                    | `SetLastFrameDuration`          | `SetLastFrameDuration`      | ✅          |
-| —                                    | `SetLoop`                       | `SetLoop` (`on`)            | ✅          |
-| —                                    | `SetEmojiFontFamily`            | `SetEmojiFontFamily`        | ✅          |
-| —                                    | `SetFontFamilyExact`            | `SetFontFamilyExact`        | ✅          |
-| —                                    | `SetFontDir`                    | `SetFontDir` (repeats)      | ✅          |
-| —                                    | `SetFontAntialiasing`           | `SetFontAntialiasing` (`6`) | ✅          |
-| —                                    | `SetFontHinting`                | `SetFontHinting` (`on`)     | ✅          |
-| —                                    | `SetEngine`                     | `SetEngine` (`swash`)       | ✅          |
-| —                                    | `SetBoldIsBright`               | `SetBoldIsBright` (`off`)   | ✅          |
-| —                                    | `SetCursor` (SVG only)          | `SetCursor` (`on`)          | ✅          |
-| —                                    | `SetPaddingX` (SVG only)        | `SetPaddingX`               | ✅          |
-| —                                    | `SetPaddingY` (SVG only)        | `SetPaddingY`               | ✅          |
-| —                                    | `SetTitle`                      | `SetTitle`                  | ✅          |
-| —                                    | `SetQuiet`                      | `SetQuiet` (`off`)          | ✅          |
-| —                                    | `SetOptimize`                   | —                           | 📋         |
-| —                                    | `SetOutput out.cast`            | `SetOutput out.cast`        | ✅          |
-|                                      |                                 |                             |             |
-| —                                    | `Start`                         | `Start`                     | ✅          |
-| —                                    | `Render`                        | `Render`                    | ✅          |
-| —                                    | `Run`                           | `Run`                       | ✅          |
-| —                                    | `RunOffRecord`                  | `RunOffRecord`              | ✅          |
-| `vhs --version` (CLI)                | `svhs_version`                  | `svhs_version`              | ✅          |
-| `vhs new demo.tape` (CLI)            | `s-vhs.sh new`                  | `s-vhs.sh new`              | ✅          |
+| VHS                                  | s-vhs (planned)                 | Today                       | Status |
+| ------------------------------------ | ------------------------------- | --------------------------- | ------ |
+| `Output out.gif`                     | `SetOutput out.gif`             | `SetOutput out.gif`         | ✅     |
+| `Output out.txt` / `.ascii`          | `SetOutput out.txt`             | `SetOutput out.txt`         | ✅     |
+| `Require prog`                       | `Require`                       | `Require <cmd>...`          | ✅     |
+| `Type "text"`                        | `Type <text> [<delay>]`         | `Type`                      | ✅     |
+| `Ctrl+R`, `Alt+X`, `Ctrl+Shift+P`    | `Key <key> [<count>] [<delay>]` | `Key C-r`, `Key M-x`        | ✅     |
+| `Enter`, `Tab`, `Up`, … (named keys) | `Enter`, `Tab`, `Up`, …         | `Enter`, `Backspace`        | ✅     |
+| `Enter 2`, `Backspace 18` (repeat)   | `Enter [<count>] [<time>]`, ... | `Backspace 18 0.05`         | ✅     |
+| `ScrollUp` / `ScrollDown`            | `ScrollUp` / `ScrollDown`       | —                           | 📋    |
+| `Sleep 2`                            | `Sleep`                         | `Sleep 2`                   | ✅     |
+| `Wait /regex/`                       | `Wait`                          | `Wait`                      | 🟡    |
+| `Wait+Line /regex/`                  | `WaitLine <pattern> [timeout]`  | `WaitLine`                  | ✅     |
+| `Hide`                               | `Hide`                          | `Hide`                      | ✅     |
+| `Show`                               | `Show`                          | `Show`                      | ✅     |
+| `Screenshot out.png`                 | `Screenshot`                    | —                           | 📋    |
+| `Copy` / `Paste`                     | `Copy <text>` / `Paste`         | `Copy` / `Paste`            | ✅     |
+| `Env KEY "VAL"`                      | `Env`                           | `Env KEY VAL`               | ✅     |
+| `Source other.tape`                  | —                               | `source other.sh`           | ✅     |
+|                                      |                                 |                             |        |
+| `Set Shell fish`                     | `SetShell`                      | `SetShell` (`bash`)         | ✅     |
+| `Set FontSize 40`                    | `SetFontSize`                   | `SetFontSize` (`28`)        | ✅     |
+| `Set FontFamily "…"`                 | `SetFontFamily`                 | `SetFontFamily` (chain)     | ✅     |
+| `Set Width 1200`                     | `SetCols`                       | `SetCols` (`100`)           | ✅     |
+| `Set Height 600`                     | `SetRows`                       | `SetRows` (`40`)            | ✅     |
+| `Set LineHeight 1.8`                 | `SetLineHeight`                 | `SetLineHeight` (`1.2`)     | ✅     |
+| `Set TypingSpeed 0.1`                | `SetTypingSpeed`                | `SetTypingSpeed` (`0.07`)   | ✅     |
+| `Set Theme "…"`                      | `SetTheme`                      | `SetTheme` (`dracula`)      | 🟡    |
+| `Set Padding 20`                     | `SetPadding` (SVG only)         | `SetPadding` (`0`)          | ✅     |
+| `Set Framerate 60`                   | `SetFramerate`                  | `SetFramerate` (`30`)       | ✅     |
+| `Set PlaybackSpeed 2`                | `SetPlaybackSpeed`              | `SetPlaybackSpeed` (`1`)    | ✅     |
+| `Set LoopOffset 5`                   | `SetLoopOffset`                 | —                           | 📋    |
+| `Set LetterSpacing 20`               | —                               | —                           | 🚫    |
+| `Set Margin` / `MarginFill`          | —                               | —                           | 🚫    |
+| `Set WindowBar`                      | `SetWindowBar` (SVG only)       | `SetWindowBar` (`off`)      | ✅     |
+| `Set BorderRadius`                   | —                               | —                           | 🚫    |
+| `Set CursorBlink`                    | —                               | —                           | 🚫    |
+|                                      |                                 |                             |        |
+| —                                    | `SetKeyDelay`                   | `SetKeyDelay` (`0.0`)       | ✅     |
+| —                                    | `SetSession`                    | `SetSession` (`s-vhs-$$`)   | ✅     |
+| —                                    | `SetPrompt`                     | `SetPrompt` (`arrow`)       | ✅     |
+| —                                    | `SetIdleTimeLimit`              | `SetIdleTimeLimit` (`5`)    | ✅     |
+| —                                    | `SetLastFrameDuration`          | `SetLastFrameDuration`      | ✅     |
+| —                                    | `SetLoop`                       | `SetLoop` (`on`)            | ✅     |
+| —                                    | `SetEmojiFontFamily`            | `SetEmojiFontFamily`        | ✅     |
+| —                                    | `SetFontFamilyExact`            | `SetFontFamilyExact`        | ✅     |
+| —                                    | `SetFontDir`                    | `SetFontDir` (repeats)      | ✅     |
+| —                                    | `SetFontAntialiasing`           | `SetFontAntialiasing` (`6`) | ✅     |
+| —                                    | `SetFontHinting`                | `SetFontHinting` (`on`)     | ✅     |
+| —                                    | `SetEngine`                     | `SetEngine` (`swash`)       | ✅     |
+| —                                    | `SetBoldIsBright`               | `SetBoldIsBright` (`off`)   | ✅     |
+| —                                    | `SetCursor` (SVG only)          | `SetCursor` (`on`)          | ✅     |
+| —                                    | `SetPaddingX` (SVG only)        | `SetPaddingX`               | ✅     |
+| —                                    | `SetPaddingY` (SVG only)        | `SetPaddingY`               | ✅     |
+| —                                    | `SetTitle`                      | `SetTitle`                  | ✅     |
+| —                                    | `SetQuiet`                      | `SetQuiet` (`off`)          | ✅     |
+| —                                    | `SetOptimize`                   | —                           | 📋    |
+| —                                    | `SetOutput out.cast`            | `SetOutput out.cast`        | ✅     |
+|                                      |                                 |                             |        |
+| —                                    | `Start`                         | `Start`                     | ✅     |
+| —                                    | `Render`                        | `Render`                    | ✅     |
+| —                                    | `Run`                           | `Run`                       | ✅     |
+| —                                    | `RunOffRecord`                  | `RunOffRecord`              | ✅     |
+| `vhs --version` (CLI)                | `svhs_version`                  | `svhs_version`              | ✅     |
+| `vhs new demo.tape` (CLI)            | `s-vhs.sh new`                  | `s-vhs.sh new`              | ✅     |
 
 [vhs-ref]: https://github.com/charmbracelet/vhs#vhs-command-reference
 
@@ -127,29 +127,6 @@ draws a macOS-style bar, so `SetWindowBar` decorates SVG output only.
 
 Missing. Would need tmux copy-mode plus `send-keys -X scroll-up`, and the
 scrollback is captured only if the alternate screen is not in use.
-
-## Wait 🟡
-
-`Wait` polls `tmux capture-pane` until a pattern appears, failing after a
-timeout instead of guessing sleeps.
-
-```shell
-Wait 'Context Usage'        # default timeout: 15s
-Wait 'Session compacted' 30
-```
-
-Differences from VHS:
-- The pattern is a **grep** pattern, not `/regex/`.
-- Only VHS's `Wait+Screen` scope: the whole visible pane is matched. `Wait+Line`
-  (last line only) and the bare `Wait` default of `/>$/` are missing 📋 — the
-  scope is an optional argument piping `capture-pane -p` through `tail -n1`.
-- VHS's `@time` sets the poll interval; here it is fixed at `0.2s` and the
-  argument is the timeout.
-
-> Is `Wait+Line` useful ?
-> TODO: separate command?
-
-
 
 ## Screenshot 📋
 
