@@ -1143,9 +1143,9 @@ Start() {
     #
     # Start a fresh detached tmux session with the configured geometry, shell
     # and prompt on the dedicated s-vhs server, isolated from personal tmux
-    # config and without a status bar, and report how to attach to it. It
-    # returns once the shell's line editor starts reading, so the first input
-    # cannot race its startup.
+    # config and without a status bar, and report the S-VHS version and how
+    # to attach to it. It returns once the shell's line editor starts reading,
+    # so the first input cannot race its startup.
     #
     # Parameters:
     #   $1 - wait_mode - (optional) - 'no-wait' returns as soon as the shell
@@ -1221,6 +1221,7 @@ Start() {
     # The session runs on its own socket with the status bar off and a name
     # carrying a PID, so watching a recording live takes the printed command
     if [[ $_SVHS_QUIET == 0 ]]; then
+        printf '::: S-VHS v%s\n' "$(svhs_version)"
         printf '::: Started session %s, attach with: tmux -L %s attach -t %s\n' \
             "$_SVHS_SESSION" "$_SVHS_TMUX_SOCKET" "$_SVHS_SESSION"
     fi

@@ -26,8 +26,9 @@
 * Add `SetOptimize`: shrink GIF output with a lossless `gifsicle` pass.
 
 ### Changed
-* Show non-fatal s-vhs warnings in yellow.
 * SVG output now caps idle pauses at 5 seconds like GIF output.
+* Show non-fatal s-vhs warnings in yellow.
+* Print the S-VHS version when a recording starts.
 
 ### Fixed
 * Initialize the default playback speed so rendering works without calling `SetPlaybackSpeed`.

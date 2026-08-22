@@ -49,7 +49,7 @@
       - [x] Add extra dependency `gifsicle` - optional: a missing one is
             reported in `Render`, never fails the recording.
 - [x] Use colorful (yellow) for warnings.
-- [ ] Print `S-VHS` version at beginning of a recording.
+- [x] Print `S-VHS` version at beginning of a recording.
 - [ ] Update existing examples and README if needed.
 - [ ] Review the "SVG usage issues" draft ([SVG.md](SVG.md)) - refine structure and make readable.
 - [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:

@@ -333,9 +333,10 @@ animated by CSS, sharp at any zoom:
 ## S-VHS in the Wild
 
 
-📌 [pi-context-view](https://github.com/dimk90/pi-context-view): demo GIFs,
+📌 [pi-context-view](https://github.com/dimk90/pi-context-view) - demo GIFs,
 such as [context-usage.rec.sh](https://github.com/dimk90/pi-context-view/blob/develop/scripts/recordings/context-usage.rec.sh).  
-📌 [S-VHS logo recording](examples/logo.rec.sh).
+
+📌 [S-VHS logo](examples/logo.rec.sh) recording.
 
 
 ## Output Formats
