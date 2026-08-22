@@ -101,9 +101,6 @@ invokes neither, see [Output Formats](#output-formats).
   > `agg` is not on crates.io (the `agg` crate there is an unrelated project),
   > hence the `--git` install.
 
-  > [!TIP]
-  > GIF size can be reduced without quality loss, see [`GIF Size Optimization`](#gif-size-optimization).
-
 - For animated SVG output, install
   [`asg`](https://github.com/kingsword09/asg#quick-start):
   ```bash
@@ -115,6 +112,9 @@ invokes neither, see [Output Formats](#output-formats).
 > Cargo installs both renderers into `~/.cargo/bin` - make sure it is on your
 >  `PATH` (rustup's installer arranges that; a distro-packaged `cargo` does not).
 
+> [!TIP]
+> GIF size can be reduced by [`gifsicle`](https://github.com/kohler/gifsicle)
+> without quality loss, see [`GIF Size Optimization`](#gif-size-optimization).
 
 ## Examples
 
@@ -320,6 +320,7 @@ Render
 
 ```bash
 SetOutput 'multi-output.cast'
+SetOutput 'multi-output.txt'
 SetOutput 'multi-output.gif'
 SetOutput 'multi-output.svg' # <---
 ```
@@ -355,12 +356,14 @@ The extension of the path passed to `SetOutput` picks the format:
 
 ```bash
 SetOutput 'multi-output.cast'
+SetOutput 'multi-output.txt'
 SetOutput 'multi-output.gif'
 SetOutput 'multi-output.svg'
 ```
 
 Keeping the `.cast` next to the rendered files leaves the recording replayable
-with `asciinema play` and re-renderable at any size later — see
+with `asciinema play` and re-renderable at any size later, while the `.txt` log
+makes the recorded output greppable — see
 [`examples/multi-output.rec.sh`](examples/multi-output.rec.sh).
 
 

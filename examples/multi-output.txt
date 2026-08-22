@@ -1,0 +1,3 @@
+❯ echo "one recording, four outputs"
+one recording, four outputs
+❯

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 #
-# SetOutput is repeatable: one recording, several outputs. The cast is kept at
-# the requested path and stays replayable with `asciinema play`, so the GIF and
-# the SVG can be re-rendered from it at any size.
+# SetOutput is repeatable: one recording, every supported output. The cast is
+# kept at the requested path and stays replayable with `asciinema play`, so the
+# GIF and the SVG can be re-rendered from it at any size, and the plain-text log
+# is greppable.
 #
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -10,6 +11,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 source "$SCRIPT_DIR/../s-vhs.sh"
 
 SetOutput "$SCRIPT_DIR/multi-output.cast"
+SetOutput "$SCRIPT_DIR/multi-output.txt"
 SetOutput "$SCRIPT_DIR/multi-output.gif"
 SetOutput "$SCRIPT_DIR/multi-output.svg"
 
@@ -28,7 +30,7 @@ Start
 
 Show
 
-Type 'echo "one recording, three outputs"'
+Type 'echo "one recording, four outputs"'
 Enter
 Sleep 4
 

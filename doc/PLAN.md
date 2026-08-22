@@ -50,12 +50,12 @@
             reported in `Render`, never fails the recording.
 - [x] Use colorful (yellow) for warnings.
 - [x] Print `S-VHS` version at beginning of a recording.
-- [ ] Update existing examples and README if needed.
-- [ ] Review the "SVG usage issues" draft ([SVG.md](SVG.md)) - refine structure and make readable.
+- [x] Update existing examples and README if needed.
 - [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:
   - https://github.com/charmbracelet/vhs/tree/main/examples/settings
   - https://github.com/charmbracelet/vhs/tree/main/examples/commands
 - [ ] Update template (`s-vhs new`) with common settings (if any new).
+- [ ] Review the "SVG usage issues" draft ([SVG.md](SVG.md)) - refine structure and make readable.
 - [ ] Rename `COMMANDS` to `DEV.NOTES`
 - [ ] Update skill for recordings?
   - [ ] Review current skill content.
