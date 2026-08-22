@@ -27,11 +27,11 @@
 
 ### Changed
 * SVG output now caps idle pauses at 5 seconds like GIF output.
-* Show non-fatal s-vhs warnings in yellow.
+* Show non-fatal S-VHS warnings in yellow.
 * Print the S-VHS version when a recording starts.
 
 ### Fixed
-* Initialize the default playback speed so rendering works without calling `SetPlaybackSpeed`.
+* Initialize the default playback speed so rendering works without `SetPlaybackSpeed`.
 
 
 ## `[v0.3.0]` - 16.08.2026

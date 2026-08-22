@@ -2,7 +2,7 @@
 
 ## v0.4.0
 
-- [x] Make list of planned functions (COMMANDS.md) which are easy to implement - low hanging fruit:
+- [x] Make list of planned functions (DEV-NOTES.md) which are easy to implement - low hanging fruit:
   - [x] `SetPlaybackSpeed <x>` - `agg --speed`, `asg --speed` (default `1`).
   - [x] `SetFramerate <fps>` - `agg --fps-cap`, `asg --fps` (default `30`).
   - [x] `SetIdleTimeLimit <secs>` - `--idle-time-limit` on both, applied in
@@ -34,7 +34,7 @@
           the emoji tail of the SVG font chain too.
     - [x] `SetPadding <px>` - `asg --padding`, with `SetPaddingX` /
           `SetPaddingY` axis overrides; the GIF side needs a second encode and
-          stays out (see COMMANDS.md).
+          stays out (see DEV-NOTES.md).
     - [x] `SetWindowBar <on|off>` - `asg --window`; VHS parity for SVG only.
     - [x] `SetCursor <on|off>` - `asg --no-cursor`.
     - [x] `WaitLine <pattern> [timeout]` - match only the cursor's current row;
@@ -66,7 +66,7 @@
     design (`border-radius`, `cursor-blink`, `letter-spacing`, `margin`).
 - [x] Update template (`s-vhs new`) with common settings (if any new).
 - [x] Review the "SVG usage issues" draft ([SVG.md](SVG.md)) - refine structure and make readable.
-- [ ] Rename `COMMANDS` to `DEV.NOTES`
+- [x] Rename `COMMANDS` to `DEV.NOTES`
 - [ ] Update skill for recordings?
   - [ ] Review current skill content.
   - [ ] Add Skill section to README: "Skill contain best practices with help with writing and refactoring S-VHS scripts".
@@ -81,7 +81,7 @@
 - [ ] Update `pi-context-view` recording. Especially `Require`?
 
 - [ ] Write advanced example with emulating mouse selection.
-  - [ ] Add new commands to [COMMANDS](doc/COMMANDS.md) if possible: e.g `Highlight`.
+  - [ ] Add new commands to [REFERENCE](REFERENCE.md) if possible: e.g `Highlight`.
   - [ ] Add feature + issue ref (https://github.com/charmbracelet/vhs/issues/66) to README;
   - [ ] Add demo to README.
 - [ ] Fix default font problem: `Error: no faces matching font family options`.
@@ -111,6 +111,5 @@
   - [ ] catppuccin themes.
   - [ ] Add example with custom theme (hex colors).
 - [ ] Add a `git` theme (bash/zsh command substitution, fish `__fish_git_prompt`)?
-- [ ] Optional GIF optimization step (see COMMANDS.md).
 - [ ] Print estimated resolution in `Start` ('e.g. ::: N Rows x M Cols x F FontSize -> Resolution W x H') ?
 - [ ] CLI for recording scripts to override some of the settings: e.g. `--set-optimize off`, `--set-output ...`.

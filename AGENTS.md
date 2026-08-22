@@ -17,7 +17,7 @@ and used only to render the other outputs (GIF, SVG).
 | `README.md`          | User-facing docs.                                            |
 | `CHANGELOG.md`       | One line per significant change, newest version on top.      |
 | `doc/REFERENCE.md`   | Commands today + planned settings. Keep in sync.             |
-| `doc/COMMANDS.md`    | Temporary dev notes: VHS parity and target API. Not public.  |
+| `doc/DEV-NOTES.md`   | Temporary dev notes: VHS parity and target API. Not public.  |
 | `doc/PLAN.md`        | Roadmap / checklist. Tick boxes when a task lands.           |
 | `doc/INTRO.md`       | How the pipeline works, for users.                           |
 | `doc/SVG.md`         | Animated SVG pitfalls and workarounds, for users.            |
@@ -95,7 +95,7 @@ writing or running a `*.rec.sh` script. Project-specific points:
   prose; a rule about a single command goes into that command's row even if the
   cell grows, and prose outside the tables is justified only for a rule global
   to a section. Rationale and design notes belong in `README.md` or here.
-- **`doc/COMMANDS.md` is temporary.** Neither public documentation nor linked
+- **`doc/DEV-NOTES.md` is temporary.** Neither public documentation nor linked
   from `README.md`, and deleted once the command surface is complete; anything
   that must outlive it belongs in `README.md`, `doc/REFERENCE.md` or here.
 - **Changelog is part of the change.** Every significant fix, change or
