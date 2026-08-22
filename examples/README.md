@@ -20,5 +20,6 @@
 | `hide-show`      | Off-record `Run`, then `Hide` and `Show` appending another segment          |
 | `run-off-record` | `RunOffRecord` - one hidden command without a `Hide`/`Show` pair            |
 | `multi-output`   | Three `SetOutput` calls - a replayable cast next to the GIF and SVG         |
+| `optimize`       | `SetOptimize` - a scrolling build log, against its unoptimized twin         |
 | `remote-import`  | A pinned `curl` + `source` import with no local copy of `s-vhs.sh`          |
 | `shell-power`    | Loops, variables and functions in the recording script itself               |
