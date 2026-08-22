@@ -45,10 +45,9 @@
           render time.
       - [x] Add example and include to README: side-by-side table no-optimization | optimization.
       - [x] Include table to demonstrate optimization efficiency: e.g. big gif, small git, lossy/lossless.
-      - [ ] Not only `SetOptimize` -> add other optimization options.
+      - [x] Not only `SetOptimize` -> add other optimization options.
       - [x] Add extra dependency `gifsicle` - optional: a missing one is
             reported in `Render`, never fails the recording.
-      - [-] Add `SetOptimize` to recording examples.
 - [ ] Use colorful (yellow) for warnings.
 - [ ] Print `S-VHS` version at beginning of a recording.
 - [ ] Update existing examples and README if needed.
@@ -61,7 +60,7 @@
 - [ ] Update skill for recordings?
   - [ ] Review current skill content.
   - [ ] Add Skill section to README: "Skill contain best practices with help with writing and refactoring S-VHS scripts".
-  - [ ] Use `SetOptimize on` by default?
+  - [ ] Use `SetOptimize on` if `gifsicle` is available?
   - [ ] Add `Require` as a good practice?
   - [ ] Deploy skill to npm? Or simple curl command?
 - [ ] Test on macOS + installation instruction.

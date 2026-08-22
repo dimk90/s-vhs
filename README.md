@@ -21,10 +21,8 @@ A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superi
   ([#644](https://github.com/charmbracelet/vhs/discussions/644),
   [#109](https://github.com/charmbracelet/vhs/issues/109),
   [#105](https://github.com/charmbracelet/vhs/issues/105)).
-- **No browser** - no headless Chromium downloaded behind your back, just
-  `tmux` + [asciinema](https://github.com/asciinema/asciinema) with
-  [agg](https://github.com/asciinema/agg) for GIF and
-  [asg](https://github.com/kingsword09/asg) for SVG
+- no Chromium downloaded behind your back, just
+  `tmux` + [asciinema](https://github.com/asciinema/asciinema) + [GIF/SVG](#output-formats) renderer
   ([#528](https://github.com/charmbracelet/vhs/issues/528),
   [#438](https://github.com/charmbracelet/vhs/issues/438),
   [#150](https://github.com/charmbracelet/vhs/issues/150),
@@ -437,13 +435,29 @@ How much it saves depends on the recording - long, scrolling ones gain most:
 > so it saves 1-2 % at best and loses to the lossless pass on short recordings -
 > which is why `SetOptimize` only ever runs the lossless one.
 
-### Installation
+### Dependency
 
 ```bash
 sudo pacman -S gifsicle
 ```
 > Without it, `Render` leaves GIFs unoptimized and reports the skipped pass.
 
+### Other Ways
+
+Reduce what the renderer has to encode before optimizing it:
+
+| Approach              | Setting                                                                                    | Trade-off                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Render fewer pixels   | Choose the smallest useful `SetCols`, `SetRows` and `SetFontSize`                          | Less terminal space or smaller text; a large GIF scaled down in HTML is sharper but costs more bytes |
+| Render fewer frames   | Lower `SetFramerate`, for example from `30` to `15` or `10`                                | Fast typing and motion look less smooth                                                              |
+| Shorten inactive gaps | Lower `SetIdleTimeLimit`, for example from `5` to `1`                                      | Long pauses play back faster; the retained `.cast` keeps its original timing                         |
+| Use fewer edge shades | Use `SetFontAntialiasing 3` or `'off'` instead of the default `6`                          | Text edges become less smooth; this affects GIF output only                                          |
+| Record less activity  | Put setup and noisy intermediate commands between `Hide` and `Show`, or use `RunOffRecord` | Hidden activity does not appear in the recording                                                     |
+
+> [!TIP]
+> These reductions can save more than a post-processing pass. Keep the highest
+> values the recording actually needs, then use `SetOptimize 'on'` for additional
+> lossless savings.
 
 ## Documentation
 
