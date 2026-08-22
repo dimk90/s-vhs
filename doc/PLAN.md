@@ -64,7 +64,7 @@
     `set-shell-*` (covered by `prompt`), `set-theme` hex palette (backlog),
     `set-loop-offset` (not implemented), and the settings VHS-only by
     design (`border-radius`, `cursor-blink`, `letter-spacing`, `margin`).
-- [ ] Update template (`s-vhs new`) with common settings (if any new).
+- [x] Update template (`s-vhs new`) with common settings (if any new).
 - [ ] Review the "SVG usage issues" draft ([SVG.md](SVG.md)) - refine structure and make readable.
 - [ ] Rename `COMMANDS` to `DEV.NOTES`
 - [ ] Update skill for recordings?

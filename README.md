@@ -422,12 +422,20 @@ SetOutput 'demo.gif'
 
 # SetCols 100
 # SetRows 40
+# SetShell 'bash'
+# SetPrompt 'arrow'
+
 # SetFontSize 28
 # SetFontFamily 'JetBrains Mono'
 # SetTheme 'dracula'
+
 # SetTypingSpeed 0.07
-# SetShell 'bash'
-# SetPrompt 'arrow'
+# SetPlaybackSpeed 1
+# SetFramerate 30
+# SetLoop on
+# SetOptimize off
+
+# Require 'git' 'jq'
 
 Start
 Show
