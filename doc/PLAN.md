@@ -38,17 +38,20 @@
     - [x] `SetWindowBar <on|off>` - `asg --window`; VHS parity for SVG only.
     - [x] `SetCursor <on|off>` - `asg --no-cursor`.
     - [x] `WaitLine <pattern> [timeout]` - match only the cursor's current row;
+      - [ ] Add example with `WaitLine`;
     - [x] `SetOptimize <on|off>` - `gifsicle --batch -O3` after `agg` (default
           `off`); lossless and 12-25 % smaller, while agg's own recommended
           lossy set adds 1-2 % on <128-color terminal frames. Roughly doubles
           render time.
-      - [ ] Add example and include to README: side-by-side table no-optimization | optimization.
-      - [ ] Include table to demonstrate optimization efficiency: e.g. big gif, small git, lossy/lossless.
+      - [x] Add example and include to README: side-by-side table no-optimization | optimization.
+      - [x] Include table to demonstrate optimization efficiency: e.g. big gif, small git, lossy/lossless.
       - [ ] Not only `SetOptimize` -> add other optimization options.
       - [x] Add extra dependency `gifsicle` - optional: a missing one is
             reported in `Render`, never fails the recording.
       - [ ] Add command to install gifsicle to the warning message.
+      - [ ] Add `SetOptimize` to recording examples.
 - [ ] Use colorful (yellow) for warnings.
+- [ ] Print `S-VHS` version at beginning of a recording.
 - [ ] Update existing examples and README if needed.
 - [ ] Review the "SVG usage issues" draft ([SVG.md](SVG.md)) - refine structure and make readable.
 - [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:
@@ -56,8 +59,13 @@
   - https://github.com/charmbracelet/vhs/tree/main/examples/commands
 - [ ] Update template (`s-vhs new`) with common settings (if any new).
 - [ ] Rename `COMMANDS` to `DEV.NOTES`
-- [ ] Test on macOS + installation instruction.
 - [ ] Update skill for recordings?
+  - [ ] Review current skill content.
+  - [ ] Add Skill section to README: "Skill contain best practices with help with writing and refactoring S-VHS scripts".
+  - [ ] Use `SetOptimize on` by default?
+  - [ ] Add `Require` as a good practice?
+  - [ ] Deploy skill to npm? Or simple curl command?
+- [ ] Test on macOS + installation instruction.
 
 
 ## Backlog
@@ -97,3 +105,4 @@
 - [ ] Add a `git` theme (bash/zsh command substitution, fish `__fish_git_prompt`)?
 - [ ] Optional GIF optimization step (see COMMANDS.md).
 - [ ] Print estimated resolution in `Start` ('e.g. ::: N Rows x M Cols x F FontSize -> Resolution W x H') ?
+- [ ] CLI for recording scripts to override some of the settings: e.g. `--set-optimize off`, `--set-output ...`.

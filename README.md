@@ -104,7 +104,7 @@ invokes neither, see [Output Formats](#output-formats).
   > hence the `--git` install.
 
   > [!TIP]
-  > GIF size can be reduced without quality loss, see [`SetOptimize`](#setoptimize) example.
+  > GIF size can be reduced without quality loss, see [`GIF Size Optimization`](#gif-size-optimization).
 
 - For animated SVG output, install
   [`asg`](https://github.com/kingsword09/asg#quick-start):
@@ -318,17 +318,6 @@ Render
 > Keep the version pinned so the same script always imports the same library.
 
 
-### SetOptimize
-
-> TODO: good description
-
-For `SetOptimize`, install [`gifsicle`](https://github.com/kohler/gifsicle):
-```bash
-sudo pacman -S gifsicle
-```
-> Without it GIFs are simply written unoptimized.
-
-
 ### Animated SVG Output
 
 ```bash
@@ -345,11 +334,14 @@ animated by CSS, sharp at any zoom:
 
 ## S-VHS in the Wild
 
+
 📌 [pi-context-view](https://github.com/dimk90/pi-context-view): demo GIFs,
 such as [context-usage.rec.sh](https://github.com/dimk90/pi-context-view/blob/develop/scripts/recordings/context-usage.rec.sh).  
 📌 [S-VHS logo recording](examples/logo.rec.sh).
 
+
 ## Output Formats
+
 
 The extension of the path passed to `SetOutput` picks the format:
 
@@ -374,6 +366,7 @@ with `asciinema play` and re-renderable at any size later — see
 
 
 ## Recording Template
+
 
 Start a new recording without downloading `s-vhs.sh`:
 
@@ -413,7 +406,47 @@ Sleep 3
 Render
 ```
 
+
+## GIF Size Optimization
+
+
+GIFs come out of the renderer generously encoded. `SetOptimize 'on'` runs the
+rendered file through a lossless [`gifsicle`](https://github.com/kohler/gifsicle)
+pass, so it shrinks without a single pixel changing:
+
+```bash
+SetOutput 'optimize.gif'
+SetOptimize 'on' # <---
+```
+
+| `SetOptimize 'off'` - the default                                            | `SetOptimize 'on'`                                                     |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| <img src="examples/optimize-off.gif" width="330px" alt="Unoptimized render"> | <img src="examples/optimize.gif" width="330px" alt="Optimized render"> |
+| 193,964 bytes                                                                | 164,541 bytes, identical frames                                        |
+
+How much it saves depends on the recording - long, scrolling ones gain most:
+
+| Recording                        | Plain render | `SetOptimize 'on'`  | Lossy pass          |
+| -------------------------------- | ------------ | ------------------- | ------------------- |
+| this example, 30 scrolling lines | 189.4 KiB    | 160.7 KiB (-15.2 %) | 161.1 KiB (-15.0 %) |
+| a short typed one-liner          | 12.4 KiB     | 11.0 KiB (-11 %)    | 11.2 KiB            |
+| a 24 s build log, 984x700 px     | 12.8 MiB     | 9.8 MiB (-23 %)     | 9.6 MiB             |
+
+> The last column is the lossy pass agg's docs suggest
+> (`gifsicle --lossy=80 -k 128 -O2`). Terminal frames use fewer than 128 colors,
+> so it saves 1-2 % at best and loses to the lossless pass on short recordings -
+> which is why `SetOptimize` only ever runs the lossless one.
+
+### Installation
+
+```bash
+sudo pacman -S gifsicle
+```
+> Without it, `Render` leaves GIFs unoptimized and reports the skipped pass.
+
+
 ## Documentation
+
 
 - For the full list of commands and settings, see [REFERENCE.md](doc/REFERENCE.md).
 
@@ -426,6 +459,8 @@ Render
     <img src="doc/images/svhs-pipeline.svg" width="500px" alt="s-vhs pipeline">
   </p>
 
+
 ## License
+
 
 [MIT](LICENSE)
