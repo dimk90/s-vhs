@@ -288,6 +288,37 @@ Enter; Sleep 2
 > `RunOffRecord 'clear' 0.5` is the shorthand for a `Hide` + `Run` + `Show`
 > sandwich, see [`examples/run-off-record.rec.sh`](examples/run-off-record.rec.sh).
 
+### Require & Env
+
+`Require` checks the commands a recording depends on before anything starts,
+and `Env` hands the recorded shell the variables they need - here a git
+identity, so the recording does not depend on the host's git configuration:
+
+```bash
+# Reported now, not as a "command not found" frame in the middle of the GIF
+Require 'git'
+
+Env 'GIT_AUTHOR_NAME' 'Ada Lovelace'
+Env 'GIT_AUTHOR_EMAIL' 'ada@example.com'
+Env 'GIT_COMMITTER_NAME' 'Ada Lovelace'
+Env 'GIT_COMMITTER_EMAIL' 'ada@example.com'
+
+Start
+
+# Off camera: an empty repository in a throwaway directory
+Run 'cd "$(mktemp -d)" && git init -q . && clear' 1
+
+Show
+
+Type 'git commit -q --allow-empty -m "recorded"'
+Enter; Sleep 1
+
+Type 'git log -1 --format="%an <%ae>"'
+Enter; Sleep 2.5
+```
+
+<img src="examples/require-env.gif" width="500px" alt="A commit recorded with the git identity exported by Env">
+
 ### Remote Import
 
 Import an immutable release directly from GitHub via `curl` instead

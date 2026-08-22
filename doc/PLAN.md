@@ -51,9 +51,19 @@
 - [x] Use colorful (yellow) for warnings.
 - [x] Print `S-VHS` version at beginning of a recording.
 - [x] Update existing examples and README if needed.
-- [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:
+- [x] Check if any useful example could be implemented with the current state of `s-vhs.sh`:
   - https://github.com/charmbracelet/vhs/tree/main/examples/settings
   - https://github.com/charmbracelet/vhs/tree/main/examples/commands
+  - [x] `clipboard` - `Copy` / `Paste` (VHS `commands/clipboard.tape`).
+  - [x] `svg-frame` - `SetPadding`, `SetWindowBar`, `SetCursor` (VHS
+        `settings/set-padding.tape`, `settings/set-window-bar.tape`).
+  - [x] `playback` - `SetPlaybackSpeed`, `SetFramerate`,
+        `SetLastFrameDuration`, `SetLoop`.
+  - [x] `require-env` - `Require` and `Env`, with a README section.
+  - Skipped: `tab`/`space`/`alt` (covered by `enter`, `ctrl`),
+    `set-shell-*` (covered by `prompt`), `set-theme` hex palette (backlog),
+    `set-loop-offset` (not implemented), and the settings VHS-only by
+    design (`border-radius`, `cursor-blink`, `letter-spacing`, `margin`).
 - [ ] Update template (`s-vhs new`) with common settings (if any new).
 - [ ] Review the "SVG usage issues" draft ([SVG.md](SVG.md)) - refine structure and make readable.
 - [ ] Rename `COMMANDS` to `DEV.NOTES`
