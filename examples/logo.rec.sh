@@ -19,6 +19,8 @@ SetFontFamily 'Iosevka Term'
 SetLineHeight 1.0
 SetTypingSpeed 0
 
+SetOptimize 'on'
+
 # Empty prompt: nothing but the logo may reach the screen
 SetPrompt ''
 
