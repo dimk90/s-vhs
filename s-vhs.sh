@@ -44,6 +44,10 @@ _SVHS_OUTPUTS=()
 _SVHS_TITLE=''
 _SVHS_QUIET=0
 
+# Warning color paired with its reset so styling cannot leak into later output
+_SVHS_WARNING_COLOR=$'\033[33m'
+_SVHS_COLOR_RESET=$'\033[0m'
+
 # Terminal size in cells, not pixels
 _SVHS_COLS=100
 _SVHS_ROWS=40
@@ -967,9 +971,7 @@ SetShell() {
     esac
 
     if ! command -v "$shell" > /dev/null 2>&1; then
-        if [[ $_SVHS_QUIET == 0 ]]; then
-            printf '::: SetShell: %s is not installed, falling back to bash\n' "$shell"
-        fi
+        _svhs_warn "SetShell: $shell is not installed, falling back to bash"
         shell='bash'
     fi
 
@@ -2446,6 +2448,24 @@ _svhs_svg_font_family() {
 }
 
 
+_svhs_warn() {
+    #
+    # Print a non-blocking warning in yellow unless quiet mode is enabled.
+    #
+    # Parameters:
+    #   $1 - message - warning text without the informational prefix.
+    #
+    # Example:
+    #   _svhs_warn 'SetShell: fish is not installed, falling back to bash'
+    #
+    local message="$1"
+
+    [[ $_SVHS_QUIET == 1 ]] && return 0
+
+    printf '%s::: %s%s\n' "$_SVHS_WARNING_COLOR" "$message" "$_SVHS_COLOR_RESET"
+}
+
+
 _svhs_report_skipped() {
     #
     # Report a setting the renderer of one output has no equivalent for. A
@@ -2463,10 +2483,7 @@ _svhs_report_skipped() {
     local output="$2"
     local renderer="$3"
 
-    [[ $_SVHS_QUIET == 1 ]] && return 0
-
-    printf '::: %s: skipped for %s (not supported by %s)\n' \
-        "$setter" "$output" "$renderer"
+    _svhs_warn "$setter: skipped for $output (not supported by $renderer)"
 }
 
 
@@ -2557,10 +2574,7 @@ _svhs_optimize_gif() {
     [[ $_SVHS_OPTIMIZE == 'off' ]] && return 0
 
     if ! command -v gifsicle > /dev/null 2>&1; then
-        if [[ $_SVHS_QUIET == 0 ]]; then
-            printf '::: SetOptimize: gifsicle is not installed, %s left unoptimized\n' \
-                "$output"
-        fi
+        _svhs_warn "SetOptimize: gifsicle is not installed, $output left unoptimized"
         return 0
     fi
 

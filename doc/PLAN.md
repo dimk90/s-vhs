@@ -40,15 +40,15 @@
     - [x] `WaitLine <pattern> [timeout]` - match only the cursor's current row;
       - [x] Add example with `WaitLine`;
     - [x] `SetOptimize <on|off>` - `gifsicle --batch -O3` after `agg` (default
-          `off`); lossless and 12-25 % smaller, while agg's own recommended
-          lossy set adds 1-2 % on <128-color terminal frames. Roughly doubles
-          render time.
+          `off`); lossless and 12-25 % smaller, while agg's lossy settings at
+          the same `-O3` level add at most 0.14 % on sampled low-color terminal
+          frames. Roughly doubles render time.
       - [x] Add example and include to README: side-by-side table no-optimization | optimization.
       - [x] Include table to demonstrate optimization efficiency: e.g. big gif, small git, lossy/lossless.
       - [x] Not only `SetOptimize` -> add other optimization options.
       - [x] Add extra dependency `gifsicle` - optional: a missing one is
             reported in `Render`, never fails the recording.
-- [ ] Use colorful (yellow) for warnings.
+- [x] Use colorful (yellow) for warnings.
 - [ ] Print `S-VHS` version at beginning of a recording.
 - [ ] Update existing examples and README if needed.
 - [ ] Review the "SVG usage issues" draft ([SVG.md](SVG.md)) - refine structure and make readable.

@@ -26,6 +26,7 @@
 * Add `SetOptimize`: shrink GIF output with a lossless `gifsicle` pass.
 
 ### Changed
+* Show non-fatal s-vhs warnings in yellow.
 * SVG output now caps idle pauses at 5 seconds like GIF output.
 
 ### Fixed
