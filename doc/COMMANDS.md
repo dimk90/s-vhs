@@ -66,7 +66,7 @@ are implemented now; the remaining command names still describe the target API.
 | —                                    | `SetPaddingY` (SVG only)        | `SetPaddingY`               | ✅     |
 | —                                    | `SetTitle`                      | `SetTitle`                  | ✅     |
 | —                                    | `SetQuiet`                      | `SetQuiet` (`off`)          | ✅     |
-| —                                    | `SetOptimize`                   | —                           | 📋    |
+| —                                    | `SetOptimize` (GIF only)        | `SetOptimize` (`off`)       | ✅     |
 | —                                    | `SetOutput out.cast`            | `SetOutput out.cast`        | ✅     |
 |                                      |                                 |                             |        |
 | —                                    | `Start`                         | `Start`                     | ✅     |
@@ -90,19 +90,6 @@ single `::: ` line rather than failing the recording.
 `SetLoopOffset` is the odd one out: `agg --select 5..` *drops* the first five
 seconds, while VHS's `LoopOffset` keeps every frame and only moves where the
 loop starts. There is no cheap equivalent.
-
-
-### GIF optimization 📋
-
-`agg` encodes with gifski, which looks great and produces large files. agg's own
-docs recommend a `gifsicle` pass, which would make a good opt-in `SetOptimize`:
-
-```shell
-gifsicle --lossy=80 -k 128 -O2 -Okeep-empty demo.gif -o demo-opt.gif
-```
-
-It is post-processing, the same layer as the removed padding, so it must stay
-opt-in and off by default.
 
 ### Not applicable 🚫
 

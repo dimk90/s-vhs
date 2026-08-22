@@ -103,6 +103,9 @@ invokes neither, see [Output Formats](#output-formats).
   > `agg` is not on crates.io (the `agg` crate there is an unrelated project),
   > hence the `--git` install.
 
+  > [!TIP]
+  > GIF size can be reduced without quality loss, see [`SetOptimize`](#setoptimize) example.
+
 - For animated SVG output, install
   [`asg`](https://github.com/kingsword09/asg#quick-start):
   ```bash
@@ -313,6 +316,17 @@ Render
 
 > [!TIP]
 > Keep the version pinned so the same script always imports the same library.
+
+
+### SetOptimize
+
+> TODO: good description
+
+For `SetOptimize`, install [`gifsicle`](https://github.com/kohler/gifsicle):
+```bash
+sudo pacman -S gifsicle
+```
+> Without it GIFs are simply written unoptimized.
 
 
 ### Animated SVG Output

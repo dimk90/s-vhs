@@ -23,6 +23,7 @@
 * Add `SetWindowBar`: draw macOS-style window decorations above the terminal in SVG output.
 * Add `SetCursor`: hide the terminal cursor in SVG output.
 * Add `WaitLine`: wait for a pattern on the cursor's current row.
+* Add `SetOptimize`: shrink GIF output with a lossless `gifsicle` pass.
 
 ### Changed
 * SVG output now caps idle pauses at 5 seconds like GIF output.

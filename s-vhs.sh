@@ -97,6 +97,9 @@ _SVHS_BOLD_IS_BRIGHT='off'
 _SVHS_ENGINE='swash'
 _SVHS_ENGINE_SET=0
 
+# Lossless gifsicle pass over the rendered GIF; it costs render time, so opt-in
+_SVHS_OPTIMIZE='off'
+
 # SVG frame around the terminal: padding in output pixels, its per-axis
 # overrides - empty until set, so both follow _SVHS_PADDING - macOS-style
 # window decorations, and the terminal cursor
@@ -612,6 +615,34 @@ SetEngine() {
 
     _SVHS_ENGINE="$engine"
     _SVHS_ENGINE_SET=1
+}
+
+
+SetOptimize() {
+    #
+    # Shrink the rendered GIF with a lossless `gifsicle` pass, typically by a
+    # fifth to a quarter, at the cost of a slower `Render`. Without gifsicle
+    # installed the GIF is written unoptimized.
+    #
+    # Parameters:
+    #   $1 - optimize - 'on' or 'off'.
+    #
+    # Example:
+    #   SetOptimize 'on' || exit 1
+    #
+    local optimize="${1-}"
+
+    _svhs_require_configuration_phase 'SetOptimize' || return 1
+
+    case "$optimize" in
+        on|off) ;;
+        *)
+            printf 'SetOptimize: expected on or off, got: %s\n' "$optimize" >&2
+            return 1
+            ;;
+    esac
+
+    _SVHS_OPTIMIZE="$optimize"
 }
 
 
@@ -1647,6 +1678,7 @@ Render() {
                     --font-hinting "$hinting"                          \
                     --renderer "$_SVHS_ENGINE"                         \
                     "$_SVHS_CAST" "$output" || return 1
+                _svhs_optimize_gif "$output" || return 1
                 _svhs_report_gif_skips "$output"
                 ;;
             *.svg)
@@ -2502,7 +2534,37 @@ _svhs_report_svg_skips() {
     # an SVG names fonts instead of loading them, so a directory means nothing
     [[ -n ${_SVHS_FONT_DIRS[*]-} ]] &&
         _svhs_report_skipped 'SetFontDir' "$output" 'SVG output'
+    [[ $_SVHS_OPTIMIZE == 'on' ]] &&
+        _svhs_report_skipped 'SetOptimize' "$output" 'SVG output'
     return 0
+}
+
+
+_svhs_optimize_gif() {
+    #
+    # Rewrite a rendered GIF through a lossless gifsicle pass. gifsicle is an
+    # optional dependency: without it the GIF stays as the renderer wrote it,
+    # which is worth a line but not a failed recording.
+    #
+    # Parameters:
+    #   $1 - output - GIF path to optimize in place.
+    #
+    # Example:
+    #   _svhs_optimize_gif 'demo.gif' || return 1
+    #
+    local output="$1"
+
+    [[ $_SVHS_OPTIMIZE == 'off' ]] && return 0
+
+    if ! command -v gifsicle > /dev/null 2>&1; then
+        if [[ $_SVHS_QUIET == 0 ]]; then
+            printf '::: SetOptimize: gifsicle is not installed, %s left unoptimized\n' \
+                "$output"
+        fi
+        return 0
+    fi
+
+    gifsicle --batch -O3 "$output" || return 1
 }
 
 

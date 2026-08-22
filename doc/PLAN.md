@@ -38,19 +38,24 @@
     - [x] `SetWindowBar <on|off>` - `asg --window`; VHS parity for SVG only.
     - [x] `SetCursor <on|off>` - `asg --no-cursor`.
     - [x] `WaitLine <pattern> [timeout]` - match only the cursor's current row;
-    - [ ] Discuss `SetOptimize`: benefit and way to implement.
+    - [x] `SetOptimize <on|off>` - `gifsicle --batch -O3` after `agg` (default
+          `off`); lossless and 12-25 % smaller, while agg's own recommended
+          lossy set adds 1-2 % on <128-color terminal frames. Roughly doubles
+          render time.
+      - [ ] Add example and include to README: side-by-side table no-optimization | optimization.
+      - [ ] Include table to demonstrate optimization efficiency: e.g. big gif, small git, lossy/lossless.
+      - [ ] Not only `SetOptimize` -> add other optimization options.
+      - [x] Add extra dependency `gifsicle` - optional: a missing one is
+            reported in `Render`, never fails the recording.
+      - [ ] Add command to install gifsicle to the warning message.
+- [ ] Use colorful (yellow) for warnings.
 - [ ] Update existing examples and README if needed.
-- [ ] Review the "SVG usage issues" draft ([SVG.md](SVG.md)) - linked from the
-      README's *Animated SVG Output* section:
-  - [ ] Re-check every claim against the current `asg` release and trim what
-        upstream has since fixed.
-  - [x] Verify an embedded `data:` font in Firefox, Chrome and Safari on GitHub
-        and record the result in [EMBED-FONT.md](upstream/EMBED-FONT.md).
-  - [ ] Decide whether it belongs in the README's *Documentation* list too.
+- [ ] Review the "SVG usage issues" draft ([SVG.md](SVG.md)) - refine structure and make readable.
 - [ ] Check which examples could be implemented with the current version of `s-vhs.sh`:
   - https://github.com/charmbracelet/vhs/tree/main/examples/settings
   - https://github.com/charmbracelet/vhs/tree/main/examples/commands
 - [ ] Update template (`s-vhs new`) with common settings (if any new).
+- [ ] Rename `COMMANDS` to `DEV.NOTES`
 - [ ] Test on macOS + installation instruction.
 - [ ] Update skill for recordings?
 
