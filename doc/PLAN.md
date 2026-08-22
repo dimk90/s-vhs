@@ -38,7 +38,7 @@
     - [x] `SetWindowBar <on|off>` - `asg --window`; VHS parity for SVG only.
     - [x] `SetCursor <on|off>` - `asg --no-cursor`.
     - [x] `WaitLine <pattern> [timeout]` - match only the cursor's current row;
-      - [ ] Add example with `WaitLine`;
+      - [x] Add example with `WaitLine`;
     - [x] `SetOptimize <on|off>` - `gifsicle --batch -O3` after `agg` (default
           `off`); lossless and 12-25 % smaller, while agg's own recommended
           lossy set adds 1-2 % on <128-color terminal frames. Roughly doubles
@@ -48,8 +48,7 @@
       - [ ] Not only `SetOptimize` -> add other optimization options.
       - [x] Add extra dependency `gifsicle` - optional: a missing one is
             reported in `Render`, never fails the recording.
-      - [ ] Add command to install gifsicle to the warning message.
-      - [ ] Add `SetOptimize` to recording examples.
+      - [-] Add `SetOptimize` to recording examples.
 - [ ] Use colorful (yellow) for warnings.
 - [ ] Print `S-VHS` version at beginning of a recording.
 - [ ] Update existing examples and README if needed.

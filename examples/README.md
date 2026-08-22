@@ -11,6 +11,7 @@
 | `backspace`      | `Backspace 18 0.05` deleting typed text                                     |
 | `ctrl`           | `Key C-u` and tmux modifier notation (`C-`, `M-`, `S-`)                     |
 | `wait`           | `Wait '^build succeeded'` synchronizing on output instead of a sleep        |
+| `wait-line`      | `WaitLine '^Username:$'` matching only the cursor's current row             |
 | `cols-rows`      | `SetCols`/`SetRows` - the terminal is sized in cells, not pixels            |
 | `font-size-<px>` | One 34x2 grid rendered at 10, 20 and 40 px                                  |
 | `font-family`    | `SetFontFamily` falling back over a missing family, plus bundled Nerd icons |
