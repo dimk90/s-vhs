@@ -426,9 +426,9 @@ How much it saves depends on the recording - long, scrolling ones gain most:
 
 | Recording                        | Plain render | `SetOptimize 'on'`  | Lossy pass          |
 | -------------------------------- | ------------ | ------------------- | ------------------- |
-| this example, 30 scrolling lines | 189.4 KiB    | 160.7 KiB (-15.2 %) | 161.1 KiB (-15.0 %) |
-| a short typed one-liner          | 12.4 KiB     | 11.0 KiB (-11 %)    | 11.2 KiB            |
-| a 24 s build log, 984x700 px     | 12.8 MiB     | 9.8 MiB (-23 %)     | 9.6 MiB             |
+| this example, 30 scrolling lines | 189.4 KiB    | 160.7 KiB (-15.2 %) | 160.7 KiB (-15.2 %) |
+| a short typed one-liner          | 12.3 KiB     | 10.9 KiB (-11.5 %)  | 10.9 KiB (-11.5 %)  |
+| a 24 s build log, 984x700 px     | 12.8 MiB     | 9.8 MiB (-23.4 %)   | 9.8 MiB (-23.5 %)   |
 
 > The last column is the lossy pass agg's docs suggest
 > (`gifsicle --lossy=80 -k 128 -O2`). Terminal frames use fewer than 128 colors,
