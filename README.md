@@ -21,7 +21,7 @@ A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superi
   ([#644](https://github.com/charmbracelet/vhs/discussions/644),
   [#109](https://github.com/charmbracelet/vhs/issues/109),
   [#105](https://github.com/charmbracelet/vhs/issues/105)).
-- no Chromium downloaded behind your back, just
+- **No Chromium** downloaded behind your back - just
   `tmux` + [asciinema](https://github.com/asciinema/asciinema) + [GIF/SVG](#output-formats) renderer
   ([#528](https://github.com/charmbracelet/vhs/issues/528),
   [#438](https://github.com/charmbracelet/vhs/issues/438),
@@ -38,7 +38,7 @@ A recording is a plain shell script that sources `s-vhs.sh`:
 #!/usr/bin/env bash
 
 # Import s-vhs straight from GitHub - no local copy needed.
-# A local copy works too, use "source ./s-vhs.sh"
+# A local copy works too - use "source ./s-vhs.sh"
 source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.3.0) && wait "$!" || exit 1
 
 # Where should we write the GIF?
@@ -88,9 +88,9 @@ You should see a new file called `demo.gif` in the same directory:
 ```bash
 sudo pacman -S tmux asciinema
 ```
-> The provided instructions are for Arch Linux, but you can easily adapt them for your favorite distro ;)
+> The provided instructions are for Arch Linux, but you can easily adapt them to your favorite distro 😉
 
-Only the formats you request need their renderer - a cast-only recording
+Only the formats you request need a renderer - a cast-only recording
 invokes neither, see [Output Formats](#output-formats).
 
 - For GIF output, install
@@ -110,7 +110,7 @@ invokes neither, see [Output Formats](#output-formats).
 
 > [!TIP]
 > Cargo installs both renderers into `~/.cargo/bin` - make sure it is on your
->  `PATH` (rustup's installer arranges that; a distro-packaged `cargo` does not).
+> `PATH` (rustup's installer arranges that; a distro-packaged `cargo` does not).
 
 > [!TIP]
 > GIF size can be reduced by [`gifsicle`](https://github.com/kohler/gifsicle)
@@ -162,7 +162,7 @@ Enter; Sleep 1
 
 Named keys are commands of their own: `Enter`, `Tab`, `Space`, `Backspace`,
 `Escape`, `Up`, `Down`, `Left`, `Right`, `PageUp`, `PageDown`, `Home`, `End`,
-`Insert`, `Delete`. Each taking an optional repeat count and delay. A modified
+`Insert`, `Delete`. Each takes an optional repeat count and delay. A modified
 key goes through `Key` in tmux notation: `Key C-u`, `Key C-r`, `Key M-x`, see
 [`examples/ctrl.rec.sh`](examples/ctrl.rec.sh).
 
@@ -216,9 +216,9 @@ SetTheme 'kanagawa'
 
 ### Shell & Prompt
 
-A recording runs in an isolated shell by default: no personal rc files, your
-own prompt stays out of the frame, and nothing is written to your shell
-history.
+A recording runs in an isolated shell by default: no personal rc files are
+read, your own prompt stays out of the frame, and nothing is written to your
+shell history.
 
 ```bash
 SetShell 'fish'       # bash (default), zsh or fish
@@ -285,7 +285,7 @@ Enter; Sleep 2
 <img src="examples/hide-show.gif" width="500px" alt="A recording that skips the commands run between Hide and the next Show">
 
 > [!TIP]
-> `RunOffRecord 'clear' 0.5` is the shorthand for a `Hide` + `Run` + `Show`
+> `RunOffRecord 'clear' 0.5` is shorthand for a `Hide` + `Run` + `Show`
 > sandwich, see [`examples/run-off-record.rec.sh`](examples/run-off-record.rec.sh).
 
 ### Require & Env
@@ -361,13 +361,17 @@ animated by CSS, sharp at any zoom:
 
 <img src="examples/multi-output.svg" width="500px" alt="One recording rendered as an animated SVG">
 
+> [!NOTE]
+> An SVG names fonts instead of embedding them and animates through CSS, so
+> where it is displayed might change how it looks. Check
+> [SVG pitfalls and workarounds](doc/SVG.md).
+
 
 ## S-VHS in the Wild
 
 
 📌 [pi-context-view](https://github.com/dimk90/pi-context-view) - demo GIFs,
 such as [context-usage.rec.sh](https://github.com/dimk90/pi-context-view/blob/develop/scripts/recordings/context-usage.rec.sh).  
-
 📌 [S-VHS logo](examples/logo.rec.sh) recording.
 
 
@@ -394,7 +398,7 @@ SetOutput 'multi-output.svg'
 
 Keeping the `.cast` next to the rendered files leaves the recording replayable
 with `asciinema play` and re-renderable at any size later, while the `.txt` log
-makes the recorded output greppable — see
+makes the recorded output greppable - see
 [`examples/multi-output.rec.sh`](examples/multi-output.rec.sh).
 
 
@@ -465,7 +469,8 @@ SetOptimize 'on' # <---
 | <img src="examples/optimize-off.gif" width="330px" alt="Unoptimized render"> | <img src="examples/optimize.gif" width="330px" alt="Optimized render"> |
 | 193,964 bytes                                                                | 164,541 bytes, identical frames                                        |
 
-How much it saves depends on the recording - long, scrolling ones gain most:
+How much it saves depends on the recording - long, scrolling ones gain the
+most:
 
 | Recording                        | Plain render | `SetOptimize 'on'`  | Lossy pass          |
 | -------------------------------- | ------------ | ------------------- | ------------------- |
@@ -507,7 +512,7 @@ Reduce what the renderer has to encode before optimizing it:
 
 - For the full list of commands and settings, see [REFERENCE.md](doc/REFERENCE.md).
 
-- For debugging a recording script see [DEBUG.md](doc/DEBUG.md).
+- For debugging a recording script, see [DEBUG.md](doc/DEBUG.md).
 
 - For the architecture behind `tmux + asciinema + output renderers` and how
   `s-vhs` glues them together, see [INTRO.md](doc/INTRO.md).

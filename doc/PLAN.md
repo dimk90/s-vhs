@@ -65,7 +65,7 @@
     `set-loop-offset` (not implemented), and the settings VHS-only by
     design (`border-radius`, `cursor-blink`, `letter-spacing`, `margin`).
 - [x] Update template (`s-vhs new`) with common settings (if any new).
-- [ ] Review the "SVG usage issues" draft ([SVG.md](SVG.md)) - refine structure and make readable.
+- [x] Review the "SVG usage issues" draft ([SVG.md](SVG.md)) - refine structure and make readable.
 - [ ] Rename `COMMANDS` to `DEV.NOTES`
 - [ ] Update skill for recordings?
   - [ ] Review current skill content.

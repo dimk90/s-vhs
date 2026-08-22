@@ -20,6 +20,7 @@ and used only to render the other outputs (GIF, SVG).
 | `doc/COMMANDS.md`    | Temporary dev notes: VHS parity and target API. Not public.  |
 | `doc/PLAN.md`        | Roadmap / checklist. Tick boxes when a task lands.           |
 | `doc/INTRO.md`       | How the pipeline works, for users.                           |
+| `doc/SVG.md`         | Animated SVG pitfalls and workarounds, for users.            |
 | `doc/DEBUG.md`       | Debugging recording scripts (`watch`, live pane).            |
 | `doc/DEPLOY.md`      | GitHub Pages deployment (remote imports).                    |
 | `doc/RELEASE.md`     | Release procedure, read when cutting a release.              |
