@@ -19,23 +19,24 @@ readonly _RELEASE_DEVELOP_BRANCH='develop'
 readonly _RELEASE_MASTER_BRANCH='master'
 readonly _RELEASE_PUBLICATION_ATTEMPTS=90
 readonly _RELEASE_PUBLICATION_INTERVAL=10
+readonly _RELEASE_SKILL_PATH='skills/s-vhs-recording/SKILL.md'
 readonly _RELEASE_ALLOWED_PATHS=(
     CHANGELOG.md
     doc/PLAN.md
-    skills/s-vhs-recording/SKILL.md
+    "$_RELEASE_SKILL_PATH"
     README.md
     s-vhs.sh
     examples/remote-import.rec.sh
 )
 readonly _RELEASE_PINNED_IMPORT_FILES=(
     README.md
-    skills/s-vhs-recording/SKILL.md
+    "$_RELEASE_SKILL_PATH"
     examples/remote-import.rec.sh
 )
 # Pinned-import files that may also point readers at the latest alias
 readonly _RELEASE_MIXED_IMPORT_FILES=(
     README.md
-    skills/s-vhs-recording/SKILL.md
+    "$_RELEASE_SKILL_PATH"
 )
 readonly _RELEASE_LATEST_IMPORT_FILES=(
     doc/DEBUG.md
@@ -794,14 +795,16 @@ _release_check_target_publication() {
     # Example:
     #   _release_check_target_publication
     #
-    local release_url pages_url
+    local release_url pages_url skill_url
 
     [[ -n $_RELEASE_TARGET_TAG ]] || return 0
 
     release_url="https://github.com/${_RELEASE_GITHUB_REPOSITORY}/releases/tag/${_RELEASE_TARGET_TAG}"
     pages_url="${_RELEASE_PAGES_BASE_URL}/${_RELEASE_TARGET_TAG}"
+    skill_url="${_RELEASE_PAGES_BASE_URL}/skill-${_RELEASE_TARGET_TAG}"
     _release_check_unpublished_url 'GitHub release' "$release_url"
     _release_check_unpublished_url 'versioned Pages file' "$pages_url"
+    _release_check_unpublished_url 'versioned Pages skill' "$skill_url"
 }
 
 
@@ -933,7 +936,7 @@ _release_print_release_plan() {
         ' 4. Update master, merge develop with --no-ff, and revalidate the exact tree'
         " 5. Verify version and clean state, then tag ${_RELEASE_TARGET_TAG}"
         ' 6. Atomically push master and only the target tag (starts the release workflow)'
-        ' 7. Wait for the GitHub release and verify versioned/latest Pages imports'
+        ' 7. Wait for the GitHub release and verify versioned/latest Pages library and skill'
         ' 8. Return to develop and verify a clean worktree'
     )
     gum style --border rounded --border-foreground 244 --padding '0 2' --margin '1 0 0 0' -- \
@@ -1361,8 +1364,9 @@ _release_push_master_and_tag() {
 
 _release_wait_for_publication() {
     #
-    # Wait for the workflow-created GitHub release, then verify versioned and
-    # latest Pages files plus the documented remote-import form.
+    # Wait for the workflow-created GitHub release, then verify the versioned
+    # and latest Pages files for both the library and the skill, plus the
+    # documented remote-import form.
     #
     # Parameters:
     #   None.
@@ -1370,7 +1374,7 @@ _release_wait_for_publication() {
     # Example:
     #   _release_wait_for_publication
     #
-    local release_url version_url latest_url
+    local release_url version_url latest_url skill_version_url skill_latest_url
     local release_observed=false
     local status='request failed'
     local attempt published_version
@@ -1379,6 +1383,8 @@ _release_wait_for_publication() {
     release_url="https://github.com/${_RELEASE_GITHUB_REPOSITORY}/releases/tag/${_RELEASE_TARGET_TAG}"
     version_url="${_RELEASE_PAGES_BASE_URL}/${_RELEASE_TARGET_TAG}"
     latest_url="${_RELEASE_PAGES_BASE_URL}/latest"
+    skill_version_url="${_RELEASE_PAGES_BASE_URL}/skill-${_RELEASE_TARGET_TAG}"
+    skill_latest_url="${_RELEASE_PAGES_BASE_URL}/skill"
 
     _release_info "waiting for ${release_url}"
     for ((attempt = 1; attempt <= _RELEASE_PUBLICATION_ATTEMPTS; attempt++)); do
@@ -1405,10 +1411,20 @@ _release_wait_for_publication() {
 
     _release_verify_published_file 'versioned Pages file' \
                                    "${version_url}?commit=${_RELEASE_MERGE_COMMIT}" \
+                                   s-vhs.sh \
                                    "${_RELEASE_TMP_DIR}/published-version"
     _release_verify_published_file 'latest Pages file' \
                                    "${latest_url}?commit=${_RELEASE_MERGE_COMMIT}" \
+                                   s-vhs.sh \
                                    "${_RELEASE_TMP_DIR}/published-latest"
+    _release_verify_published_file 'versioned Pages skill' \
+                                   "${skill_version_url}?commit=${_RELEASE_MERGE_COMMIT}" \
+                                   "$_RELEASE_SKILL_PATH" \
+                                   "${_RELEASE_TMP_DIR}/published-skill-version"
+    _release_verify_published_file 'latest Pages skill' \
+                                   "${skill_latest_url}?commit=${_RELEASE_MERGE_COMMIT}" \
+                                   "$_RELEASE_SKILL_PATH" \
+                                   "${_RELEASE_TMP_DIR}/published-skill-latest"
 
     # The inner Bash receives the URL as $1; $! belongs to its process substitution
     # shellcheck disable=SC2016
@@ -1431,20 +1447,22 @@ _release_wait_for_publication() {
 
 _release_verify_published_file() {
     #
-    # Wait for a published library URL to exactly match the tagged s-vhs.sh in
-    # the current master worktree.
+    # Wait for a published URL to exactly match its source file in the current
+    # master worktree.
     #
     # Parameters:
     #   $1 - label - artifact described in output.
     #   $2 - url - public URL to download.
-    #   $3 - destination - temporary path for the response body.
+    #   $3 - source_file - repository file the published bytes must match.
+    #   $4 - destination - temporary path for the response body.
     #
     # Example:
-    #   _release_verify_published_file 'versioned Pages file' "$url" "$file"
+    #   _release_verify_published_file 'versioned Pages file' "$url" s-vhs.sh "$file"
     #
     local label="$1"
     local url="$2"
-    local destination="$3"
+    local source_file="$3"
+    local destination="$4"
     local attempt request_url
     local failure_detail='request failed'
 
@@ -1459,11 +1477,11 @@ _release_verify_published_file() {
         if curl -fsSL -H 'Cache-Control: no-cache' \
                 "$request_url" -o "$destination" \
                 >"$_RELEASE_LOG_FILE" 2>&1; then
-            if cmp -s s-vhs.sh "$destination"; then
-                _release_pass "${label} matches s-vhs.sh"
+            if cmp -s "$source_file" "$destination"; then
+                _release_pass "${label} matches ${source_file}"
                 return 0
             fi
-            failure_detail='HTTP 200, but the published bytes do not match s-vhs.sh'
+            failure_detail="HTTP 200, but the published bytes do not match ${source_file}"
         else
             failure_detail="$(tail -n 20 "$_RELEASE_LOG_FILE")"
         fi
@@ -1511,7 +1529,7 @@ _release_return_to_develop() {
 
 _release_report_success() {
     #
-    # Print the completed release with its GitHub and Pages locations.
+    # Print the completed release with its GitHub, library and skill locations.
     #
     # Parameters:
     #   None.
@@ -1522,8 +1540,9 @@ _release_report_success() {
     gum style --border double --border-foreground 42 --foreground 42 \
               --padding '0 2' --margin '1 0' -- \
               "Released ${_RELEASE_PROJECT_NAME} ${_RELEASE_TARGET_TAG}" \
-              "GitHub: https://github.com/${_RELEASE_GITHUB_REPOSITORY}/releases/tag/${_RELEASE_TARGET_TAG}" \
-              "Pages:  ${_RELEASE_PAGES_BASE_URL}/${_RELEASE_TARGET_TAG}"
+              "GitHub:  https://github.com/${_RELEASE_GITHUB_REPOSITORY}/releases/tag/${_RELEASE_TARGET_TAG}" \
+              "Library: ${_RELEASE_PAGES_BASE_URL}/${_RELEASE_TARGET_TAG}" \
+              "Skill:   ${_RELEASE_PAGES_BASE_URL}/skill-${_RELEASE_TARGET_TAG}"
 }
 
 
