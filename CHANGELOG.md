@@ -24,6 +24,7 @@
 * Add `SetCursor`: hide the terminal cursor in SVG output.
 * Add `WaitLine`: wait for a pattern on the cursor's current row.
 * Add `SetOptimize`: shrink GIF output with a lossless `gifsicle` pass.
+* Add an agent skill teaching coding agents to write and verify recording scripts, installable with `gh skill install dimk90/s-vhs s-vhs-recording` or from `https://dimk90.github.io/s-vhs/skill`.
 
 ### Changed
 * SVG output now caps idle pauses at 5 seconds like GIF output.
