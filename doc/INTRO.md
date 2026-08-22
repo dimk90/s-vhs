@@ -16,7 +16,7 @@ recording into the requested formats.
 | **asciinema** | Terminal session recorder | Stores terminal output, control sequences, geometry, and timestamps in a `.cast` file, and can export it as plain text. |
 | **`.cast`**   | asciicast v3 file         | The recording itself - text plus timings, the hand-off point between recording and rendering.                           |
 | **agg**       | asciinema GIF generator   | Replays the cast into GIF frames using the selected font, font size, line height, and color theme.                      |
-| **asg**       | asciinema SVG generator   | Replays the cast into a sharp, CSS-animated SVG using the selected font, font size, line height, and color theme.        |
+| **asg**       | asciinema SVG generator   | Replays the cast into a sharp, CSS-animated SVG using the selected font, font size, line height, and color theme.       |
 | **s-vhs**     | ~1k lines of bash         | Glues them together and gives you `Type`, `Key`, `Wait`, `Show`, `Render` instead of raw tmux commands.                 |
 
 ### Recording Script
@@ -104,4 +104,4 @@ the terminal or how asciinema records it.
 
 - [README](../README.md) - install and the quick start.
 - [REFERENCE.md](REFERENCE.md) - every command, with defaults.
-- [examples/README.md](../examples/README.md) - the example catalogue.
+- [examples/README.md](../examples) - the example catalogue.

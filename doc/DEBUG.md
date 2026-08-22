@@ -2,11 +2,11 @@
 
 ## Watch the Recording Live
 
-**A recording is quiet by design**: the script prints only a few `:::` lines
+📌 **A recording is quiet by design**: the script prints only a few `:::` lines
 while everything happens in a detached tmux session. When it hangs or draws
 the wrong thing, there is nothing on screen to explain why.
 
-**Debug it by observing that tmux session from a second terminal**. Observing must
+📌 **Debug it by observing that tmux session from a second terminal**. Observing must
 not interfere with the recording - attaching a tmux client can resize the pane
 or disturb the asciinema recorder - so look through pane snapshots instead of
 attaching.
