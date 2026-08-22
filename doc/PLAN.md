@@ -67,12 +67,16 @@
 - [x] Update template (`s-vhs new`) with common settings (if any new).
 - [x] Review the "SVG usage issues" draft ([SVG.md](SVG.md)) - refine structure and make readable.
 - [x] Rename `COMMANDS` to `DEV.NOTES`
-- [ ] Update skill for recordings?
-  - [ ] Review current skill content.
-  - [ ] Add Skill section to README: "Skill contain best practices with help with writing and refactoring S-VHS scripts".
-  - [ ] Use `SetOptimize on` if `gifsicle` is available?
-  - [ ] Add `Require` as a good practice?
-  - [ ] Deploy skill to npm? Or simple curl command?
+- [x] Update skill for recordings?
+  - [x] Review current skill content.
+  - [x] Vendor the skill as `skills/s-vhs-recording/SKILL.md`, refreshed to the
+        current API.
+  - [x] Add Skill section to README: "Skill contain best practices with help with writing and refactoring S-VHS scripts".
+  - [x] Use `SetOptimize on` if `gifsicle` is available?
+  - [x] Add `Require` as a good practice?
+  - [x] Deploy skill to npm? Or simple curl command? - Pages, next to the
+        library: `skill` and `skill-vX.Y.Z`, published by `release.yml`, plus
+        `gh skill install` from the spec-compliant `skills/` layout.
 - [ ] Test on macOS + installation instruction.
 
 

@@ -94,6 +94,8 @@ jobs:
               );
             }
 
+            const skill = await readFileAtRef("skills/s-vhs-recording/SKILL.md", releaseTag);
+
             const changelog = (await readFileAtRef("CHANGELOG.md", releaseTag)).replace(
               /\r\n/g,
               "\n",
@@ -168,8 +170,6 @@ jobs:
               branch: "deploy",
             });
             const deployHeadSha = deployBranch.commit.sha;
-            const existingVersion = await readFileAtRef(releaseTag, "deploy", true);
-            const existingLatest = await readFileAtRef("latest", "deploy", true);
             const { data: deployEntries } = await github.rest.repos.getContent({
               owner,
               repo,
@@ -210,41 +210,62 @@ jobs:
                 `Cannot publish ${releaseTag} after newer version ${newestDeployedTag}.`,
               );
             }
-            if (existingVersion !== undefined && existingVersion !== source) {
-              throw new Error(`${releaseTag} already exists on deploy with different content.`);
+
+            // Every file served by Pages has an immutable pinned path and a
+            // moving alias that only the newest release replaces
+            const publications = [
+              { content: source, pinnedPath: releaseTag, aliasPath: "latest" },
+              { content: skill, pinnedPath: `skill-${releaseTag}`, aliasPath: "skill" },
+            ];
+            for (const publication of publications) {
+              const existingPinned = await readFileAtRef(publication.pinnedPath, "deploy", true);
+              const existingAlias = await readFileAtRef(publication.aliasPath, "deploy", true);
+
+              if (existingPinned !== undefined && existingPinned !== publication.content) {
+                throw new Error(
+                  `${publication.pinnedPath} already exists on deploy with different content.`,
+                );
+              }
+
+              publication.pinnedNeedsUpdate = existingPinned !== publication.content;
+              publication.aliasNeedsUpdate = isNewestVersion
+                && existingAlias !== publication.content;
             }
 
-            const versionNeedsUpdate = existingVersion !== source;
-            const latestNeedsUpdate = isNewestVersion && existingLatest !== source;
+            const outdatedPublications = publications.filter(
+              (publication) => publication.pinnedNeedsUpdate || publication.aliasNeedsUpdate,
+            );
             let pagesCommitSha = deployHeadSha;
-            if (versionNeedsUpdate || latestNeedsUpdate) {
+            if (outdatedPublications.length > 0) {
               const { data: deployCommit } = await github.rest.git.getCommit({
                 owner,
                 repo,
                 commit_sha: deployHeadSha,
               });
-              const { data: sourceBlob } = await github.rest.git.createBlob({
-                owner,
-                repo,
-                content: Buffer.from(source, "utf8").toString("base64"),
-                encoding: "base64",
-              });
               const treeEntries = [];
-              if (versionNeedsUpdate) {
-                treeEntries.push({
-                  path: releaseTag,
-                  mode: "100644",
-                  type: "blob",
-                  sha: sourceBlob.sha,
+              for (const publication of outdatedPublications) {
+                const { data: contentBlob } = await github.rest.git.createBlob({
+                  owner,
+                  repo,
+                  content: Buffer.from(publication.content, "utf8").toString("base64"),
+                  encoding: "base64",
                 });
-              }
-              if (latestNeedsUpdate) {
-                treeEntries.push({
-                  path: "latest",
-                  mode: "100644",
-                  type: "blob",
-                  sha: sourceBlob.sha,
-                });
+                if (publication.pinnedNeedsUpdate) {
+                  treeEntries.push({
+                    path: publication.pinnedPath,
+                    mode: "100644",
+                    type: "blob",
+                    sha: contentBlob.sha,
+                  });
+                }
+                if (publication.aliasNeedsUpdate) {
+                  treeEntries.push({
+                    path: publication.aliasPath,
+                    mode: "100644",
+                    type: "blob",
+                    sha: contentBlob.sha,
+                  });
+                }
               }
               const { data: pagesTree } = await github.rest.git.createTree({
                 owner,
@@ -270,9 +291,9 @@ jobs:
               pagesCommitSha = pagesCommit.sha;
               core.info(`Updated deploy to ${pagesCommitSha}.`);
             } else if (isNewestVersion) {
-              core.info(`${releaseTag} and latest already match the released source.`);
+              core.info(`${releaseTag} and its aliases already match the released files.`);
             } else {
-              core.info(`${releaseTag} already matches; latest remains ${newestDeployedTag}.`);
+              core.info(`${releaseTag} already matches; aliases remain at ${newestDeployedTag}.`);
             }
 
             // GITHUB_TOKEN pushes do not trigger branch-based Pages builds
@@ -312,26 +333,28 @@ jobs:
               throw new Error(`Pages did not build deploy commit ${pagesCommitSha} in time.`);
             }
 
-            const pagesUrl = `https://${owner}.github.io/${repo}/${releaseTag}`;
-            const expectedSource = Buffer.from(source, "utf8");
-            let pagesVerified = false;
-            for (let attempt = 0; attempt < 12; attempt += 1) {
-              const response = await fetch(`${pagesUrl}?commit=${pagesCommitSha}`, {
-                headers: { "cache-control": "no-cache" },
-              });
-              if (response.ok) {
-                const publishedSource = Buffer.from(await response.arrayBuffer());
-                if (publishedSource.equals(expectedSource)) {
-                  pagesVerified = true;
-                  break;
+            for (const publication of publications) {
+              const pagesUrl = `https://${owner}.github.io/${repo}/${publication.pinnedPath}`;
+              const expectedContent = Buffer.from(publication.content, "utf8");
+              let pagesVerified = false;
+              for (let attempt = 0; attempt < 12; attempt += 1) {
+                const response = await fetch(`${pagesUrl}?commit=${pagesCommitSha}`, {
+                  headers: { "cache-control": "no-cache" },
+                });
+                if (response.ok) {
+                  const publishedContent = Buffer.from(await response.arrayBuffer());
+                  if (publishedContent.equals(expectedContent)) {
+                    pagesVerified = true;
+                    break;
+                  }
                 }
+                await wait(5000);
               }
-              await wait(5000);
+              if (!pagesVerified) {
+                throw new Error(`${pagesUrl} does not serve the released file.`);
+              }
+              core.notice(`Published ${pagesUrl}`);
             }
-            if (!pagesVerified) {
-              throw new Error(`${pagesUrl} does not serve the released source.`);
-            }
-            core.notice(`Published ${pagesUrl}`);
 
             if (existingRelease) {
               core.notice(`Matching release already exists: ${existingRelease.html_url}`);

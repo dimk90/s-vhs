@@ -22,9 +22,10 @@ and used only to render the other outputs (GIF, SVG).
 | `doc/INTRO.md`       | How the pipeline works, for users.                           |
 | `doc/SVG.md`         | Animated SVG pitfalls and workarounds, for users.            |
 | `doc/DEBUG.md`       | Debugging recording scripts (`watch`, live pane).            |
-| `doc/DEPLOY.md`      | GitHub Pages deployment (remote imports).                    |
+| `doc/DEPLOY.md`      | GitHub Pages deployment (remote imports, skill).             |
 | `doc/RELEASE.md`     | Release procedure, read when cutting a release.              |
 | `doc/HISTORY.md`     | Verbatim archive of code removed from `s-vhs.sh`.            |
+| `skills/*/SKILL.md`  | Agent skills teaching recording scripts; published to Pages. |
 | `examples/`          | Example recording scripts, rendered output, catalogue.       |
 | `scripts/release.sh` | Release tooling; its own changes stay out of the changelog.  |
 
@@ -36,7 +37,8 @@ requested output.
 ## Dependencies
 
 Runtime: `bash`, `tmux`, `asciinema`; `agg` for GIF output, `asg` for SVG.
-Dev: `shellcheck`.
+Dev: `shellcheck`; `gh` optionally, to validate the agent skill during a
+release.
 
 ## Conventions
 
@@ -95,6 +97,14 @@ writing or running a `*.rec.sh` script. Project-specific points:
   prose; a rule about a single command goes into that command's row even if the
   cell grows, and prose outside the tables is justified only for a rule global
   to a section. Rationale and design notes belong in `README.md` or here.
+- **Skill.** `skills/s-vhs-recording/SKILL.md` teaches an agent to write
+  recordings, so it stays a self-contained single file — the release workflow
+  publishes it verbatim as `skill` and `skill-<tag>`. Its directory layout
+  follows the [Agent Skills spec](https://agentskills.io/specification) so
+  `gh skill install` discovers it, which requires the `name` in the front
+  matter to match the directory name. It teaches judgement, not every command:
+  a new setting earns a line only when using it well needs one, while a changed
+  or removed command it mentions is updated in the same change.
 - **`doc/DEV-NOTES.md` is temporary.** Neither public documentation nor linked
   from `README.md`, and deleted once the command surface is complete; anything
   that must outlive it belongs in `README.md`, `doc/REFERENCE.md` or here.

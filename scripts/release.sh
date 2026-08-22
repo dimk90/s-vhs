@@ -22,13 +22,20 @@ readonly _RELEASE_PUBLICATION_INTERVAL=10
 readonly _RELEASE_ALLOWED_PATHS=(
     CHANGELOG.md
     doc/PLAN.md
+    skills/s-vhs-recording/SKILL.md
     README.md
     s-vhs.sh
     examples/remote-import.rec.sh
 )
 readonly _RELEASE_PINNED_IMPORT_FILES=(
     README.md
+    skills/s-vhs-recording/SKILL.md
     examples/remote-import.rec.sh
+)
+# Pinned-import files that may also point readers at the latest alias
+readonly _RELEASE_MIXED_IMPORT_FILES=(
+    README.md
+    skills/s-vhs-recording/SKILL.md
 )
 readonly _RELEASE_LATEST_IMPORT_FILES=(
     doc/DEBUG.md
@@ -476,6 +483,29 @@ _release_check_plan() {
 }
 
 
+_release_allows_latest_import() {
+    #
+    # Report whether a pinned-import file may also carry the latest alias.
+    #
+    # Parameters:
+    #   $1 - file - path being checked by _release_check_remote_imports.
+    #
+    # Example:
+    #   _release_allows_latest_import 'skills/s-vhs-recording/SKILL.md'
+    #
+    local file="$1"
+    local mixed_file
+
+    for mixed_file in ${_RELEASE_MIXED_IMPORT_FILES[@]+"${_RELEASE_MIXED_IMPORT_FILES[@]}"}; do
+        if [[ $file == "$mixed_file" ]]; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+
 _release_check_remote_imports() {
     #
     # Block unless immutable imports name the target tag and rolling imports
@@ -495,8 +525,8 @@ _release_check_remote_imports() {
         url_count=0
         while IFS= read -r url; do
             url_count=$((url_count + 1))
-            if [[ ${url##*/} != "$_RELEASE_TARGET_TAG" &&
-                  ! ($file == README.md && ${url##*/} == 'latest') ]]; then
+            if [[ ${url##*/} != "$_RELEASE_TARGET_TAG" ]] &&
+               ! { [[ ${url##*/} == 'latest' ]] && _release_allows_latest_import "$file"; }; then
                 stale_url_detail="${stale_url_detail}${stale_url_detail:+$'\n'}${url}"
             fi
         done < <(grep -Eo \
@@ -507,7 +537,7 @@ _release_check_remote_imports() {
         elif [[ -n $stale_url_detail ]]; then
             _release_block "${file} contains a remote import not pinned to ${_RELEASE_TARGET_TAG}" \
                            "$stale_url_detail"
-        elif [[ $file == README.md ]]; then
+        elif _release_allows_latest_import "$file"; then
             _release_pass "${file} uses ${url_count} current remote import(s)"
         else
             _release_pass "${file} pins ${url_count} remote import(s) to ${_RELEASE_TARGET_TAG}"
@@ -966,8 +996,8 @@ _release_validate_release_tree() {
 
 _release_run_project_checks() {
     #
-    # Run static checks and verify the generated recording template against its
-    # README copy.
+    # Run static checks, validate the agent skills, and verify the generated
+    # recording template against its README copy.
     #
     # Parameters:
     #   None.
@@ -985,7 +1015,36 @@ _release_run_project_checks() {
     _release_apply_command 'running ShellCheck' shellcheck s-vhs.sh scripts/release.sh
     _release_apply_command 'checking Bash syntax' \
                            bash -n ${shell_paths[@]+"${shell_paths[@]}"}
+    _release_validate_skills
     _release_validate_template
+}
+
+
+_release_validate_skills() {
+    #
+    # Validate every skill under skills/ against the Agent Skills
+    # specification, so that `gh skill install` keeps discovering it.
+    #
+    # Skips with a warning when GitHub CLI is missing or unauthenticated:
+    # `gh skill` is a preview command, and publishing a release does not
+    # depend on it.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _release_validate_skills
+    #
+    if ! command -v gh >/dev/null 2>&1; then
+        _release_warn 'skipping skill validation: gh is not installed'
+        return 0
+    fi
+    if ! gh auth status >/dev/null 2>&1; then
+        _release_warn 'skipping skill validation: gh is not authenticated'
+        return 0
+    fi
+
+    _release_apply_command 'validating agent skills' gh skill publish --dry-run
 }
 
 
