@@ -1,6 +1,6 @@
 # Changelog
 
-## `[v0.4.0]` - Unreleased
+## `[v0.4.0]` - 23.08.2026
 
 ### New
 * Add `SetPlaybackSpeed`: play the rendered animation faster or slower.
