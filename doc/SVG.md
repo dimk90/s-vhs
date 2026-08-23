@@ -56,7 +56,8 @@ becomes a seam. The selected font's own block glyphs are never used.
   proportional.
 - Prefer GIF output for box-art-heavy or full-width recordings.
 
-Upstream: [asg#17](https://github.com/kingsword09/asg/issues/17) and
+Upstream: [asg#19](https://github.com/kingsword09/asg/issues/19),
+[asg#17](https://github.com/kingsword09/asg/issues/17) and
 [asg#18](https://github.com/kingsword09/asg/issues/18).
 
 ## Outside a browser, only the first frame appears

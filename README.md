@@ -22,7 +22,7 @@ A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superi
   [#109](https://github.com/charmbracelet/vhs/issues/109),
   [#105](https://github.com/charmbracelet/vhs/issues/105)).
 - **No Chromium** downloaded behind your back - just
-  `tmux` + [asciinema](https://github.com/asciinema/asciinema) + [GIF/SVG](#output-formats) renderer
+  `tmux` + [asciinema](https://github.com/asciinema/asciinema) + [renderer](#output-formats)
   ([#528](https://github.com/charmbracelet/vhs/issues/528),
   [#438](https://github.com/charmbracelet/vhs/issues/438),
   [#150](https://github.com/charmbracelet/vhs/issues/150),
@@ -359,8 +359,6 @@ Enter; Sleep 3
 
 Render
 ```
-
-> [!NOTE]
 > The `wait "$!"` is a guard: without it, process substitution can hide a
 > failed or truncated `curl` download.
 
@@ -551,14 +549,7 @@ Reduce what the renderer has to encode before optimizing it:
   gh skill install dimk90/s-vhs s-vhs-recording --agent claude-code --scope user
   ```
 
-  or fetch the released copy with `curl`, here for
-  [Claude Code](https://claude.com/product/claude-code):
-
-  ```bash
-  mkdir -p ~/.claude/skills/s-vhs-recording && curl -fsSL https://dimk90.github.io/s-vhs/skill -o ~/.claude/skills/s-vhs-recording/SKILL.md
-  ```
-
-- For the architecture behind `tmux + asciinema + output renderers` and how
+- For the architecture behind `tmux + asciinema + renderers` and how
   `s-vhs` glues them together, see [INTRO.md](doc/INTRO.md).
 
   <p align="center">
