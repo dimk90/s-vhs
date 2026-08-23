@@ -85,36 +85,57 @@ You should see a new file called `demo.gif` in the same directory:
 
 `s-vhs` is a bash script, so all you need are its dependencies `tmux` and `asciinema`:
 
-```bash
-sudo pacman -S tmux asciinema
-```
-> The provided instructions are for Arch Linux, but you can easily adapt them to your favorite distro 😉
+- **macOS**
+  ```bash
+  brew install tmux asciinema
+  ```
 
-Only the formats you request need a renderer - a cast-only recording
-invokes neither, see [Output Formats](#output-formats).
+- **Linux**
+  ```bash
+  sudo pacman -S tmux asciinema
+  ```
+  > The Linux instructions are for Arch, but you can easily adapt them to your
+  > favorite distro 😉
 
-- For GIF output, install
-  [`agg`](https://github.com/asciinema/agg#building):
+> [!NOTE]
+> Only the formats you request need a renderer - a cast-only recording
+> invokes neither, see [Output Formats](#output-formats).
+
+> [!TIP]
+> Some installs below use `cargo`, which puts binaries into `~/.cargo/bin` -
+> make sure it is on your `PATH` (rustup's installer arranges that; a
+> distro-packaged `cargo` does not).
+
+### Renderer: GIF
+
+For GIF output, install [`agg`](https://github.com/asciinema/agg#installation):
+
+- **macOS**
+  ```bash
+  brew install agg
+  ```
+
+- **Linux**
   ```bash
   cargo install --git https://github.com/asciinema/agg --locked
   ```
   > `agg` is not on crates.io (the `agg` crate there is an unrelated project),
-  > hence the `--git` install.
-
-- For animated SVG output, install
-  [`asg`](https://github.com/kingsword09/asg#quick-start):
-  ```bash
-  cargo install asg --locked
-  ```
-  > `asg` reads asciicast v3 only, so SVG output also needs `asciinema` 3 or newer.
-
-> [!TIP]
-> Cargo installs both renderers into `~/.cargo/bin` - make sure it is on your
-> `PATH` (rustup's installer arranges that; a distro-packaged `cargo` does not).
+  > hence the `--git` install. Some distros package it as `agg` or
+  > `asciinema-agg` (on Arch, the AUR `asciinema-agg` package).
 
 > [!TIP]
 > GIF size can be reduced by [`gifsicle`](https://github.com/kohler/gifsicle)
 > without quality loss, see [`GIF Size Optimization`](#gif-size-optimization).
+
+### Renderer: SVG
+
+For animated SVG output, install
+[`asg`](https://github.com/kingsword09/asg#quick-start) - no package on either
+platform, so `cargo` on both:
+
+```bash
+cargo install asg --locked
+```
 
 ## Examples
 
@@ -380,12 +401,12 @@ such as [context-usage.rec.sh](https://github.com/dimk90/pi-context-view/blob/de
 
 The extension of the path passed to `SetOutput` picks the format:
 
-| Format  | Description                              | Render dependency                                       |
-| ------- | ---------------------------------------- | ------------------------------------------------------- |
-| `.cast` | Editable, replayable asciicast recording | None                                                    |
-| `.txt`  | Plain-text terminal log                  | None                                                    |
-| `.gif`  | Animated raster image                    | [`agg`](https://github.com/asciinema/agg#installation)  |
-| `.svg`  | Sharp, CSS-animated vector image         | [`asg`](https://github.com/kingsword09/asg#quick-start) |
+| Format  | Description                              | Render dependency      |
+| ------- | ---------------------------------------- | ---------------------- |
+| `.cast` | Editable, replayable asciicast recording | None                   |
+| `.txt`  | Plain-text terminal log                  | None                   |
+| `.gif`  | Animated raster image                    | [`agg`](#renderer-gif) |
+| `.svg`  | Sharp, CSS-animated vector image         | [`asg`](#renderer-svg) |
 
 `SetOutput` is repeatable - one recording, several outputs:
 
@@ -485,10 +506,18 @@ most:
 
 ### Dependency
 
-```bash
-sudo pacman -S gifsicle
-```
-> Without it, `Render` leaves GIFs unoptimized and reports the skipped pass.
+You need `gifsicle`. Without it, `Render` leaves GIFs unoptimized and reports
+the skipped pass.
+
+- **macOS**
+  ```bash
+  brew install gifsicle
+  ```
+
+- **Linux**
+  ```bash
+  sudo pacman -S gifsicle
+  ```
 
 ### Other Ways
 
@@ -509,8 +538,9 @@ Reduce what the renderer has to encode before optimizing it:
 
 ## Documentation
 
-
 - For the full list of commands and settings, see [REFERENCE.md](doc/REFERENCE.md).
+
+- For debugging a recording script, see [DEBUG.md](doc/DEBUG.md).
 
 - For the agent skill with recording best practices, see
   [SKILL.md](skills/s-vhs-recording/SKILL.md). Install it with
@@ -527,8 +557,6 @@ Reduce what the renderer has to encode before optimizing it:
   ```bash
   mkdir -p ~/.claude/skills/s-vhs-recording && curl -fsSL https://dimk90.github.io/s-vhs/skill -o ~/.claude/skills/s-vhs-recording/SKILL.md
   ```
-
-- For debugging a recording script, see [DEBUG.md](doc/DEBUG.md).
 
 - For the architecture behind `tmux + asciinema + output renderers` and how
   `s-vhs` glues them together, see [INTRO.md](doc/INTRO.md).
