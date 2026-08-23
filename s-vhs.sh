@@ -84,6 +84,14 @@ _SVHS_SVG_EMOJI_FALLBACKS="'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoj
 _SVHS_FONT_SIZE=28
 _SVHS_LINE_HEIGHT=1.2
 
+# Nominal monospace advance in em, the cell width asg is fixed at. agg takes
+# its own from the primary font, so a GIF width is measured by probing agg and
+# only falls back to this. asg's window bar costs these fixed pixels on top of
+# the grid and the padding
+_SVHS_CELL_ADVANCE=0.6
+_SVHS_WINDOW_BAR_WIDTH=40
+_SVHS_WINDOW_BAR_HEIGHT=60
+
 # Glyph rasterization, swash only: alpha-coverage levels kept in text glyph
 # masks, and outlines fitted to the pixel grid
 _SVHS_FONT_ANTIALIASING=6
@@ -174,6 +182,10 @@ _SVHS_WRITE_TIMEOUT=5
 # Recorded shell command line and environment, assembled by Start
 _SVHS_SHELL_COMMAND=()
 _SVHS_SHELL_ENV=()
+
+# agg's font selection, assembled by Start so the resolution probe and the
+# render resolve the same faces
+_SVHS_AGG_FONT_ARGS=()
 
 # Session and recorder lifecycle state
 _SVHS_STARTED=0
@@ -1197,6 +1209,7 @@ Start() {
     _svhs_prepare_cast || return 1
 
     _svhs_build_shell
+    _svhs_build_agg_font_args
 
     # the shell's own pairs come first, so an explicit Env PS1 still wins:
     # tmux keeps the last -e given for a name
@@ -1232,6 +1245,7 @@ Start() {
         printf '::: S-VHS v%s\n' "$(svhs_version)"
         printf '::: Started session %s, attach with: tmux -L %s attach -t %s\n' \
             "$_SVHS_SESSION" "$_SVHS_TMUX_SOCKET" "$_SVHS_SESSION"
+        _svhs_report_geometry
     fi
 }
 
@@ -1596,10 +1610,8 @@ Render() {
     #
     local clean_lines=''
     local output
-    local font_dir
     # agg spells hinting as a value rather than as a flag pair
     local hinting='true'
-    local agg_font_args=()
     local asg_font_args=()
     local asg_frame_args=()
     local quiet_args=()
@@ -1624,23 +1636,12 @@ Render() {
     _SVHS_REC_PID=''
 
     if [[ -n $_SVHS_FONT_FAMILY_EXACT ]]; then
-        agg_font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
         asg_font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
-    else
-        [[ -n $_SVHS_FONT_FAMILY ]] &&
-            agg_font_args+=(--text-font-family "$_SVHS_FONT_FAMILY")
-        [[ -n $_SVHS_EMOJI_FONT_FAMILY ]] &&
-            agg_font_args+=(--emoji-font-family "$_SVHS_EMOJI_FONT_FAMILY")
-        # the SVG chain is built as a whole, so it is only worth naming once
-        # one of its two configurable parts was set
-        if [[ -n $_SVHS_FONT_FAMILY || -n $_SVHS_EMOJI_FONT_FAMILY ]]; then
-            asg_font_args+=(--font-family "$(_svhs_svg_font_family)")
-        fi
+    elif [[ -n $_SVHS_FONT_FAMILY || -n $_SVHS_EMOJI_FONT_FAMILY ]]; then
+        # the SVG chain is built as a whole, so it is only worth naming once one
+        # of its two configurable parts was set
+        asg_font_args+=(--font-family "$(_svhs_svg_font_family)")
     fi
-
-    for font_dir in ${_SVHS_FONT_DIRS[@]+"${_SVHS_FONT_DIRS[@]}"}; do
-        agg_font_args+=(--font-dir "$font_dir")
-    done
 
     [[ $_SVHS_FONT_HINTING == 'off' ]] && hinting='false'
     [[ $_SVHS_QUIET == 1 ]] && quiet_args=(-q)
@@ -1674,20 +1675,20 @@ Render() {
             # bash 3.2 (stock macOS) rejects an empty array under set -u, so
             # expand optional renderer arguments only when they were set
             *.gif)
-                agg ${agg_font_args[@]+"${agg_font_args[@]}"}          \
-                    ${quiet_args[@]+"${quiet_args[@]}"}                \
-                    ${loop_args[@]+"${loop_args[@]}"}                  \
-                    ${bold_args[@]+"${bold_args[@]}"}                  \
-                    --font-size "$_SVHS_FONT_SIZE"                     \
-                    --line-height "$_SVHS_LINE_HEIGHT"                 \
-                    --theme "$_SVHS_THEME"                             \
-                    --speed "$_SVHS_PLAYBACK_SPEED"                    \
-                    --fps-cap "$_SVHS_FRAMERATE"                       \
-                    --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT"         \
-                    --last-frame-duration "$_SVHS_LAST_FRAME_DURATION" \
-                    --font-antialiasing "$_SVHS_FONT_ANTIALIASING"     \
-                    --font-hinting "$hinting"                          \
-                    --renderer "$_SVHS_ENGINE"                         \
+                agg ${_SVHS_AGG_FONT_ARGS[@]+"${_SVHS_AGG_FONT_ARGS[@]}"} \
+                    ${quiet_args[@]+"${quiet_args[@]}"}                   \
+                    ${loop_args[@]+"${loop_args[@]}"}                     \
+                    ${bold_args[@]+"${bold_args[@]}"}                     \
+                    --font-size "$_SVHS_FONT_SIZE"                        \
+                    --line-height "$_SVHS_LINE_HEIGHT"                    \
+                    --theme "$_SVHS_THEME"                                \
+                    --speed "$_SVHS_PLAYBACK_SPEED"                       \
+                    --fps-cap "$_SVHS_FRAMERATE"                          \
+                    --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT"            \
+                    --last-frame-duration "$_SVHS_LAST_FRAME_DURATION"    \
+                    --font-antialiasing "$_SVHS_FONT_ANTIALIASING"        \
+                    --font-hinting "$hinting"                             \
+                    --renderer "$_SVHS_ENGINE"                            \
                     "$_SVHS_CAST" "$output" || return 1
                 _svhs_optimize_gif "$output" || return 1
                 _svhs_report_gif_skips "$output"
@@ -2164,6 +2165,38 @@ _svhs_build_shell() {
 }
 
 
+_svhs_build_agg_font_args() {
+    #
+    # Assemble agg's font selection into _SVHS_AGG_FONT_ARGS. Settings are
+    # frozen once the session starts, so building it in Start lets the
+    # resolution probe and the render share one font selection.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_build_agg_font_args
+    #
+    local font_dir
+
+    _SVHS_AGG_FONT_ARGS=()
+
+    if [[ -n $_SVHS_FONT_FAMILY_EXACT ]]; then
+        _SVHS_AGG_FONT_ARGS+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
+    else
+        [[ -n $_SVHS_FONT_FAMILY ]] &&
+            _SVHS_AGG_FONT_ARGS+=(--text-font-family "$_SVHS_FONT_FAMILY")
+        [[ -n $_SVHS_EMOJI_FONT_FAMILY ]] &&
+            _SVHS_AGG_FONT_ARGS+=(--emoji-font-family "$_SVHS_EMOJI_FONT_FAMILY")
+    fi
+
+    for font_dir in ${_SVHS_FONT_DIRS[@]+"${_SVHS_FONT_DIRS[@]}"}; do
+        _SVHS_AGG_FONT_ARGS+=(--font-dir "$font_dir")
+    done
+    return 0
+}
+
+
 _svhs_prepare_cast() {
     #
     # Select a requested cast path or create a temporary renderer input.
@@ -2562,6 +2595,158 @@ _svhs_report_svg_skips() {
         _svhs_report_skipped 'SetFontDir' "$output" 'SVG output'
     [[ $_SVHS_OPTIMIZE == 'on' ]] &&
         _svhs_report_skipped 'SetOptimize' "$output" 'SVG output'
+    return 0
+}
+
+
+_svhs_grid_width() {
+    #
+    # Compute the width in pixels a cell grid renders to, assuming the nominal
+    # monospace advance. That is what asg draws; agg takes the advance from
+    # the primary font, so there the result is only an estimate.
+    #
+    # Parameters:
+    #   $1 - cells - cells across, including the renderer's own padding.
+    #   $2 - extra - pixels added left and right together.
+    #
+    # Example:
+    #   width=$(_svhs_grid_width 46 0)
+    #
+    local cells="$1"
+    local extra="$2"
+
+    # bash has no floating-point arithmetic, and the advance is a fraction
+    awk -v cells="$cells" -v extra="$extra" \
+        -v advance="$_SVHS_CELL_ADVANCE"    \
+        -v font_size="$_SVHS_FONT_SIZE"     \
+        'BEGIN { printf "%d", int(cells * advance * font_size + extra + 0.5) }'
+}
+
+
+_svhs_grid_height() {
+    #
+    # Compute the height in pixels a cell grid renders to. Both renderers take
+    # a row's height from the line height alone, so this is exact.
+    #
+    # Parameters:
+    #   $1 - cells - cells down, including the renderer's own padding.
+    #   $2 - extra - pixels added above and below together.
+    #
+    # Example:
+    #   height=$(_svhs_grid_height 5 0)
+    #
+    local cells="$1"
+    local extra="$2"
+
+    # bash has no floating-point arithmetic, and the line height is a fraction
+    awk -v cells="$cells" -v extra="$extra"    \
+        -v line_height="$_SVHS_LINE_HEIGHT"    \
+        -v font_size="$_SVHS_FONT_SIZE"        \
+        'BEGIN { printf "%d", int(cells * line_height * font_size + extra + 0.5) }'
+}
+
+
+_svhs_gif_width() {
+    #
+    # Measure the width agg gives this recording's GIF, by rendering a
+    # throwaway single-row cast of the configured width and reading the size
+    # back out of its header. agg sizes a cell by the face the system resolves
+    # the font family to - a semi-extended or condensed one renders a tenth
+    # wider or narrower than nominal - which no setting can predict, while a
+    # single row keeps the probe at a few tens of milliseconds.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   width=$(_svhs_gif_width) || width=$(_svhs_grid_width 46 0)
+    #
+    local probe_cast
+    local probe_gif
+    local low
+    local high
+
+    probe_cast=$(mktemp) || return 1
+    probe_gif="$probe_cast.gif"
+
+    # agg rejects a cast without output events, so the probe prints one cell
+    printf '{"version":3,"term":{"cols":%s,"rows":1},"timestamp":0}\n[0.0,"o","x"]\n' \
+        "$_SVHS_COLS" > "$probe_cast"
+
+    # the line height would only change the height, which is not read back,
+    # but the engine picks its own faces and must match the real render
+    if ! agg ${_SVHS_AGG_FONT_ARGS[@]+"${_SVHS_AGG_FONT_ARGS[@]}"} \
+             --font-size "$_SVHS_FONT_SIZE"                        \
+             --renderer "$_SVHS_ENGINE"                            \
+             "$probe_cast" "$probe_gif" > /dev/null 2>&1; then
+        rm -f -- "$probe_cast" "$probe_gif"
+        return 1
+    fi
+
+    # a GIF stores its width as two little-endian bytes at offset 6
+    read -r low high < <(od -An -tu1 -j6 -N2 "$probe_gif")
+    rm -f -- "$probe_cast" "$probe_gif"
+
+    printf '%d' "$((low + high * 256))"
+}
+
+
+_svhs_report_geometry() {
+    #
+    # Report the recorded grid and the size every requested renderer turns it
+    # into, so a mistyped SetCols or SetFontSize shows up before the recording
+    # runs rather than in the finished file.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_report_geometry
+    #
+    local grid="$_SVHS_COLS cols x $_SVHS_ROWS rows x ${_SVHS_FONT_SIZE}px font"
+    local output
+    local gif=0
+    local svg=0
+    local padding_x="${_SVHS_PADDING_X:-$_SVHS_PADDING}"
+    local padding_y="${_SVHS_PADDING_Y:-$_SVHS_PADDING}"
+    local window_width=0
+    local window_height=0
+    local width
+    local estimated=''
+
+    for output in "${_SVHS_OUTPUTS[@]}"; do
+        case "$output" in
+            *.gif) gif=1 ;;
+            *.svg) svg=1 ;;
+        esac
+    done
+
+    # a cast and a text export commit to no pixels, leaving only the grid
+    if [[ $gif == 0 && $svg == 0 ]]; then
+        printf '::: %s\n' "$grid"
+        return 0
+    fi
+
+    # agg pads a GIF by one cell left and right and by half a row above and
+    # below; a failed probe leaves the nominal advance, marked as a guess
+    if [[ $gif == 1 ]]; then
+        if ! width=$(_svhs_gif_width); then
+            width=$(_svhs_grid_width "$((_SVHS_COLS + 2))" 0)
+            estimated='~'
+        fi
+        printf '::: GIF: %s -> %s%s x %s px\n' "$grid" "$estimated" "$width" \
+            "$(_svhs_grid_height "$((_SVHS_ROWS + 1))" 0)"
+    fi
+
+    if [[ $svg == 1 ]]; then
+        if [[ $_SVHS_WINDOW_BAR == 'on' ]]; then
+            window_width=$_SVHS_WINDOW_BAR_WIDTH
+            window_height=$_SVHS_WINDOW_BAR_HEIGHT
+        fi
+        printf '::: SVG: %s -> %s x %s px\n' "$grid"                                \
+            "$(_svhs_grid_width "$_SVHS_COLS" "$((2 * padding_x + window_width))")"  \
+            "$(_svhs_grid_height "$_SVHS_ROWS" "$((2 * padding_y + window_height))")"
+    fi
     return 0
 }
 

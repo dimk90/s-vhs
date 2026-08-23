@@ -101,7 +101,10 @@ least one `SetOutput`.
 - `SetCols`/`SetRows` size the grid in **cells, not pixels**. Fit them to the
   content: a two-line demo in a 40-row terminal is mostly empty frame.
 - `SetFontSize` is the only pixel setting; it scales the render without
-  changing the grid the recorded shell sees.
+  changing the grid the recorded shell sees. `Start` prints the resulting size
+  per renderer (`::: GIF: 60 cols x 8 rows x 40px font -> 1488 x 432 px`) —
+  read it back and adjust the grid or the font size before a render that is
+  far off the size the user asked for.
 - `SetFontFamily 'A, B'` takes a list and keeps agg's Nerd Font and emoji
   fallbacks. Pass a family that exists on the rendering machine — agg fails
   with `no faces matching font family options` when none of its defaults is

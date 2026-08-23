@@ -30,6 +30,7 @@
 * SVG output now caps idle pauses at 5 seconds like GIF output.
 * Show non-fatal S-VHS warnings in yellow.
 * Print the S-VHS version when a recording starts.
+* Print the recorded grid and the estimated pixel size of each rendered output.
 
 ### Fixed
 * Initialize the default playback speed so rendering works without `SetPlaybackSpeed`.

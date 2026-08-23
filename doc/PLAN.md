@@ -77,6 +77,11 @@
   - [x] Deploy skill to npm? Or simple curl command? - Pages, next to the
         library: `skill` and `skill-vX.Y.Z`, published by `release.yml`, plus
         `gh skill install` from the spec-compliant `skills/` layout.
+- [x] Print estimated resolution e.g. '::: N Rows x M Cols x F FontSize -> Resolution W x H').
+      One `::: GIF: ...` / `::: SVG: ...` line per requested renderer in
+      `Start`. asg's fixed 0.6 em cell makes the SVG size exact; agg sizes a
+      cell by the resolved face, so the GIF width comes from a throwaway
+      single-row agg render (~30 ms), falling back to a `~` estimate.
 - [ ] Test on macOS + installation instruction.
 
 
@@ -115,5 +120,4 @@
   - [ ] catppuccin themes.
   - [ ] Add example with custom theme (hex colors).
 - [ ] Add a `git` theme (bash/zsh command substitution, fish `__fish_git_prompt`)?
-- [ ] Print estimated resolution in `Start` ('e.g. ::: N Rows x M Cols x F FontSize -> Resolution W x H') ?
 - [ ] CLI for recording scripts to override some of the settings: e.g. `--set-optimize off`, `--set-output ...`.
