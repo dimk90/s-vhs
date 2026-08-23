@@ -18,21 +18,25 @@ files served by Pages:
 ```text
 .nojekyll
 latest
+skill
+skill-v0.4.0
+...
 v0.1.0
 v0.2.0
 ...
 ```
 
-Each extensionless `vX.Y.Z` file is an exact copy of `s-vhs.sh` from that tag.
-Released version files are immutable: publication must fail rather than replace
-an existing version with different content. `latest` is replaced on every
-stable release.
+Each extensionless `vX.Y.Z` file is an exact copy of `s-vhs.sh` from that tag,
+and each `skill-vX.Y.Z` a copy of `skills/s-vhs-recording/SKILL.md`. Released
+files are immutable:
+publication must fail rather than replace an existing one with different
+content. The `latest` and `skill` aliases are replaced on every stable release.
 
 Pages publishes one branch snapshot and cannot read files directly from Git
-tags. The release workflow therefore copies each tagged `s-vhs.sh` into
-`deploy`, preserving all earlier versions. Use Pages' **Deploy from a branch**
-source, not `actions/deploy-pages`, whose artifact replaces the whole site on
-every deployment.
+tags. The release workflow therefore copies both tagged files into `deploy`,
+preserving all earlier versions. Use Pages' **Deploy from a branch** source,
+not `actions/deploy-pages`, whose artifact replaces the whole site on every
+deployment.
 
 The `.nojekyll` marker disables unnecessary Jekyll processing and makes Pages
 serve these files verbatim. The site deliberately has no landing page, so the
@@ -105,13 +109,15 @@ release:
 
 1. Validate the stable `vX.Y.Z` tag and `svhs_version`.
 2. Read the current `deploy` branch without force-pushing.
-3. Copy the tagged `s-vhs.sh` to the extensionless path named by the tag.
-4. Fail if that path already exists with different content; do nothing if it
+3. Copy the tagged `s-vhs.sh` to the extensionless path named by the tag, and
+   the tagged `skills/s-vhs-recording/SKILL.md` to `skill-<tag>`.
+4. Fail if either path already exists with different content; do nothing if it
    already contains the same content.
-5. Replace `latest` with the same file.
-6. Commit both files to `deploy` while preserving every earlier version.
+5. Replace the `latest` and `skill` aliases with the same files.
+6. Commit every changed file to `deploy` in one commit while preserving every
+   earlier version.
 7. Explicitly request a Pages build and wait for it to finish.
-8. Verify that the public version URL serves the exact released bytes.
+8. Verify that both public version URLs serve the exact released bytes.
 9. Create the GitHub release from the matching changelog section.
 
 GitHub does not trigger a branch-based Pages build when `GITHUB_TOKEN` pushes
@@ -120,5 +126,5 @@ the branch update and `pages: write` for the explicit build request.
 
 All releases share one workflow concurrency group, so different tags cannot
 race while updating `deploy`. Rerunning an older release verifies its pinned
-file without moving `latest` backwards. Do not protect the branch in a way that
+files without moving the aliases backwards. Do not protect the branch in a way that
 prevents the release workflow from updating it.

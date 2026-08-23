@@ -24,7 +24,7 @@ set -euo pipefail
 
 
 svhs_version() {
-    printf '%s\n' '0.3.0'
+    printf '%s\n' '0.4.0'
 }
 
 
@@ -40,14 +40,27 @@ _SVHS_SESSION="s-vhs-$$"
 # Output paths added by SetOutput
 _SVHS_OUTPUTS=()
 
+# Recorder metadata and diagnostic output
+_SVHS_TITLE=''
+_SVHS_QUIET=0
+
+# Warning color paired with its reset so styling cannot leak into later output
+_SVHS_WARNING_COLOR=$'\033[33m'
+_SVHS_COLOR_RESET=$'\033[0m'
+
 # Terminal size in cells, not pixels
 _SVHS_COLS=100
 _SVHS_ROWS=40
 
 # Renderer fonts, empty = their defaults. FAMILY keeps the Nerd Font and
-# emoji fallbacks; FAMILY_EXACT replaces the whole chain, no fallbacks
+# emoji fallbacks; FAMILY_EXACT replaces the whole chain, no fallbacks;
+# EMOJI_FONT_FAMILY replaces the emoji fallbacks alone
 _SVHS_FONT_FAMILY=''
 _SVHS_FONT_FAMILY_EXACT=''
+_SVHS_EMOJI_FONT_FAMILY=''
+
+# Extra font directories added by SetFontDir, searched by the GIF renderer
+_SVHS_FONT_DIRS=()
 
 # agg bundles these fallbacks; an SVG can only name fonts on the viewer's
 # system, and it picks a face per glyph. Text faces must therefore come before
@@ -62,15 +75,59 @@ _SVHS_SVG_FONT_FALLBACKS+="'Liberation Mono','Roboto Mono','Menlo',"
 _SVHS_SVG_FONT_FALLBACKS+="'DejaVu Sans Mono','SF Mono','Consolas',"
 _SVHS_SVG_FONT_FALLBACKS+="'Symbols Nerd Font Mono','Symbols Nerd Font',"
 _SVHS_SVG_FONT_FALLBACKS+="'Powerline Symbols','Apple Symbols','Segoe UI Symbol',"
-_SVHS_SVG_FONT_FALLBACKS+="'Noto Sans Symbols 2','Noto Sans Symbols','Apple Color Emoji',"
-_SVHS_SVG_FONT_FALLBACKS+="'Segoe UI Emoji','Noto Color Emoji',monospace"
+_SVHS_SVG_FONT_FALLBACKS+="'Noto Sans Symbols 2','Noto Sans Symbols'"
+
+# Emoji tail of that chain, replaced by SetEmojiFontFamily
+_SVHS_SVG_EMOJI_FALLBACKS="'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji'"
 
 # Output resolution ~ COLS x ROWS x FONT_SIZE
 _SVHS_FONT_SIZE=28
 _SVHS_LINE_HEIGHT=1.2
 
+# Nominal monospace advance in em, the cell width asg is fixed at. agg takes
+# its own from the primary font, so a GIF width is measured by probing agg and
+# only falls back to this. asg's window bar costs these fixed pixels on top of
+# the grid and the padding
+_SVHS_CELL_ADVANCE=0.6
+_SVHS_WINDOW_BAR_WIDTH=40
+_SVHS_WINDOW_BAR_HEIGHT=60
+
+# Glyph rasterization, swash only: alpha-coverage levels kept in text glyph
+# masks, and outlines fitted to the pixel grid
+_SVHS_FONT_ANTIALIASING=6
+_SVHS_FONT_ANTIALIASING_SET=0
+_SVHS_FONT_HINTING='on'
+_SVHS_FONT_HINTING_SET=0
+
 # Render theme; headless recording has no host theme to inherit
 _SVHS_THEME='dracula'
+
+# Bold text in the bright ANSI color, the way most terminals show it
+_SVHS_BOLD_IS_BRIGHT='off'
+
+# agg's frame rasterizer; only resvg draws COLRv1 emoji in color
+_SVHS_ENGINE='swash'
+_SVHS_ENGINE_SET=0
+
+# Lossless gifsicle pass over the rendered GIF; it costs render time, so opt-in
+_SVHS_OPTIMIZE='off'
+
+# SVG frame around the terminal: padding in output pixels, its per-axis
+# overrides - empty until set, so both follow _SVHS_PADDING - macOS-style
+# window decorations, and the terminal cursor
+_SVHS_PADDING=0
+_SVHS_PADDING_X=''
+_SVHS_PADDING_Y=''
+_SVHS_WINDOW_BAR='off'
+_SVHS_CURSOR='on'
+
+# Timing applied by the renderers rather than baked into the cast
+_SVHS_PLAYBACK_SPEED=1
+_SVHS_FRAMERATE=30
+_SVHS_IDLE_TIME_LIMIT=5
+_SVHS_LOOP='on'
+_SVHS_LAST_FRAME_DURATION=3
+_SVHS_LAST_FRAME_DURATION_SET=0
 
 # Recorded shell; must be one s-vhs knows how to isolate and inject
 # a prompt into, and bash is present everywhere
@@ -91,6 +148,10 @@ _SVHS_POWERLINE_SEPARATOR=$'\xee\x82\xb0'
 
 # NAME=VALUE pairs exported into the recorded shell by Env
 _SVHS_ENV=()
+
+# Named per process so parallel recordings do not share copied text
+_SVHS_COPY_BUFFER="s-vhs-copy-$$"
+_SVHS_COPY_BUFFER_SET=0
 
 # Delays in seconds
 _SVHS_TYPING_SPEED=0.07
@@ -122,6 +183,10 @@ _SVHS_WRITE_TIMEOUT=5
 _SVHS_SHELL_COMMAND=()
 _SVHS_SHELL_ENV=()
 
+# agg's font selection, assembled by Start so the resolution probe and the
+# render resolve the same faces
+_SVHS_AGG_FONT_ARGS=()
+
 # Session and recorder lifecycle state
 _SVHS_STARTED=0
 _SVHS_CAST=''
@@ -142,12 +207,20 @@ SetOutput 'demo.gif'
 
 # SetCols 100
 # SetRows 40
+# SetShell 'bash'
+# SetPrompt 'arrow'
+
 # SetFontSize 28
 # SetFontFamily 'JetBrains Mono'
 # SetTheme 'dracula'
+
 # SetTypingSpeed 0.07
-# SetShell 'bash'
-# SetPrompt 'arrow'
+# SetPlaybackSpeed 1
+# SetFramerate 30
+# SetLoop on
+# SetOptimize off
+
+# Require 'git' 'jq'
 
 Start
 Show
@@ -163,10 +236,10 @@ TEMPLATE
 
 SetOutput() {
     #
-    # Add a cast, GIF, or animated SVG output for the recording.
+    # Add a cast, plain-text, GIF, or animated SVG output for the recording.
     #
     # Parameters:
-    #   $1 - output - path ending in .cast, .gif, or .svg.
+    #   $1 - output - path ending in .cast, .txt, .gif, or .svg.
     #
     # Example:
     #   SetOutput 'demo.gif' || exit 1
@@ -176,7 +249,7 @@ SetOutput() {
     _svhs_require_configuration_phase 'SetOutput' || return 1
 
     case "$output" in
-        *.cast|*.gif|*.svg) ;;
+        *.cast|*.txt|*.gif|*.svg) ;;
         '')
             printf 'SetOutput: output path must not be empty\n' >&2
             return 1
@@ -314,8 +387,74 @@ SetFontFamilyExact() {
         printf 'SetFontFamilyExact: cannot be combined with SetFontFamily\n' >&2
         return 1
     fi
+    if [[ -n $_SVHS_EMOJI_FONT_FAMILY ]]; then
+        printf 'SetFontFamilyExact: cannot be combined with SetEmojiFontFamily\n' >&2
+        return 1
+    fi
 
     _SVHS_FONT_FAMILY_EXACT="$font_family"
+}
+
+
+SetEmojiFontFamily() {
+    #
+    # Set the families emoji are drawn with, in place of the renderer's own
+    # emoji chain. The GIF renderer picks the first family carrying the glyph;
+    # the SVG only names them, so the viewer's system decides.
+    #
+    # Parameters:
+    #   $1 - emoji_font_family - non-empty comma-separated family list.
+    #
+    # Example:
+    #   SetEmojiFontFamily 'Noto Color Emoji' || exit 1
+    #
+    local emoji_font_family="${1-}"
+
+    _svhs_require_configuration_phase 'SetEmojiFontFamily' || return 1
+
+    if [[ -z $emoji_font_family ]]; then
+        printf 'SetEmojiFontFamily: font family must not be empty\n' >&2
+        return 1
+    fi
+    # an exact list already names every family, emoji ones included, and agg
+    # rejects the two flags at once
+    if [[ -n $_SVHS_FONT_FAMILY_EXACT ]]; then
+        printf 'SetEmojiFontFamily: cannot be combined with SetFontFamilyExact\n' >&2
+        return 1
+    fi
+
+    _SVHS_EMOJI_FONT_FAMILY="$emoji_font_family"
+}
+
+
+SetFontDir() {
+    #
+    # Add a directory the GIF renderer searches for fonts on top of the
+    # installed ones; repeatable. Fonts kept next to the recording script
+    # render the same on a machine that has none of them installed.
+    #
+    # Parameters:
+    #   $1 - font_dir - existing directory holding font files.
+    #
+    # Example:
+    #   SetFontDir './fonts' || exit 1
+    #
+    local font_dir="${1-}"
+
+    _svhs_require_configuration_phase 'SetFontDir' || return 1
+
+    if [[ -z $font_dir ]]; then
+        printf 'SetFontDir: font directory must not be empty\n' >&2
+        return 1
+    fi
+    # agg passes over a directory that is not there, leaving a recording that
+    # differs only by its font, so a mistyped path is reported here instead
+    if [[ ! -d $font_dir ]]; then
+        printf 'SetFontDir: not a directory: %s\n' "$font_dir" >&2
+        return 1
+    fi
+
+    _SVHS_FONT_DIRS+=("$font_dir")
 }
 
 
@@ -339,6 +478,63 @@ SetFontSize() {
     fi
 
     _SVHS_FONT_SIZE="$font_size"
+}
+
+
+SetFontAntialiasing() {
+    #
+    # Set how many alpha-coverage levels the GIF renderer keeps in text glyph
+    # masks: fewer levels give harder glyph edges and a smaller file, 'off'
+    # being the two-level extreme.
+    #
+    # Parameters:
+    #   $1 - levels - number of levels from 2 to 256, or 'off' for 2.
+    #
+    # Example:
+    #   SetFontAntialiasing 16 || exit 1
+    #
+    local levels="${1-}"
+
+    _svhs_require_configuration_phase 'SetFontAntialiasing' || return 1
+
+    if [[ $levels != 'off' ]]; then
+        if ! _svhs_is_positive_integer "$levels" || ((levels < 2 || levels > 256)); then
+            printf 'SetFontAntialiasing: expected off or 2 to 256, got: %s\n' \
+                "$levels" >&2
+            return 1
+        fi
+    fi
+
+    _SVHS_FONT_ANTIALIASING="$levels"
+    _SVHS_FONT_ANTIALIASING_SET=1
+}
+
+
+SetFontHinting() {
+    #
+    # Fit glyph outlines to the pixel grid while rendering the GIF, which
+    # keeps small text legible; turning it off draws the font's own shapes.
+    #
+    # Parameters:
+    #   $1 - font_hinting - 'on' or 'off'.
+    #
+    # Example:
+    #   SetFontHinting 'off' || exit 1
+    #
+    local font_hinting="${1-}"
+
+    _svhs_require_configuration_phase 'SetFontHinting' || return 1
+
+    case "$font_hinting" in
+        on|off) ;;
+        *)
+            printf 'SetFontHinting: expected on or off, got: %s\n' "$font_hinting" >&2
+            return 1
+            ;;
+    esac
+
+    _SVHS_FONT_HINTING="$font_hinting"
+    _SVHS_FONT_HINTING_SET=1
 }
 
 
@@ -388,6 +584,387 @@ SetTheme() {
 }
 
 
+SetBoldIsBright() {
+    #
+    # Draw bold text in the bright ANSI color (0..7 -> 8..15), the way most
+    # terminals show it, instead of the literal color it was written with.
+    #
+    # Parameters:
+    #   $1 - bold_is_bright - 'on' or 'off'.
+    #
+    # Example:
+    #   SetBoldIsBright 'on' || exit 1
+    #
+    local bold_is_bright="${1-}"
+
+    _svhs_require_configuration_phase 'SetBoldIsBright' || return 1
+
+    case "$bold_is_bright" in
+        on|off) ;;
+        *)
+            printf 'SetBoldIsBright: expected on or off, got: %s\n' \
+                "$bold_is_bright" >&2
+            return 1
+            ;;
+    esac
+
+    _SVHS_BOLD_IS_BRIGHT="$bold_is_bright"
+}
+
+
+SetEngine() {
+    #
+    # Select the backend the GIF renderer rasterizes frames with. 'resvg'
+    # draws COLRv1 emoji - recent Noto Color Emoji - in color, which 'swash'
+    # renders monochrome; 'swash' is the faster one and the only one font
+    # hinting applies to.
+    #
+    # Parameters:
+    #   $1 - engine - 'swash' or 'resvg'.
+    #
+    # Example:
+    #   SetEngine 'resvg' || exit 1
+    #
+    local engine="${1-}"
+
+    _svhs_require_configuration_phase 'SetEngine' || return 1
+
+    case "$engine" in
+        swash|resvg) ;;
+        *)
+            printf 'SetEngine: expected swash or resvg, got: %s\n' "$engine" >&2
+            return 1
+            ;;
+    esac
+
+    _SVHS_ENGINE="$engine"
+    _SVHS_ENGINE_SET=1
+}
+
+
+SetOptimize() {
+    #
+    # Shrink the rendered GIF with a lossless `gifsicle` pass, typically by a
+    # fifth to a quarter, at the cost of a slower `Render`. Without gifsicle
+    # installed the GIF is written unoptimized.
+    #
+    # Parameters:
+    #   $1 - optimize - 'on' or 'off'.
+    #
+    # Example:
+    #   SetOptimize 'on' || exit 1
+    #
+    local optimize="${1-}"
+
+    _svhs_require_configuration_phase 'SetOptimize' || return 1
+
+    case "$optimize" in
+        on|off) ;;
+        *)
+            printf 'SetOptimize: expected on or off, got: %s\n' "$optimize" >&2
+            return 1
+            ;;
+    esac
+
+    _SVHS_OPTIMIZE="$optimize"
+}
+
+
+SetPadding() {
+    #
+    # Set the padding drawn around the terminal on both axes, in the theme's
+    # background color.
+    #
+    # Parameters:
+    #   $1 - padding - non-negative integer number of output pixels.
+    #
+    # Example:
+    #   SetPadding 20 || exit 1
+    #
+    local padding="${1-}"
+
+    _svhs_require_configuration_phase 'SetPadding' || return 1
+
+    if ! _svhs_is_nonnegative_integer "$padding"; then
+        printf 'SetPadding: expected a non-negative integer, got: %s\n' \
+            "$padding" >&2
+        return 1
+    fi
+
+    _SVHS_PADDING="$padding"
+}
+
+
+SetPaddingX() {
+    #
+    # Set the padding left and right of the terminal, overriding SetPadding
+    # on that axis.
+    #
+    # Parameters:
+    #   $1 - padding - non-negative integer number of output pixels.
+    #
+    # Example:
+    #   SetPaddingX 40 || exit 1
+    #
+    local padding="${1-}"
+
+    _svhs_require_configuration_phase 'SetPaddingX' || return 1
+
+    if ! _svhs_is_nonnegative_integer "$padding"; then
+        printf 'SetPaddingX: expected a non-negative integer, got: %s\n' \
+            "$padding" >&2
+        return 1
+    fi
+
+    _SVHS_PADDING_X="$padding"
+}
+
+
+SetPaddingY() {
+    #
+    # Set the padding above and below the terminal, overriding SetPadding on
+    # that axis.
+    #
+    # Parameters:
+    #   $1 - padding - non-negative integer number of output pixels.
+    #
+    # Example:
+    #   SetPaddingY 10 || exit 1
+    #
+    local padding="${1-}"
+
+    _svhs_require_configuration_phase 'SetPaddingY' || return 1
+
+    if ! _svhs_is_nonnegative_integer "$padding"; then
+        printf 'SetPaddingY: expected a non-negative integer, got: %s\n' \
+            "$padding" >&2
+        return 1
+    fi
+
+    _SVHS_PADDING_Y="$padding"
+}
+
+
+SetWindowBar() {
+    #
+    # Draw macOS-style window decorations - a bar with three buttons - above
+    # the terminal.
+    #
+    # Parameters:
+    #   $1 - window_bar - 'on' or 'off'.
+    #
+    # Example:
+    #   SetWindowBar 'on' || exit 1
+    #
+    local window_bar="${1-}"
+
+    _svhs_require_configuration_phase 'SetWindowBar' || return 1
+
+    case "$window_bar" in
+        on|off) ;;
+        *)
+            printf 'SetWindowBar: expected on or off, got: %s\n' "$window_bar" >&2
+            return 1
+            ;;
+    esac
+
+    _SVHS_WINDOW_BAR="$window_bar"
+}
+
+
+SetCursor() {
+    #
+    # Draw the terminal cursor; turning it off leaves the recorded text on
+    # screen without the block trailing it.
+    #
+    # Parameters:
+    #   $1 - cursor - 'on' or 'off'.
+    #
+    # Example:
+    #   SetCursor 'off' || exit 1
+    #
+    local cursor="${1-}"
+
+    _svhs_require_configuration_phase 'SetCursor' || return 1
+
+    case "$cursor" in
+        on|off) ;;
+        *)
+            printf 'SetCursor: expected on or off, got: %s\n' "$cursor" >&2
+            return 1
+            ;;
+    esac
+
+    _SVHS_CURSOR="$cursor"
+}
+
+
+SetPlaybackSpeed() {
+    #
+    # Set how fast the rendered animation plays back; the cast itself keeps
+    # the timing it was recorded with.
+    #
+    # Parameters:
+    #   $1 - playback_speed - positive multiplier; 2 plays twice as fast.
+    #
+    # Example:
+    #   SetPlaybackSpeed 2 || exit 1
+    #
+    local playback_speed="${1-}"
+
+    _svhs_require_configuration_phase 'SetPlaybackSpeed' || return 1
+
+    if ! _svhs_is_positive_number "$playback_speed"; then
+        printf 'SetPlaybackSpeed: expected a positive number, got: %s\n' \
+            "$playback_speed" >&2
+        return 1
+    fi
+
+    _SVHS_PLAYBACK_SPEED="$playback_speed"
+}
+
+
+SetFramerate() {
+    #
+    # Set the maximum number of rendered frames per second.
+    #
+    # Parameters:
+    #   $1 - framerate - positive integer frames per second.
+    #
+    # Example:
+    #   SetFramerate 60 || exit 1
+    #
+    local framerate="${1-}"
+
+    _svhs_require_configuration_phase 'SetFramerate' || return 1
+
+    if ! _svhs_is_positive_integer "$framerate"; then
+        printf 'SetFramerate: expected a positive integer, got: %s\n' \
+            "$framerate" >&2
+        return 1
+    fi
+
+    _SVHS_FRAMERATE="$framerate"
+}
+
+
+SetIdleTimeLimit() {
+    #
+    # Cap how long a pause is played back, so a wait for a slow command does
+    # not stall the animation. Applied while rendering, so the cast keeps
+    # every pause at its recorded length.
+    #
+    # Parameters:
+    #   $1 - idle_time_limit - positive number of seconds.
+    #
+    # Example:
+    #   SetIdleTimeLimit 2 || exit 1
+    #
+    local idle_time_limit="${1-}"
+
+    _svhs_require_configuration_phase 'SetIdleTimeLimit' || return 1
+
+    if ! _svhs_is_positive_number "$idle_time_limit"; then
+        printf 'SetIdleTimeLimit: expected a positive number, got: %s\n' \
+            "$idle_time_limit" >&2
+        return 1
+    fi
+
+    _SVHS_IDLE_TIME_LIMIT="$idle_time_limit"
+}
+
+
+SetLoop() {
+    #
+    # Repeat the rendered animation, or stop it after a single pass.
+    #
+    # Parameters:
+    #   $1 - loop - 'on' or 'off'.
+    #
+    # Example:
+    #   SetLoop 'off' || exit 1
+    #
+    local loop="${1-}"
+
+    _svhs_require_configuration_phase 'SetLoop' || return 1
+
+    case "$loop" in
+        on|off) ;;
+        *)
+            printf 'SetLoop: expected on or off, got: %s\n' "$loop" >&2
+            return 1
+            ;;
+    esac
+
+    _SVHS_LOOP="$loop"
+}
+
+
+SetLastFrameDuration() {
+    #
+    # Set how long the last GIF frame is held before the loop restarts.
+    #
+    # Parameters:
+    #   $1 - last_frame_duration - non-negative number of seconds.
+    #
+    # Example:
+    #   SetLastFrameDuration 1.5 || exit 1
+    #
+    local last_frame_duration="${1-}"
+
+    _svhs_require_configuration_phase 'SetLastFrameDuration' || return 1
+
+    if ! _svhs_is_nonnegative_number "$last_frame_duration"; then
+        printf 'SetLastFrameDuration: expected a non-negative number, got: %s\n' \
+            "$last_frame_duration" >&2
+        return 1
+    fi
+
+    _SVHS_LAST_FRAME_DURATION="$last_frame_duration"
+    _SVHS_LAST_FRAME_DURATION_SET=1
+}
+
+
+SetTitle() {
+    #
+    # Set the title stored in the cast metadata and shown by players.
+    #
+    # Parameters:
+    #   $1 - title - non-empty cast title.
+    #
+    # Example:
+    #   SetTitle 'API demo' || exit 1
+    #
+    local title="${1-}"
+
+    _svhs_require_configuration_phase 'SetTitle' || return 1
+
+    if [[ -z $title ]]; then
+        printf 'SetTitle: title must not be empty\n' >&2
+        return 1
+    fi
+
+    _SVHS_TITLE="$title"
+}
+
+
+SetQuiet() {
+    #
+    # Suppress recorder, text converter, GIF renderer and s-vhs informational
+    # messages while keeping errors visible.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   SetQuiet || exit 1
+    #
+    _svhs_require_configuration_phase 'SetQuiet' || return 1
+
+    _SVHS_QUIET=1
+}
+
+
 SetShell() {
     #
     # Set the shell run inside the tmux session. s-vhs adds the isolation
@@ -414,7 +991,7 @@ SetShell() {
     esac
 
     if ! command -v "$shell" > /dev/null 2>&1; then
-        printf '::: SetShell: %s is not installed, falling back to bash\n' "$shell"
+        _svhs_warn "SetShell: $shell is not installed, falling back to bash"
         shell='bash'
     fi
 
@@ -549,6 +1126,36 @@ Env() {
 }
 
 
+Require() {
+    #
+    # Fail immediately unless every named command is available on PATH.
+    #
+    # Parameters:
+    #   $@ - command_names - one or more commands the recording needs.
+    #
+    # Example:
+    #   Require 'git' 'jq' || exit 1
+    #
+    local command_name
+
+    _svhs_require_configuration_phase 'Require' || return 1
+
+    if [[ $# -eq 0 ]]; then
+        printf 'Require: expected at least one command\n' >&2
+        return 1
+    fi
+
+    for command_name in "$@"; do
+        if [[ -z $command_name ]]; then
+            printf 'Require: command name must not be empty\n' >&2
+            return 1
+        fi
+
+        _svhs_require_command 'Require' "$command_name" 'the recording' || return 1
+    done
+}
+
+
 ## Session
 
 
@@ -556,9 +1163,9 @@ Start() {
     #
     # Start a fresh detached tmux session with the configured geometry, shell
     # and prompt on the dedicated s-vhs server, isolated from personal tmux
-    # config and without a status bar, and report how to attach to it. It
-    # returns once the shell's line editor starts reading, so the first input
-    # cannot race its startup.
+    # config and without a status bar, and report the S-VHS version and how
+    # to attach to it. It returns once the shell's line editor starts reading,
+    # so the first input cannot race its startup.
     #
     # Parameters:
     #   $1 - wait_mode - (optional) - 'no-wait' returns as soon as the shell
@@ -602,6 +1209,7 @@ Start() {
     _svhs_prepare_cast || return 1
 
     _svhs_build_shell
+    _svhs_build_agg_font_args
 
     # the shell's own pairs come first, so an explicit Env PS1 still wins:
     # tmux keeps the last -e given for a name
@@ -633,8 +1241,12 @@ Start() {
 
     # The session runs on its own socket with the status bar off and a name
     # carrying a PID, so watching a recording live takes the printed command
-    printf '::: Started session %s, attach with: tmux -L %s attach -t %s\n' \
-        "$_SVHS_SESSION" "$_SVHS_TMUX_SOCKET" "$_SVHS_SESSION"
+    if [[ $_SVHS_QUIET == 0 ]]; then
+        printf '::: S-VHS v%s\n' "$(svhs_version)"
+        printf '::: Started session %s, attach with: tmux -L %s attach -t %s\n' \
+            "$_SVHS_SESSION" "$_SVHS_TMUX_SOCKET" "$_SVHS_SESSION"
+        _svhs_report_geometry
+    fi
 }
 
 
@@ -803,6 +1415,55 @@ Type() {
 }
 
 
+Copy() {
+    #
+    # Store text in this recording's tmux buffer without touching the system
+    # clipboard.
+    #
+    # Parameters:
+    #   $1 - text - non-empty text to copy.
+    #
+    # Example:
+    #   Copy 'pasted as one block' || exit 1
+    #
+    local text="${1-}"
+
+    if [[ -z $text ]]; then
+        printf 'Copy: text must not be empty\n' >&2
+        return 1
+    fi
+
+    # tmux treats an argument ending in ; as a command separator
+    if [[ $text == *';' ]]; then
+        text="${text%;}"'\;'
+    fi
+
+    tmux -L "$_SVHS_TMUX_SOCKET" set-buffer \
+        -b "$_SVHS_COPY_BUFFER" -- "$text" || return 1
+    _SVHS_COPY_BUFFER_SET=1
+}
+
+
+Paste() {
+    #
+    # Paste the text stored by Copy as a bracketed paste.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   Paste || exit 1
+    #
+    if [[ $_SVHS_COPY_BUFFER_SET == 0 ]]; then
+        printf 'Paste: no text has been copied\n' >&2
+        return 1
+    fi
+
+    tmux -L "$_SVHS_TMUX_SOCKET" paste-buffer -p \
+        -b "$_SVHS_COPY_BUFFER" -t "$_SVHS_SESSION"
+}
+
+
 Sleep() {
     #
     # Pause the recording, so the last frame stays on screen.
@@ -838,16 +1499,27 @@ Wait() {
     #
     local pattern="$1"
     local timeout="${2:-15}"
-    local deadline=$((SECONDS + timeout))
 
-    until tmux -L "$_SVHS_TMUX_SOCKET" capture-pane \
-        -p -t "$_SVHS_SESSION" | grep -q "$pattern"; do
-        if ((SECONDS >= deadline)); then
-            printf 'timeout waiting for: %s\n' "$pattern" >&2
-            return 1
-        fi
-        sleep "$_SVHS_POLL_INTERVAL"
-    done
+    _svhs_wait_for_pattern 'Wait' 'screen' "$pattern" "$timeout"
+}
+
+
+WaitLine() {
+    #
+    # Poll the cursor's current row until a pattern appears, without matching
+    # an earlier occurrence elsewhere in the visible pane.
+    #
+    # Parameters:
+    #   $1 - pattern - grep pattern to wait for.
+    #   $2 - timeout - (optional) - seconds before giving up (default: 15).
+    #
+    # Example:
+    #   WaitLine '^Username:$' 30
+    #
+    local pattern="$1"
+    local timeout="${2:-15}"
+
+    _svhs_wait_for_pattern 'WaitLine' 'line' "$pattern" "$timeout"
 }
 
 
@@ -866,19 +1538,29 @@ Show() {
     #   Show || exit 1
     #
     local attach_command
+    local recorder_args=()
     # asciinema rejects --overwrite next to --append, so the flags are
     # exclusive: the first segment replaces a stale cast, later ones extend it
     local write_mode='--overwrite'
 
-    [[ -n $_SVHS_RECORDED ]] && write_mode='--append'
+    if [[ -n $_SVHS_RECORDED ]]; then
+        write_mode='--append'
+    elif [[ -n $_SVHS_TITLE ]]; then
+        # Metadata belongs to the cast header written by the first segment,
+        # so append segments must not repeat it
+        recorder_args+=(-t "$_SVHS_TITLE")
+    fi
+    [[ $_SVHS_QUIET == 1 ]] && recorder_args+=(-q)
+
     printf -v attach_command 'tmux -L %q attach -t %q' \
         "$_SVHS_TMUX_SOCKET" "$_SVHS_SESSION"
 
     # asciinema holds the foreground for the whole segment while the script
     # keeps driving the session, so it runs in the background and its PID is
     # kept for Hide and Render to stop it
-    asciinema rec --headless "$write_mode"                    \
-                  --window-size "${_SVHS_COLS}x${_SVHS_ROWS}" \
+    asciinema rec ${recorder_args[@]+"${recorder_args[@]}"}    \
+                  --headless "$write_mode"                     \
+                  --window-size "${_SVHS_COLS}x${_SVHS_ROWS}"  \
                   -c "$attach_command" "$_SVHS_CAST" &
     _SVHS_REC_PID=$!
     _SVHS_RECORDED=1
@@ -928,8 +1610,13 @@ Render() {
     #
     local clean_lines=''
     local output
-    local agg_font_args=()
+    # agg spells hinting as a value rather than as a flag pair
+    local hinting='true'
     local asg_font_args=()
+    local asg_frame_args=()
+    local quiet_args=()
+    local loop_args=()
+    local bold_args=()
 
     # As in Hide, the closing frame needs an event of its own - without it the
     # Sleep before Render is dropped - and the kill's noise is truncated away
@@ -948,15 +1635,28 @@ Render() {
     fi
     _SVHS_REC_PID=''
 
-    if [[ -n $_SVHS_FONT_FAMILY ]]; then
-        agg_font_args+=(--text-font-family "$_SVHS_FONT_FAMILY")
-        # Quote the family: unquoted CSS idents cannot start with a digit, and one
-        # invalid entry drops the whole stack ('0xProto Nerd Font', '3270 Nerd Font')
-        asg_font_args+=(--font-family "'$_SVHS_FONT_FAMILY',$_SVHS_SVG_FONT_FALLBACKS")
-    elif [[ -n $_SVHS_FONT_FAMILY_EXACT ]]; then
-        agg_font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
+    if [[ -n $_SVHS_FONT_FAMILY_EXACT ]]; then
         asg_font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
+    elif [[ -n $_SVHS_FONT_FAMILY || -n $_SVHS_EMOJI_FONT_FAMILY ]]; then
+        # the SVG chain is built as a whole, so it is only worth naming once one
+        # of its two configurable parts was set
+        asg_font_args+=(--font-family "$(_svhs_svg_font_family)")
     fi
+
+    [[ $_SVHS_FONT_HINTING == 'off' ]] && hinting='false'
+    [[ $_SVHS_QUIET == 1 ]] && quiet_args=(-q)
+    # both renderers loop on their own and spell only the opt-out
+    [[ $_SVHS_LOOP == 'off' ]] && loop_args=(--no-loop)
+    # agg spells only the opt-in; its default is the literal color asg draws
+    [[ $_SVHS_BOLD_IS_BRIGHT == 'on' ]] && bold_args=(--bold-is-bright)
+
+    # SVG-only frame: an axis override is named only once it was set, so both
+    # axes otherwise follow --padding, and asg spells a window bar as the
+    # opt-in and the cursor as the opt-out
+    [[ -n $_SVHS_PADDING_X ]] && asg_frame_args+=(--padding-x "$_SVHS_PADDING_X")
+    [[ -n $_SVHS_PADDING_Y ]] && asg_frame_args+=(--padding-y "$_SVHS_PADDING_Y")
+    [[ $_SVHS_WINDOW_BAR == 'on' ]] && asg_frame_args+=(--window)
+    [[ $_SVHS_CURSOR == 'off' ]] && asg_frame_args+=(--no-cursor)
 
     # A caller's `Render || exit 1` suspends set -e for this whole function, so
     # check every output explicitly rather than announcing a failed render
@@ -967,25 +1667,51 @@ Render() {
                     cp -- "$_SVHS_CAST" "$output" || return 1
                 fi
                 ;;
-            # bash 3.2 (stock macOS) rejects an empty array under set -u, so
-            # expand renderer font arguments only when a family was configured
-            *.gif)
-                agg ${agg_font_args[@]+"${agg_font_args[@]}"} \
-                    --font-size "$_SVHS_FONT_SIZE"            \
-                    --line-height "$_SVHS_LINE_HEIGHT"        \
-                    --theme "$_SVHS_THEME"                    \
+            *.txt)
+                asciinema convert -f txt --overwrite \
+                    ${quiet_args[@]+"${quiet_args[@]}"} \
                     "$_SVHS_CAST" "$output" || return 1
                 ;;
-            *.svg)
-                asg ${asg_font_args[@]+"${asg_font_args[@]}"} \
-                    --font-size "$_SVHS_FONT_SIZE"            \
-                    --line-height "$_SVHS_LINE_HEIGHT"        \
-                    --theme "$_SVHS_THEME"                    \
+            # bash 3.2 (stock macOS) rejects an empty array under set -u, so
+            # expand optional renderer arguments only when they were set
+            *.gif)
+                agg ${_SVHS_AGG_FONT_ARGS[@]+"${_SVHS_AGG_FONT_ARGS[@]}"} \
+                    ${quiet_args[@]+"${quiet_args[@]}"}                   \
+                    ${loop_args[@]+"${loop_args[@]}"}                     \
+                    ${bold_args[@]+"${bold_args[@]}"}                     \
+                    --font-size "$_SVHS_FONT_SIZE"                        \
+                    --line-height "$_SVHS_LINE_HEIGHT"                    \
+                    --theme "$_SVHS_THEME"                                \
+                    --speed "$_SVHS_PLAYBACK_SPEED"                       \
+                    --fps-cap "$_SVHS_FRAMERATE"                          \
+                    --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT"            \
+                    --last-frame-duration "$_SVHS_LAST_FRAME_DURATION"    \
+                    --font-antialiasing "$_SVHS_FONT_ANTIALIASING"        \
+                    --font-hinting "$hinting"                             \
+                    --renderer "$_SVHS_ENGINE"                            \
                     "$_SVHS_CAST" "$output" || return 1
+                _svhs_optimize_gif "$output" || return 1
+                _svhs_report_gif_skips "$output"
+                ;;
+            *.svg)
+                asg ${asg_font_args[@]+"${asg_font_args[@]}"}   \
+                    ${asg_frame_args[@]+"${asg_frame_args[@]}"} \
+                    ${loop_args[@]+"${loop_args[@]}"}           \
+                    --font-size "$_SVHS_FONT_SIZE"              \
+                    --line-height "$_SVHS_LINE_HEIGHT"          \
+                    --theme "$_SVHS_THEME"                      \
+                    --padding "$_SVHS_PADDING"                  \
+                    --speed "$_SVHS_PLAYBACK_SPEED"             \
+                    --fps "$_SVHS_FRAMERATE"                    \
+                    --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT"  \
+                    "$_SVHS_CAST" "$output" || return 1
+                _svhs_report_svg_skips "$output"
                 ;;
         esac
 
-        printf '::: Wrote %s\n' "$output"
+        if [[ $_SVHS_QUIET == 0 ]]; then
+            printf '::: Wrote %s\n' "$output"
+        fi
     done
 
     if [[ -n $_SVHS_TEMP_CAST ]]; then
@@ -1178,8 +1904,11 @@ _svhs_watch_loop() {
             # painted once per wait, so the message does not blink while the
             # session is polled for
             if [[ -z $waiting ]]; then
-                printf '%s::: Waiting for %s, Ctrl-C to exit\n' \
-                    "$_SVHS_WATCH_CLEAR" "${session:-an s-vhs session}"
+                printf '%s' "$_SVHS_WATCH_CLEAR"
+                if [[ $_SVHS_QUIET == 0 ]]; then
+                    printf '::: Waiting for %s, Ctrl-C to exit\n' \
+                        "${session:-an s-vhs session}"
+                fi
                 waiting=1
             fi
             sleep "$_SVHS_POLL_INTERVAL"
@@ -1208,6 +1937,23 @@ _svhs_is_positive_integer() {
     local value="$1"
 
     [[ $value =~ ^[1-9][0-9]*$ ]] || return 1
+    return 0
+}
+
+
+_svhs_is_nonnegative_integer() {
+    #
+    # Return success when a value is an integer greater than or equal to zero.
+    #
+    # Parameters:
+    #   $1 - value - value to test.
+    #
+    # Example:
+    #   _svhs_is_nonnegative_integer '20' || exit 1
+    #
+    local value="$1"
+
+    [[ $value =~ ^(0|[1-9][0-9]*)$ ]] || return 1
     return 0
 }
 
@@ -1419,6 +2165,38 @@ _svhs_build_shell() {
 }
 
 
+_svhs_build_agg_font_args() {
+    #
+    # Assemble agg's font selection into _SVHS_AGG_FONT_ARGS. Settings are
+    # frozen once the session starts, so building it in Start lets the
+    # resolution probe and the render share one font selection.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_build_agg_font_args
+    #
+    local font_dir
+
+    _SVHS_AGG_FONT_ARGS=()
+
+    if [[ -n $_SVHS_FONT_FAMILY_EXACT ]]; then
+        _SVHS_AGG_FONT_ARGS+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
+    else
+        [[ -n $_SVHS_FONT_FAMILY ]] &&
+            _SVHS_AGG_FONT_ARGS+=(--text-font-family "$_SVHS_FONT_FAMILY")
+        [[ -n $_SVHS_EMOJI_FONT_FAMILY ]] &&
+            _SVHS_AGG_FONT_ARGS+=(--emoji-font-family "$_SVHS_EMOJI_FONT_FAMILY")
+    fi
+
+    for font_dir in ${_SVHS_FONT_DIRS[@]+"${_SVHS_FONT_DIRS[@]}"}; do
+        _SVHS_AGG_FONT_ARGS+=(--font-dir "$font_dir")
+    done
+    return 0
+}
+
+
 _svhs_prepare_cast() {
     #
     # Select a requested cast path or create a temporary renderer input.
@@ -1477,6 +2255,44 @@ _svhs_tty_reads_input() {
 
     [[ $modes == *' -icanon '* && $modes == *' -echo '* ]] || return 1
     return 0
+}
+
+
+_svhs_wait_for_pattern() {
+    #
+    # Poll either the whole visible pane or its cursor row for a grep pattern.
+    #
+    # Parameters:
+    #   $1 - caller - public command name used in the timeout error.
+    #   $2 - scope - 'screen' or 'line'.
+    #   $3 - pattern - grep pattern to wait for.
+    #   $4 - timeout - seconds before giving up.
+    #
+    # Example:
+    #   _svhs_wait_for_pattern 'WaitLine' 'line' '^Username:$' 30
+    #
+    local caller="$1"
+    local scope="$2"
+    local pattern="$3"
+    local timeout="$4"
+    local deadline=$((SECONDS + timeout))
+    local capture_args=()
+
+    # The current row can sit above blank rows at the pane's bottom, so line
+    # scope follows the cursor instead of piping the full capture through tail
+    if [[ $scope == 'line' ]]; then
+        capture_args=(-S '#{cursor_y}' -E '#{cursor_y}')
+    fi
+
+    until tmux -L "$_SVHS_TMUX_SOCKET" capture-pane \
+        -p ${capture_args[@]+"${capture_args[@]}"} \
+        -t "$_SVHS_SESSION" | grep -q "$pattern"; do
+        if ((SECONDS >= deadline)); then
+            printf '%s: timeout waiting for: %s\n' "$caller" "$pattern" >&2
+            return 1
+        fi
+        sleep "$_SVHS_POLL_INTERVAL"
+    done
 }
 
 
@@ -1626,6 +2442,340 @@ _svhs_wait_for_client() {
 }
 
 
+_svhs_svg_font_list() {
+    #
+    # Print a comma-separated family list as CSS family names, one quoted
+    # entry each. Unquoted CSS idents cannot start with a digit, and a single
+    # invalid entry drops the whole stack ('0xProto Nerd Font', '3270 Nerd
+    # Font').
+    #
+    # Parameters:
+    #   $1 - families - comma-separated family names.
+    #
+    # Example:
+    #   list=$(_svhs_svg_font_list 'Noto Color Emoji,Twemoji')
+    #
+    local families="$1"
+
+    # the spaces around a separator belong to neither name, so they are cut
+    # rather than quoted into one
+    printf "'%s'" "$(printf '%s' "$families" | sed "s/^ *//; s/ *\$//; s/ *, */','/g")"
+}
+
+
+_svhs_svg_font_family() {
+    #
+    # Print the font-family list for the SVG: the configured text font, the
+    # built-in text and symbol fallbacks, the emoji chain - the configured one
+    # when SetEmojiFontFamily was called - and the generic monospace last.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   chain=$(_svhs_svg_font_family)
+    #
+    local chain=''
+
+    [[ -n $_SVHS_FONT_FAMILY ]] && chain="$(_svhs_svg_font_list "$_SVHS_FONT_FAMILY"),"
+    chain+="$_SVHS_SVG_FONT_FALLBACKS,"
+
+    if [[ -n $_SVHS_EMOJI_FONT_FAMILY ]]; then
+        chain+="$(_svhs_svg_font_list "$_SVHS_EMOJI_FONT_FAMILY"),"
+    else
+        chain+="$_SVHS_SVG_EMOJI_FALLBACKS,"
+    fi
+
+    printf '%smonospace' "$chain"
+}
+
+
+_svhs_warn() {
+    #
+    # Print a non-blocking warning in yellow unless quiet mode is enabled.
+    #
+    # Parameters:
+    #   $1 - message - warning text without the informational prefix.
+    #
+    # Example:
+    #   _svhs_warn 'SetShell: fish is not installed, falling back to bash'
+    #
+    local message="$1"
+
+    [[ $_SVHS_QUIET == 1 ]] && return 0
+
+    printf '%s::: %s%s\n' "$_SVHS_WARNING_COLOR" "$message" "$_SVHS_COLOR_RESET"
+}
+
+
+_svhs_report_skipped() {
+    #
+    # Report a setting the renderer of one output has no equivalent for. A
+    # single line keeps the recording alive: the other outputs still carry it.
+    #
+    # Parameters:
+    #   $1 - setter - public setter name whose value was ignored.
+    #   $2 - output - output path it was ignored for.
+    #   $3 - renderer - what does not support it.
+    #
+    # Example:
+    #   _svhs_report_skipped 'SetEngine' 'demo.svg' 'SVG output'
+    #
+    local setter="$1"
+    local output="$2"
+    local renderer="$3"
+
+    _svhs_warn "$setter: skipped for $output (not supported by $renderer)"
+}
+
+
+_svhs_report_gif_skips() {
+    #
+    # Report the settings GIF output has no equivalent for, and the ones the
+    # selected engine ignores.
+    #
+    # Parameters:
+    #   $1 - output - GIF path that was rendered.
+    #
+    # Example:
+    #   _svhs_report_gif_skips 'demo.gif'
+    #
+    local output="$1"
+
+    # both knobs act on the glyph masks swash rasterizes; resvg draws text
+    # through its own pipeline and takes neither
+    if [[ $_SVHS_ENGINE == 'resvg' ]]; then
+        [[ $_SVHS_FONT_ANTIALIASING_SET == 1 ]] &&
+            _svhs_report_skipped 'SetFontAntialiasing' "$output" 'the resvg engine'
+        [[ $_SVHS_FONT_HINTING_SET == 1 ]] &&
+            _svhs_report_skipped 'SetFontHinting' "$output" 'the resvg engine'
+    fi
+
+    # a GIF is drawn without padding and without a window bar, and always with
+    # the cursor, so only a value that would have shown is worth a line
+    ((_SVHS_PADDING > 0)) &&
+        _svhs_report_skipped 'SetPadding' "$output" 'GIF output'
+    ((${_SVHS_PADDING_X:-0} > 0)) &&
+        _svhs_report_skipped 'SetPaddingX' "$output" 'GIF output'
+    ((${_SVHS_PADDING_Y:-0} > 0)) &&
+        _svhs_report_skipped 'SetPaddingY' "$output" 'GIF output'
+    [[ $_SVHS_WINDOW_BAR == 'on' ]] &&
+        _svhs_report_skipped 'SetWindowBar' "$output" 'GIF output'
+    [[ $_SVHS_CURSOR == 'off' ]] &&
+        _svhs_report_skipped 'SetCursor' "$output" 'GIF output'
+    return 0
+}
+
+
+_svhs_report_svg_skips() {
+    #
+    # Report the settings SVG output has no equivalent for.
+    #
+    # Parameters:
+    #   $1 - output - SVG path that was rendered.
+    #
+    # Example:
+    #   _svhs_report_svg_skips 'demo.svg'
+    #
+    local output="$1"
+
+    [[ $_SVHS_LAST_FRAME_DURATION_SET == 1 ]] &&
+        _svhs_report_skipped 'SetLastFrameDuration' "$output" 'SVG output'
+    # only 'on' is worth a line: 'off' is what an SVG draws anyway
+    [[ $_SVHS_BOLD_IS_BRIGHT == 'on' ]] &&
+        _svhs_report_skipped 'SetBoldIsBright' "$output" 'SVG output'
+    [[ $_SVHS_ENGINE_SET == 1 ]] &&
+        _svhs_report_skipped 'SetEngine' "$output" 'SVG output'
+    [[ $_SVHS_FONT_ANTIALIASING_SET == 1 ]] &&
+        _svhs_report_skipped 'SetFontAntialiasing' "$output" 'SVG output'
+    [[ $_SVHS_FONT_HINTING_SET == 1 ]] &&
+        _svhs_report_skipped 'SetFontHinting' "$output" 'SVG output'
+    # an SVG names fonts instead of loading them, so a directory means nothing
+    [[ -n ${_SVHS_FONT_DIRS[*]-} ]] &&
+        _svhs_report_skipped 'SetFontDir' "$output" 'SVG output'
+    [[ $_SVHS_OPTIMIZE == 'on' ]] &&
+        _svhs_report_skipped 'SetOptimize' "$output" 'SVG output'
+    return 0
+}
+
+
+_svhs_grid_width() {
+    #
+    # Compute the width in pixels a cell grid renders to, assuming the nominal
+    # monospace advance. That is what asg draws; agg takes the advance from
+    # the primary font, so there the result is only an estimate.
+    #
+    # Parameters:
+    #   $1 - cells - cells across, including the renderer's own padding.
+    #   $2 - extra - pixels added left and right together.
+    #
+    # Example:
+    #   width=$(_svhs_grid_width 46 0)
+    #
+    local cells="$1"
+    local extra="$2"
+
+    # bash has no floating-point arithmetic, and the advance is a fraction
+    awk -v cells="$cells" -v extra="$extra" \
+        -v advance="$_SVHS_CELL_ADVANCE"    \
+        -v font_size="$_SVHS_FONT_SIZE"     \
+        'BEGIN { printf "%d", int(cells * advance * font_size + extra + 0.5) }'
+}
+
+
+_svhs_grid_height() {
+    #
+    # Compute the height in pixels a cell grid renders to. Both renderers take
+    # a row's height from the line height alone, so this is exact.
+    #
+    # Parameters:
+    #   $1 - cells - cells down, including the renderer's own padding.
+    #   $2 - extra - pixels added above and below together.
+    #
+    # Example:
+    #   height=$(_svhs_grid_height 5 0)
+    #
+    local cells="$1"
+    local extra="$2"
+
+    # bash has no floating-point arithmetic, and the line height is a fraction
+    awk -v cells="$cells" -v extra="$extra"    \
+        -v line_height="$_SVHS_LINE_HEIGHT"    \
+        -v font_size="$_SVHS_FONT_SIZE"        \
+        'BEGIN { printf "%d", int(cells * line_height * font_size + extra + 0.5) }'
+}
+
+
+_svhs_gif_width() {
+    #
+    # Measure the width agg gives this recording's GIF, by rendering a
+    # throwaway single-row cast of the configured width and reading the size
+    # back out of its header. agg sizes a cell by the face the system resolves
+    # the font family to - a semi-extended or condensed one renders a tenth
+    # wider or narrower than nominal - which no setting can predict, while a
+    # single row keeps the probe at a few tens of milliseconds.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   width=$(_svhs_gif_width) || width=$(_svhs_grid_width 46 0)
+    #
+    local probe_cast
+    local probe_gif
+    local low
+    local high
+
+    probe_cast=$(mktemp) || return 1
+    probe_gif="$probe_cast.gif"
+
+    # agg rejects a cast without output events, so the probe prints one cell
+    printf '{"version":3,"term":{"cols":%s,"rows":1},"timestamp":0}\n[0.0,"o","x"]\n' \
+        "$_SVHS_COLS" > "$probe_cast"
+
+    # the line height would only change the height, which is not read back,
+    # but the engine picks its own faces and must match the real render
+    if ! agg ${_SVHS_AGG_FONT_ARGS[@]+"${_SVHS_AGG_FONT_ARGS[@]}"} \
+             --font-size "$_SVHS_FONT_SIZE"                        \
+             --renderer "$_SVHS_ENGINE"                            \
+             "$probe_cast" "$probe_gif" > /dev/null 2>&1; then
+        rm -f -- "$probe_cast" "$probe_gif"
+        return 1
+    fi
+
+    # a GIF stores its width as two little-endian bytes at offset 6
+    read -r low high < <(od -An -tu1 -j6 -N2 "$probe_gif")
+    rm -f -- "$probe_cast" "$probe_gif"
+
+    printf '%d' "$((low + high * 256))"
+}
+
+
+_svhs_report_geometry() {
+    #
+    # Report the recorded grid and the size every requested renderer turns it
+    # into, so a mistyped SetCols or SetFontSize shows up before the recording
+    # runs rather than in the finished file.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_report_geometry
+    #
+    local grid="$_SVHS_COLS cols x $_SVHS_ROWS rows x ${_SVHS_FONT_SIZE}px font"
+    local output
+    local gif=0
+    local svg=0
+    local padding_x="${_SVHS_PADDING_X:-$_SVHS_PADDING}"
+    local padding_y="${_SVHS_PADDING_Y:-$_SVHS_PADDING}"
+    local window_width=0
+    local window_height=0
+    local width
+    local estimated=''
+
+    for output in "${_SVHS_OUTPUTS[@]}"; do
+        case "$output" in
+            *.gif) gif=1 ;;
+            *.svg) svg=1 ;;
+        esac
+    done
+
+    # a cast and a text export commit to no pixels, leaving only the grid
+    if [[ $gif == 0 && $svg == 0 ]]; then
+        printf '::: %s\n' "$grid"
+        return 0
+    fi
+
+    # agg pads a GIF by one cell left and right and by half a row above and
+    # below; a failed probe leaves the nominal advance, marked as a guess
+    if [[ $gif == 1 ]]; then
+        if ! width=$(_svhs_gif_width); then
+            width=$(_svhs_grid_width "$((_SVHS_COLS + 2))" 0)
+            estimated='~'
+        fi
+        printf '::: GIF: %s -> %s%s x %s px\n' "$grid" "$estimated" "$width" \
+            "$(_svhs_grid_height "$((_SVHS_ROWS + 1))" 0)"
+    fi
+
+    if [[ $svg == 1 ]]; then
+        if [[ $_SVHS_WINDOW_BAR == 'on' ]]; then
+            window_width=$_SVHS_WINDOW_BAR_WIDTH
+            window_height=$_SVHS_WINDOW_BAR_HEIGHT
+        fi
+        printf '::: SVG: %s -> %s x %s px\n' "$grid"                                \
+            "$(_svhs_grid_width "$_SVHS_COLS" "$((2 * padding_x + window_width))")"  \
+            "$(_svhs_grid_height "$_SVHS_ROWS" "$((2 * padding_y + window_height))")"
+    fi
+    return 0
+}
+
+
+_svhs_optimize_gif() {
+    #
+    # Rewrite a rendered GIF through a lossless gifsicle pass. gifsicle is an
+    # optional dependency: without it the GIF stays as the renderer wrote it,
+    # which is worth a line but not a failed recording.
+    #
+    # Parameters:
+    #   $1 - output - GIF path to optimize in place.
+    #
+    # Example:
+    #   _svhs_optimize_gif 'demo.gif' || return 1
+    #
+    local output="$1"
+
+    [[ $_SVHS_OPTIMIZE == 'off' ]] && return 0
+
+    if ! command -v gifsicle > /dev/null 2>&1; then
+        _svhs_warn "SetOptimize: gifsicle is not installed, $output left unoptimized"
+        return 0
+    fi
+
+    gifsicle --batch -O3 "$output" || return 1
+}
+
+
 _svhs_send() {
     #
     # Send keys to the demo session (thin wrapper over tmux send-keys).
@@ -1676,6 +2826,10 @@ _svhs_cleanup() {
     fi
     if [[ -n $_SVHS_TEMP_CAST ]]; then
         rm -f -- "$_SVHS_TEMP_CAST"
+    fi
+    if [[ $_SVHS_COPY_BUFFER_SET == 1 ]]; then
+        tmux -L "$_SVHS_TMUX_SOCKET" delete-buffer \
+            -b "$_SVHS_COPY_BUFFER" 2> /dev/null || true
     fi
 }
 

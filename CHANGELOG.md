@@ -1,5 +1,41 @@
 # Changelog
 
+## `[v0.4.0]` - 23.08.2026
+
+### New
+* Add `SetPlaybackSpeed`: play the rendered animation faster or slower.
+* Add `SetFramerate`: cap the frames per second of the rendered animation.
+* Add `SetIdleTimeLimit`: cap how long a pause is played back.
+* Add `SetLoop`: stop the rendered animation after one pass instead of repeating it.
+* Add `SetTitle`: store a title in the cast metadata for players to show.
+* Add `SetQuiet`: suppress recorder, text converter, GIF renderer and s-vhs informational output.
+* Add `Require`: check recording-specific command dependencies before starting a session.
+* Add `Copy` and `Paste` commands.
+* Add plain-text `.txt` output through `asciinema convert`.
+* Add `SetLastFrameDuration`: control how long the last GIF frame is held before looping.
+* Add `SetBoldIsBright`: draw bold text in the bright ANSI color in GIF output, as most terminals do.
+* Add `SetEngine`: pick the GIF frame renderer, `resvg` for color COLRv1 emoji.
+* Add `SetEmojiFontFamily`: pick the fonts emoji are drawn with, in GIF and SVG output.
+* Add `SetFontDir`: render a GIF with fonts kept next to the recording script instead of installed ones.
+* Add `SetFontAntialiasing`: trade GIF glyph smoothness against file size.
+* Add `SetFontHinting`: fit glyph outlines to the pixel grid, keeping small GIF text legible.
+* Add `SetPadding`, `SetPaddingX` and `SetPaddingY`: pad the terminal in SVG output.
+* Add `SetWindowBar`: draw macOS-style window decorations above the terminal in SVG output.
+* Add `SetCursor`: hide the terminal cursor in SVG output.
+* Add `WaitLine`: wait for a pattern on the cursor's current row.
+* Add `SetOptimize`: shrink GIF output with a lossless `gifsicle` pass.
+* Add an agent skill teaching coding agents to write and verify recording scripts, installable with `gh skill install dimk90/s-vhs s-vhs-recording` or from `https://dimk90.github.io/s-vhs/skill`.
+
+### Changed
+* SVG output now caps idle pauses at 5 seconds like GIF output.
+* Show non-fatal S-VHS warnings in yellow.
+* Print the S-VHS version when a recording starts.
+* Print the recorded grid and the estimated pixel size of each rendered output.
+
+### Fixed
+* Initialize the default playback speed so rendering works without `SetPlaybackSpeed`.
+
+
 ## `[v0.3.0]` - 16.08.2026
 
 ### New

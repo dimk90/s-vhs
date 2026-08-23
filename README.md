@@ -17,14 +17,12 @@ A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superi
   ([#69](https://github.com/charmbracelet/vhs/issues/69#issuecomment-3121533232)).
 - **Sized in rows and cols** - no dancing with pixel width and height
   ([#578](https://github.com/charmbracelet/vhs/issues/578)).
-- **Animated SVG output**
+- **[Animated SVG](#animated-svg-output) output**
   ([#644](https://github.com/charmbracelet/vhs/discussions/644),
   [#109](https://github.com/charmbracelet/vhs/issues/109),
   [#105](https://github.com/charmbracelet/vhs/issues/105)).
-- **No browser** - no headless Chromium downloaded behind your back, just
-  `tmux` + [asciinema](https://github.com/asciinema/asciinema) with
-  [agg](https://github.com/asciinema/agg) for GIF and
-  [asg](https://github.com/kingsword09/asg) for SVG
+- **No Chromium** downloaded behind your back - just
+  `tmux` + [asciinema](https://github.com/asciinema/asciinema) + [renderer](#output-formats)
   ([#528](https://github.com/charmbracelet/vhs/issues/528),
   [#438](https://github.com/charmbracelet/vhs/issues/438),
   [#150](https://github.com/charmbracelet/vhs/issues/150),
@@ -40,8 +38,8 @@ A recording is a plain shell script that sources `s-vhs.sh`:
 #!/usr/bin/env bash
 
 # Import s-vhs straight from GitHub - no local copy needed.
-# A local copy works too, use "source ./s-vhs.sh"
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.3.0) && wait "$!" || exit 1
+# A local copy works too - use "source ./s-vhs.sh"
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.4.0) && wait "$!" || exit 1
 
 # Where should we write the GIF?
 SetOutput 'demo.gif'
@@ -87,33 +85,57 @@ You should see a new file called `demo.gif` in the same directory:
 
 `s-vhs` is a bash script, so all you need are its dependencies `tmux` and `asciinema`:
 
-```bash
-sudo pacman -S tmux asciinema
-```
-> The provided instructions are for Arch Linux, but you can easily adapt them for your favorite distro ;)
+- **macOS**
+  ```bash
+  brew install tmux asciinema
+  ```
 
-Only the formats you request need their renderer - a cast-only recording
-invokes neither, see [Output Formats](#output-formats).
+- **Linux**
+  ```bash
+  sudo pacman -S tmux asciinema
+  ```
+  > The Linux instructions are for Arch, but you can easily adapt them to your
+  > favorite distro 😉
 
-- For GIF output, install
-  [`agg`](https://github.com/asciinema/agg#building):
+> [!NOTE]
+> Only the formats you request need a renderer - a cast-only recording
+> invokes neither, see [Output Formats](#output-formats).
+
+> [!TIP]
+> Some installs below use `cargo`, which puts binaries into `~/.cargo/bin` -
+> make sure it is on your `PATH` (rustup's installer arranges that; a
+> distro-packaged `cargo` does not).
+
+### Renderer: GIF
+
+For GIF output, install [`agg`](https://github.com/asciinema/agg#installation):
+
+- **macOS**
+  ```bash
+  brew install agg
+  ```
+
+- **Linux**
   ```bash
   cargo install --git https://github.com/asciinema/agg --locked
   ```
   > `agg` is not on crates.io (the `agg` crate there is an unrelated project),
-  > hence the `--git` install.
-
-- For animated SVG output, install
-  [`asg`](https://github.com/kingsword09/asg#quick-start):
-  ```bash
-  cargo install asg --locked
-  ```
-  > `asg` reads asciicast v3 only, so SVG output also needs `asciinema` 3 or newer.
+  > hence the `--git` install. Some distros package it as `agg` or
+  > `asciinema-agg` (on Arch, the AUR `asciinema-agg` package).
 
 > [!TIP]
-> Cargo installs both renderers into `~/.cargo/bin` - make sure it is on your
->  `PATH` (rustup's installer arranges that; a distro-packaged `cargo` does not).
+> GIF size can be reduced by [`gifsicle`](https://github.com/kohler/gifsicle)
+> without quality loss, see [`GIF Size Optimization`](#gif-size-optimization).
 
+### Renderer: SVG
+
+For animated SVG output, install
+[`asg`](https://github.com/kingsword09/asg#quick-start) - no package on either
+platform, so `cargo` on both:
+
+```bash
+cargo install asg --locked
+```
 
 ## Examples
 
@@ -161,7 +183,7 @@ Enter; Sleep 1
 
 Named keys are commands of their own: `Enter`, `Tab`, `Space`, `Backspace`,
 `Escape`, `Up`, `Down`, `Left`, `Right`, `PageUp`, `PageDown`, `Home`, `End`,
-`Insert`, `Delete`. Each taking an optional repeat count and delay. A modified
+`Insert`, `Delete`. Each takes an optional repeat count and delay. A modified
 key goes through `Key` in tmux notation: `Key C-u`, `Key C-r`, `Key M-x`, see
 [`examples/ctrl.rec.sh`](examples/ctrl.rec.sh).
 
@@ -215,9 +237,9 @@ SetTheme 'kanagawa'
 
 ### Shell & Prompt
 
-A recording runs in an isolated shell by default: no personal rc files, your
-own prompt stays out of the frame, and nothing is written to your shell
-history.
+A recording runs in an isolated shell by default: no personal rc files are
+read, your own prompt stays out of the frame, and nothing is written to your
+shell history.
 
 ```bash
 SetShell 'fish'       # bash (default), zsh or fish
@@ -284,8 +306,39 @@ Enter; Sleep 2
 <img src="examples/hide-show.gif" width="500px" alt="A recording that skips the commands run between Hide and the next Show">
 
 > [!TIP]
-> `RunOffRecord 'clear' 0.5` is the shorthand for a `Hide` + `Run` + `Show`
+> `RunOffRecord 'clear' 0.5` is shorthand for a `Hide` + `Run` + `Show`
 > sandwich, see [`examples/run-off-record.rec.sh`](examples/run-off-record.rec.sh).
+
+### Require & Env
+
+`Require` checks the commands a recording depends on before anything starts,
+and `Env` hands the recorded shell the variables they need - here a git
+identity, so the recording does not depend on the host's git configuration:
+
+```bash
+# Reported now, not as a "command not found" frame in the middle of the GIF
+Require 'git'
+
+Env 'GIT_AUTHOR_NAME' 'Ada Lovelace'
+Env 'GIT_AUTHOR_EMAIL' 'ada@example.com'
+Env 'GIT_COMMITTER_NAME' 'Ada Lovelace'
+Env 'GIT_COMMITTER_EMAIL' 'ada@example.com'
+
+Start
+
+# Off camera: an empty repository in a throwaway directory
+Run 'cd "$(mktemp -d)" && git init -q . && clear' 1
+
+Show
+
+Type 'git commit -q --allow-empty -m "recorded"'
+Enter; Sleep 1
+
+Type 'git log -1 --format="%an <%ae>"'
+Enter; Sleep 2.5
+```
+
+<img src="examples/require-env.gif" width="500px" alt="A commit recorded with the git identity exported by Env">
 
 ### Remote Import
 
@@ -294,7 +347,7 @@ of keeping a local `s-vhs.sh` next to the recording script:
 
 ```bash
 # Remote import instead of "source ./s-vhs.sh"
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.3.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.4.0) && wait "$!" || exit 1
 
 SetOutput "remote-import.gif"
 
@@ -306,8 +359,6 @@ Enter; Sleep 3
 
 Render
 ```
-
-> [!NOTE]
 > The `wait "$!"` is a guard: without it, process substitution can hide a
 > failed or truncated `curl` download.
 
@@ -319,6 +370,7 @@ Render
 
 ```bash
 SetOutput 'multi-output.cast'
+SetOutput 'multi-output.txt'
 SetOutput 'multi-output.gif'
 SetOutput 'multi-output.svg' # <---
 ```
@@ -328,38 +380,49 @@ animated by CSS, sharp at any zoom:
 
 <img src="examples/multi-output.svg" width="500px" alt="One recording rendered as an animated SVG">
 
+> [!NOTE]
+> An SVG names fonts instead of embedding them and animates through CSS, so
+> where it is displayed might change how it looks. Check
+> [SVG pitfalls and workarounds](doc/SVG.md).
 
-### S-VHS in the Wild
 
-More than just a toy example:  
-📌 [pi-context-view](https://github.com/dimk90/pi-context-view): demo GIFs,
+## S-VHS in the Wild
+
+
+📌 [pi-context-view](https://github.com/dimk90/pi-context-view) - demo GIFs,
 such as [context-usage.rec.sh](https://github.com/dimk90/pi-context-view/blob/develop/scripts/recordings/context-usage.rec.sh).  
-📌 [S-VHS logo recording](examples/logo.rec.sh).
+📌 [S-VHS logo](examples/logo.rec.sh) recording.
+
 
 ## Output Formats
 
+
 The extension of the path passed to `SetOutput` picks the format:
 
-| Format  | Description                              | Render dependency                                       |
-| ------- | ---------------------------------------- | ------------------------------------------------------- |
-| `.cast` | Editable, replayable asciicast recording | None                                                    |
-| `.gif`  | Animated raster image                    | [`agg`](https://github.com/asciinema/agg#installation)  |
-| `.svg`  | Sharp, CSS-animated vector image         | [`asg`](https://github.com/kingsword09/asg#quick-start) |
+| Format  | Description                              | Render dependency      |
+| ------- | ---------------------------------------- | ---------------------- |
+| `.cast` | Editable, replayable asciicast recording | None                   |
+| `.txt`  | Plain-text terminal log                  | None                   |
+| `.gif`  | Animated raster image                    | [`agg`](#renderer-gif) |
+| `.svg`  | Sharp, CSS-animated vector image         | [`asg`](#renderer-svg) |
 
 `SetOutput` is repeatable - one recording, several outputs:
 
 ```bash
 SetOutput 'multi-output.cast'
+SetOutput 'multi-output.txt'
 SetOutput 'multi-output.gif'
 SetOutput 'multi-output.svg'
 ```
 
 Keeping the `.cast` next to the rendered files leaves the recording replayable
-with `asciinema play` and re-renderable at any size later — see
+with `asciinema play` and re-renderable at any size later, while the `.txt` log
+makes the recorded output greppable - see
 [`examples/multi-output.rec.sh`](examples/multi-output.rec.sh).
 
 
 ## Recording Template
+
 
 Start a new recording without downloading `s-vhs.sh`:
 
@@ -376,18 +439,26 @@ It writes:
 ```bash
 #!/usr/bin/env bash
 
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.3.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.4.0) && wait "$!" || exit 1
 
 SetOutput 'demo.gif'
 
 # SetCols 100
 # SetRows 40
+# SetShell 'bash'
+# SetPrompt 'arrow'
+
 # SetFontSize 28
 # SetFontFamily 'JetBrains Mono'
 # SetTheme 'dracula'
+
 # SetTypingSpeed 0.07
-# SetShell 'bash'
-# SetPrompt 'arrow'
+# SetPlaybackSpeed 1
+# SetFramerate 30
+# SetLoop on
+# SetOptimize off
+
+# Require 'git' 'jq'
 
 Start
 Show
@@ -399,19 +470,94 @@ Sleep 3
 Render
 ```
 
+
+## GIF Size Optimization
+
+
+GIFs come out of the renderer generously encoded. `SetOptimize 'on'` runs the
+rendered file through a lossless [`gifsicle`](https://github.com/kohler/gifsicle)
+pass, so it shrinks without a single pixel changing:
+
+```bash
+SetOutput 'optimize.gif'
+SetOptimize 'on' # <---
+```
+
+| `SetOptimize 'off'` - the default                                            | `SetOptimize 'on'`                                                     |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| <img src="examples/optimize-off.gif" width="330px" alt="Unoptimized render"> | <img src="examples/optimize.gif" width="330px" alt="Optimized render"> |
+| 193,964 bytes                                                                | 164,541 bytes, identical frames                                        |
+
+How much it saves depends on the recording - long, scrolling ones gain the
+most:
+
+| Recording                        | Plain render | `SetOptimize 'on'`  | Lossy pass          |
+| -------------------------------- | ------------ | ------------------- | ------------------- |
+| this example, 30 scrolling lines | 189.4 KiB    | 160.7 KiB (-15.2 %) | 160.7 KiB (-15.2 %) |
+| a short typed one-liner          | 12.3 KiB     | 10.9 KiB (-11.5 %)  | 10.9 KiB (-11.5 %)  |
+| a 24 s build log, 984x700 px     | 12.8 MiB     | 9.8 MiB (-23.4 %)   | 9.8 MiB (-23.5 %)   |
+
+> The last column is the lossy pass agg's docs suggest
+> (`gifsicle --lossy=80 -k 128 -O2`). Terminal frames use fewer than 128 colors,
+> so it saves 1-2 % at best and loses to the lossless pass on short recordings -
+> which is why `SetOptimize` only ever runs the lossless one.
+
+### Dependency
+
+You need `gifsicle`. Without it, `Render` leaves GIFs unoptimized and reports
+the skipped pass.
+
+- **macOS**
+  ```bash
+  brew install gifsicle
+  ```
+
+- **Linux**
+  ```bash
+  sudo pacman -S gifsicle
+  ```
+
+### Other Ways
+
+Reduce what the renderer has to encode before optimizing it:
+
+| Approach              | Setting                                                                                    | Trade-off                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Render fewer pixels   | Choose the smallest useful `SetCols`, `SetRows` and `SetFontSize`                          | Less terminal space or smaller text; a large GIF scaled down in HTML is sharper but costs more bytes |
+| Render fewer frames   | Lower `SetFramerate`, for example from `30` to `15` or `10`                                | Fast typing and motion look less smooth                                                              |
+| Shorten inactive gaps | Lower `SetIdleTimeLimit`, for example from `5` to `1`                                      | Long pauses play back faster; the retained `.cast` keeps its original timing                         |
+| Use fewer edge shades | Use `SetFontAntialiasing 3` or `'off'` instead of the default `6`                          | Text edges become less smooth; this affects GIF output only                                          |
+| Record less activity  | Put setup and noisy intermediate commands between `Hide` and `Show`, or use `RunOffRecord` | Hidden activity does not appear in the recording                                                     |
+
+> [!TIP]
+> These reductions can save more than a post-processing pass. Keep the highest
+> values the recording actually needs, then use `SetOptimize 'on'` for additional
+> lossless savings.
+
 ## Documentation
 
 - For the full list of commands and settings, see [REFERENCE.md](doc/REFERENCE.md).
 
-- For debugging a recording script see [DEBUG.md](doc/DEBUG.md).
+- For debugging a recording script, see [DEBUG.md](doc/DEBUG.md).
 
-- For the architecture behind `tmux + asciinema + output renderers` and how
+- For the agent skill with recording best practices, see
+  [SKILL.md](skills/s-vhs-recording/SKILL.md). Install it with
+  [`gh skill`](https://cli.github.com/manual/gh_skill_install), which places it
+  where Claude Code, pi, Codex and others look for it:
+
+  ```bash
+  gh skill install dimk90/s-vhs s-vhs-recording --agent claude-code --scope user
+  ```
+
+- For the architecture behind `tmux + asciinema + renderers` and how
   `s-vhs` glues them together, see [INTRO.md](doc/INTRO.md).
 
   <p align="center">
     <img src="doc/images/svhs-pipeline.svg" width="500px" alt="s-vhs pipeline">
   </p>
 
+
 ## License
+
 
 [MIT](LICENSE)

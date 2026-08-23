@@ -19,16 +19,24 @@ readonly _RELEASE_DEVELOP_BRANCH='develop'
 readonly _RELEASE_MASTER_BRANCH='master'
 readonly _RELEASE_PUBLICATION_ATTEMPTS=90
 readonly _RELEASE_PUBLICATION_INTERVAL=10
+readonly _RELEASE_SKILL_PATH='skills/s-vhs-recording/SKILL.md'
 readonly _RELEASE_ALLOWED_PATHS=(
     CHANGELOG.md
     doc/PLAN.md
+    "$_RELEASE_SKILL_PATH"
     README.md
     s-vhs.sh
     examples/remote-import.rec.sh
 )
 readonly _RELEASE_PINNED_IMPORT_FILES=(
     README.md
+    "$_RELEASE_SKILL_PATH"
     examples/remote-import.rec.sh
+)
+# Pinned-import files that may also point readers at the latest alias
+readonly _RELEASE_MIXED_IMPORT_FILES=(
+    README.md
+    "$_RELEASE_SKILL_PATH"
 )
 readonly _RELEASE_LATEST_IMPORT_FILES=(
     doc/DEBUG.md
@@ -476,6 +484,29 @@ _release_check_plan() {
 }
 
 
+_release_allows_latest_import() {
+    #
+    # Report whether a pinned-import file may also carry the latest alias.
+    #
+    # Parameters:
+    #   $1 - file - path being checked by _release_check_remote_imports.
+    #
+    # Example:
+    #   _release_allows_latest_import 'skills/s-vhs-recording/SKILL.md'
+    #
+    local file="$1"
+    local mixed_file
+
+    for mixed_file in ${_RELEASE_MIXED_IMPORT_FILES[@]+"${_RELEASE_MIXED_IMPORT_FILES[@]}"}; do
+        if [[ $file == "$mixed_file" ]]; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+
 _release_check_remote_imports() {
     #
     # Block unless immutable imports name the target tag and rolling imports
@@ -495,8 +526,8 @@ _release_check_remote_imports() {
         url_count=0
         while IFS= read -r url; do
             url_count=$((url_count + 1))
-            if [[ ${url##*/} != "$_RELEASE_TARGET_TAG" &&
-                  ! ($file == README.md && ${url##*/} == 'latest') ]]; then
+            if [[ ${url##*/} != "$_RELEASE_TARGET_TAG" ]] &&
+               ! { [[ ${url##*/} == 'latest' ]] && _release_allows_latest_import "$file"; }; then
                 stale_url_detail="${stale_url_detail}${stale_url_detail:+$'\n'}${url}"
             fi
         done < <(grep -Eo \
@@ -507,7 +538,7 @@ _release_check_remote_imports() {
         elif [[ -n $stale_url_detail ]]; then
             _release_block "${file} contains a remote import not pinned to ${_RELEASE_TARGET_TAG}" \
                            "$stale_url_detail"
-        elif [[ $file == README.md ]]; then
+        elif _release_allows_latest_import "$file"; then
             _release_pass "${file} uses ${url_count} current remote import(s)"
         else
             _release_pass "${file} pins ${url_count} remote import(s) to ${_RELEASE_TARGET_TAG}"
@@ -764,14 +795,16 @@ _release_check_target_publication() {
     # Example:
     #   _release_check_target_publication
     #
-    local release_url pages_url
+    local release_url pages_url skill_url
 
     [[ -n $_RELEASE_TARGET_TAG ]] || return 0
 
     release_url="https://github.com/${_RELEASE_GITHUB_REPOSITORY}/releases/tag/${_RELEASE_TARGET_TAG}"
     pages_url="${_RELEASE_PAGES_BASE_URL}/${_RELEASE_TARGET_TAG}"
+    skill_url="${_RELEASE_PAGES_BASE_URL}/skill-${_RELEASE_TARGET_TAG}"
     _release_check_unpublished_url 'GitHub release' "$release_url"
     _release_check_unpublished_url 'versioned Pages file' "$pages_url"
+    _release_check_unpublished_url 'versioned Pages skill' "$skill_url"
 }
 
 
@@ -903,7 +936,7 @@ _release_print_release_plan() {
         ' 4. Update master, merge develop with --no-ff, and revalidate the exact tree'
         " 5. Verify version and clean state, then tag ${_RELEASE_TARGET_TAG}"
         ' 6. Atomically push master and only the target tag (starts the release workflow)'
-        ' 7. Wait for the GitHub release and verify versioned/latest Pages imports'
+        ' 7. Wait for the GitHub release and verify versioned/latest Pages library and skill'
         ' 8. Return to develop and verify a clean worktree'
     )
     gum style --border rounded --border-foreground 244 --padding '0 2' --margin '1 0 0 0' -- \
@@ -966,8 +999,8 @@ _release_validate_release_tree() {
 
 _release_run_project_checks() {
     #
-    # Run static checks and verify the generated recording template against its
-    # README copy.
+    # Run static checks, validate the agent skills, and verify the generated
+    # recording template against its README copy.
     #
     # Parameters:
     #   None.
@@ -985,7 +1018,36 @@ _release_run_project_checks() {
     _release_apply_command 'running ShellCheck' shellcheck s-vhs.sh scripts/release.sh
     _release_apply_command 'checking Bash syntax' \
                            bash -n ${shell_paths[@]+"${shell_paths[@]}"}
+    _release_validate_skills
     _release_validate_template
+}
+
+
+_release_validate_skills() {
+    #
+    # Validate every skill under skills/ against the Agent Skills
+    # specification, so that `gh skill install` keeps discovering it.
+    #
+    # Skips with a warning when GitHub CLI is missing or unauthenticated:
+    # `gh skill` is a preview command, and publishing a release does not
+    # depend on it.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _release_validate_skills
+    #
+    if ! command -v gh >/dev/null 2>&1; then
+        _release_warn 'skipping skill validation: gh is not installed'
+        return 0
+    fi
+    if ! gh auth status >/dev/null 2>&1; then
+        _release_warn 'skipping skill validation: gh is not authenticated'
+        return 0
+    fi
+
+    _release_apply_command 'validating agent skills' gh skill publish --dry-run
 }
 
 
@@ -1302,8 +1364,9 @@ _release_push_master_and_tag() {
 
 _release_wait_for_publication() {
     #
-    # Wait for the workflow-created GitHub release, then verify versioned and
-    # latest Pages files plus the documented remote-import form.
+    # Wait for the workflow-created GitHub release, then verify the versioned
+    # and latest Pages files for both the library and the skill, plus the
+    # documented remote-import form.
     #
     # Parameters:
     #   None.
@@ -1311,7 +1374,7 @@ _release_wait_for_publication() {
     # Example:
     #   _release_wait_for_publication
     #
-    local release_url version_url latest_url
+    local release_url version_url latest_url skill_version_url skill_latest_url
     local release_observed=false
     local status='request failed'
     local attempt published_version
@@ -1320,6 +1383,8 @@ _release_wait_for_publication() {
     release_url="https://github.com/${_RELEASE_GITHUB_REPOSITORY}/releases/tag/${_RELEASE_TARGET_TAG}"
     version_url="${_RELEASE_PAGES_BASE_URL}/${_RELEASE_TARGET_TAG}"
     latest_url="${_RELEASE_PAGES_BASE_URL}/latest"
+    skill_version_url="${_RELEASE_PAGES_BASE_URL}/skill-${_RELEASE_TARGET_TAG}"
+    skill_latest_url="${_RELEASE_PAGES_BASE_URL}/skill"
 
     _release_info "waiting for ${release_url}"
     for ((attempt = 1; attempt <= _RELEASE_PUBLICATION_ATTEMPTS; attempt++)); do
@@ -1346,52 +1411,91 @@ _release_wait_for_publication() {
 
     _release_verify_published_file 'versioned Pages file' \
                                    "${version_url}?commit=${_RELEASE_MERGE_COMMIT}" \
+                                   s-vhs.sh \
                                    "${_RELEASE_TMP_DIR}/published-version"
     _release_verify_published_file 'latest Pages file' \
                                    "${latest_url}?commit=${_RELEASE_MERGE_COMMIT}" \
+                                   s-vhs.sh \
                                    "${_RELEASE_TMP_DIR}/published-latest"
+    _release_verify_published_file 'versioned Pages skill' \
+                                   "${skill_version_url}?commit=${_RELEASE_MERGE_COMMIT}" \
+                                   "$_RELEASE_SKILL_PATH" \
+                                   "${_RELEASE_TMP_DIR}/published-skill-version"
+    _release_verify_published_file 'latest Pages skill' \
+                                   "${skill_latest_url}?commit=${_RELEASE_MERGE_COMMIT}" \
+                                   "$_RELEASE_SKILL_PATH" \
+                                   "${_RELEASE_TMP_DIR}/published-skill-latest"
 
     # The inner Bash receives the URL as $1; $! belongs to its process substitution
     # shellcheck disable=SC2016
-    if ! _release_capture 'verifying the documented remote import' \
+    if ! _release_capture 'verifying the latest remote import' \
                           bash -c 'source <(curl -fsSL "$1") && wait "$!" || exit 1; svhs_version' \
-                               _ "$version_url"; then
-        _release_stop 'the documented remote import failed' \
+                               _ "$latest_url"; then
+        _release_stop 'the latest remote import failed' \
                       "$(tail -n 10 "$_RELEASE_LOG_FILE")"
     fi
     published_version="$(tr -d '\r\n' <"$_RELEASE_LOG_FILE")"
     if [[ $published_version != "$_RELEASE_TARGET_VERSION" ]]; then
-        _release_stop 'the versioned remote import reports an unexpected version' \
+        _release_stop 'the latest remote import reports an unexpected version' \
                       "found: ${published_version:-missing}; expected: ${_RELEASE_TARGET_VERSION}"
     fi
 
     _RELEASE_GITHUB_STATE='GitHub release and Pages imports verified'
-    _release_pass "remote import reports ${_RELEASE_TARGET_VERSION}"
+    _release_pass "latest remote import reports ${_RELEASE_TARGET_VERSION}"
 }
 
 
 _release_verify_published_file() {
     #
-    # Download a published library URL and require an exact byte match with the
-    # tagged s-vhs.sh in the current master worktree.
+    # Wait for a published URL to exactly match its source file in the current
+    # master worktree.
     #
     # Parameters:
     #   $1 - label - artifact described in output.
     #   $2 - url - public URL to download.
-    #   $3 - destination - temporary path for the response body.
+    #   $3 - source_file - repository file the published bytes must match.
+    #   $4 - destination - temporary path for the response body.
     #
     # Example:
-    #   _release_verify_published_file 'versioned Pages file' "$url" "$file"
+    #   _release_verify_published_file 'versioned Pages file' "$url" s-vhs.sh "$file"
     #
     local label="$1"
     local url="$2"
-    local destination="$3"
+    local source_file="$3"
+    local destination="$4"
+    local attempt request_url
+    local failure_detail='request failed'
 
-    _release_apply_command "downloading the ${label}" \
-                           curl -fsSL --retry 5 --retry-delay 2 \
-                                "$url" -o "$destination"
-    _release_apply_command "matching the ${label} to s-vhs.sh" \
-                           cmp s-vhs.sh "$destination"
+    for ((attempt = 1; attempt <= _RELEASE_PUBLICATION_ATTEMPTS; attempt++)); do
+        if [[ $url == *\?* ]]; then
+            request_url="${url}&attempt=${attempt}"
+        else
+            request_url="${url}?attempt=${attempt}"
+        fi
+        rm -f -- "$destination"
+
+        if curl -fsSL -H 'Cache-Control: no-cache' \
+                "$request_url" -o "$destination" \
+                >"$_RELEASE_LOG_FILE" 2>&1; then
+            if cmp -s "$source_file" "$destination"; then
+                _release_pass "${label} matches ${source_file}"
+                return 0
+            fi
+            failure_detail="HTTP 200, but the published bytes do not match ${source_file}"
+        else
+            failure_detail="$(tail -n 20 "$_RELEASE_LOG_FILE")"
+        fi
+
+        if ((attempt < _RELEASE_PUBLICATION_ATTEMPTS)); then
+            if ((attempt % 6 == 0)); then
+                _release_info "still waiting for the ${label} (attempt ${attempt})"
+            fi
+            sleep "$_RELEASE_PUBLICATION_INTERVAL"
+        fi
+    done
+
+    _release_stop "the ${label} did not publish matching content in time" \
+                  "$failure_detail"
 }
 
 
@@ -1425,7 +1529,7 @@ _release_return_to_develop() {
 
 _release_report_success() {
     #
-    # Print the completed release with its GitHub and Pages locations.
+    # Print the completed release with its GitHub, library and skill locations.
     #
     # Parameters:
     #   None.
@@ -1436,8 +1540,9 @@ _release_report_success() {
     gum style --border double --border-foreground 42 --foreground 42 \
               --padding '0 2' --margin '1 0' -- \
               "Released ${_RELEASE_PROJECT_NAME} ${_RELEASE_TARGET_TAG}" \
-              "GitHub: https://github.com/${_RELEASE_GITHUB_REPOSITORY}/releases/tag/${_RELEASE_TARGET_TAG}" \
-              "Pages:  ${_RELEASE_PAGES_BASE_URL}/${_RELEASE_TARGET_TAG}"
+              "GitHub:  https://github.com/${_RELEASE_GITHUB_REPOSITORY}/releases/tag/${_RELEASE_TARGET_TAG}" \
+              "Library: ${_RELEASE_PAGES_BASE_URL}/${_RELEASE_TARGET_TAG}" \
+              "Skill:   ${_RELEASE_PAGES_BASE_URL}/skill-${_RELEASE_TARGET_TAG}"
 }
 
 

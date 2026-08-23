@@ -2,8 +2,8 @@
 
 `s-vhs` records a terminal by combining small tools with separate jobs. It does
 not capture pixels from a terminal window. Instead, it drives a real shell,
-records the shell's terminal output and timing, then renders that recording into
-a visual format.
+records the shell's terminal output and timing, then exports or renders that
+recording into the requested formats.
 
 <img src="images/svhs-pipeline.svg" width="800px" alt="s-vhs pipeline">
 
@@ -13,10 +13,10 @@ a visual format.
 |               | What it is                | Its job here                                                                                                            |
 | ------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | **tmux**      | Terminal multiplexer      | Runs the shell in a detached session, keeps its screen state, and fixes its size in rows and columns.                   |
-| **asciinema** | Terminal session recorder | Attaches to the tmux session and stores terminal output, control sequences, geometry, and timestamps in a `.cast` file. |
+| **asciinema** | Terminal session recorder | Stores terminal output, control sequences, geometry, and timestamps in a `.cast` file, and can export it as plain text. |
 | **`.cast`**   | asciicast v3 file         | The recording itself - text plus timings, the hand-off point between recording and rendering.                           |
 | **agg**       | asciinema GIF generator   | Replays the cast into GIF frames using the selected font, font size, line height, and color theme.                      |
-| **asg**       | asciinema SVG generator   | Replays the cast into a sharp, CSS-animated SVG using the selected font, font size, line height, and color theme.        |
+| **asg**       | asciinema SVG generator   | Replays the cast into a sharp, CSS-animated SVG using the selected font, font size, line height, and color theme.       |
 | **s-vhs**     | ~1k lines of bash         | Glues them together and gives you `Type`, `Key`, `Wait`, `Show`, `Render` instead of raw tmux commands.                 |
 
 ### Recording Script
@@ -50,7 +50,8 @@ What happens during a recording:
    tmux. The shell or TUI processes that input and redraws the pane; asciinema
    records those updates.
 1. **`Render` produces outputs.** s-vhs closes the session, keeps the cast when
-   requested, and passes it to the renderer for each visual output.
+   requested, converts it to plain text when requested, and passes it to the
+   renderer for each visual output.
 
 Every tmux invocation uses the named `s-vhs` socket (`tmux -L s-vhs ...`);
 the command sketches below omit that shared prefix.
@@ -64,7 +65,7 @@ Each command is a thin wrapper over one of the tools:
 | `Type`, `Key`   | `tmux send-keys` into the session                                         |
 | `Wait`          | `tmux capture-pane -p` piped through `grep` until the pattern appears     |
 | `Hide`          | `tmux detach-client` - the recorder stops, the session keeps running      |
-| `Render`        | `tmux kill-session`, then `agg` or `asg` per requested visual output      |
+| `Render`        | `tmux kill-session`, then `asciinema convert`, `agg` or `asg` per output  |
 
 > [!TIP]
 > Two shells are involved, and mixing them up is the classic first bug:
@@ -93,13 +94,14 @@ This separation has useful consequences:
 - fonts, themes, and pixel scale are chosen during rendering;
 - changing output resolution does not change the recorded timing.
 
-Today s-vhs can retain the cast directly, render it to GIF with `agg`, or render
-it to animated SVG with `asg`. Other cast-compatible renderers or converters can
-occupy the same final stage - for example, a video renderer - without changing
-how tmux runs the terminal or how asciinema records it.
+Today s-vhs can retain the cast directly, export it as plain text with
+`asciinema convert`, render it to GIF with `agg`, or render it to animated SVG
+with `asg`. Other cast-compatible renderers or converters can occupy the same
+final stage - for example, a video renderer - without changing how tmux runs
+the terminal or how asciinema records it.
 
 ## Links
 
 - [README](../README.md) - install and the quick start.
-- [REFERENCE.md](REFERENCE.md) - every command, with defaults.
-- [examples/README.md](../examples/README.md) - the example catalogue.
+- [REFERENCE](REFERENCE.md) - every command, with defaults.
+- [Examples](../examples) - the example catalogue.

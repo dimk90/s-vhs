@@ -20,7 +20,8 @@ imports before creating the GitHub release.
      current.
 
 1. Point every literal pinned remote import URL at the tag being released — in
-   `README.md`, `doc/DEBUG.md`, and `examples/remote-import.rec.sh`.
+   `README.md`, `skills/s-vhs-recording/SKILL.md`, `doc/DEBUG.md`, and
+   `examples/remote-import.rec.sh`.
 
 1. Bump the version literal in `svhs_version`.
 
@@ -32,6 +33,14 @@ imports before creating the GitHub release.
    ```bash
    ./s-vhs.sh new /tmp/release-check.rec.sh && bash -n /tmp/release-check.rec.sh
    ```
+   ```bash
+   gh skill publish --dry-run
+   ```
+
+   The last one validates the agent skill against the Agent Skills
+   specification. It never publishes: the tag push does that. `scripts/release.sh`
+   runs it too, and skips it with a warning when `gh` is missing or
+   unauthenticated.
 
 1. Re-render every example whose output changed, and replay each rendered file
    before committing it.
@@ -41,7 +50,7 @@ imports before creating the GitHub release.
    changed.
 
    ```bash
-   git add CHANGELOG.md doc/PLAN.md README.md s-vhs.sh
+   git add CHANGELOG.md doc/PLAN.md skills/s-vhs-recording/SKILL.md README.md s-vhs.sh
    ```
    ```bash
    git commit -m "[doc] Release v0.?.?"
@@ -99,4 +108,10 @@ imports before creating the GitHub release.
 
    ```bash
    bash -c 'source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.?.?) && wait "$!" || exit 1; svhs_version'
+   ```
+
+1. Verify that the published skill matches the released one:
+
+   ```bash
+   curl -fsSL https://dimk90.github.io/s-vhs/skill | diff - skills/s-vhs-recording/SKILL.md
    ```
