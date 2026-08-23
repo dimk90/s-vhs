@@ -17,7 +17,6 @@ and used only to render the other outputs (GIF, SVG).
 | `README.md`          | User-facing docs.                                            |
 | `CHANGELOG.md`       | One line per significant change, newest version on top.      |
 | `doc/REFERENCE.md`   | Commands today + planned settings. Keep in sync.             |
-| `doc/DEV-NOTES.md`   | Temporary dev notes: VHS parity and target API. Not public.  |
 | `doc/PLAN.md`        | Roadmap / checklist. Tick boxes when a task lands.           |
 | `doc/INTRO.md`       | How the pipeline works, for users.                           |
 | `doc/SVG.md`         | Animated SVG pitfalls and workarounds, for users.            |
@@ -105,9 +104,6 @@ writing or running a `*.rec.sh` script. Project-specific points:
   matter to match the directory name. It teaches judgement, not every command:
   a new setting earns a line only when using it well needs one, while a changed
   or removed command it mentions is updated in the same change.
-- **`doc/DEV-NOTES.md` is temporary.** Neither public documentation nor linked
-  from `README.md`, and deleted once the command surface is complete; anything
-  that must outlive it belongs in `README.md`, `doc/REFERENCE.md` or here.
 - **Changelog is part of the change.** Every significant fix, change or
   addition gets one clear line in `CHANGELOG.md` under the unreleased
   version's `### New`, `### Changed` or `### Fixed` heading — what a user
