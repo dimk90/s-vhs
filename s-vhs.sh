@@ -62,6 +62,11 @@ _SVHS_EMOJI_FONT_FAMILY=''
 # Extra font directories added by SetFontDir, searched by the GIF renderer
 _SVHS_FONT_DIRS=()
 
+# agg's default text-font chain, appended after SetFontFamily so a missing
+# preferred face falls back normally; re-check agg's docs when upgrading it
+_SVHS_AGG_TEXT_FONT_DEFAULTS='JetBrains Mono,Fira Code,SF Mono,Menlo,'
+_SVHS_AGG_TEXT_FONT_DEFAULTS+='Consolas,DejaVu Sans Mono,Liberation Mono'
+
 # agg bundles these fallbacks; an SVG can only name fonts on the viewer's
 # system, and it picks a face per glyph. Text faces must therefore come before
 # the symbol ones: 'Segoe UI Symbol' (Windows) and 'Apple Symbols' (macOS, iOS)
@@ -328,8 +333,8 @@ SetRows() {
 
 SetFontFamily() {
     #
-    # Set the font family used to render text, keeping the renderer's Nerd
-    # Font and emoji fallbacks.
+    # Set preferred font families used to render text, followed by the
+    # renderer's default text, Nerd Font and emoji fallbacks.
     #
     # Parameters:
     #   $1 - font_family - non-empty font family name.
@@ -2099,9 +2104,10 @@ _svhs_build_shell() {
 
 _svhs_build_agg_font_args() {
     #
-    # Assemble agg's font selection into _SVHS_AGG_FONT_ARGS. Settings are
-    # frozen once the session starts, so building it in Start lets the
-    # resolution probe and the render share one font selection.
+    # Assemble agg's font selection into _SVHS_AGG_FONT_ARGS. A configured
+    # text list is followed by agg's defaults, so a missing preferred face
+    # falls back normally. Settings are frozen once the session starts, so the
+    # geometry probe and the render share one font selection.
     #
     # Parameters:
     #   None.
@@ -2110,14 +2116,17 @@ _svhs_build_agg_font_args() {
     #   _svhs_build_agg_font_args
     #
     local font_dir
+    local text_font_family
 
     _SVHS_AGG_FONT_ARGS=()
 
     if [[ -n $_SVHS_FONT_FAMILY_EXACT ]]; then
         _SVHS_AGG_FONT_ARGS+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
     else
-        [[ -n $_SVHS_FONT_FAMILY ]] &&
-            _SVHS_AGG_FONT_ARGS+=(--text-font-family "$_SVHS_FONT_FAMILY")
+        if [[ -n $_SVHS_FONT_FAMILY ]]; then
+            text_font_family="$_SVHS_FONT_FAMILY,$_SVHS_AGG_TEXT_FONT_DEFAULTS"
+            _SVHS_AGG_FONT_ARGS+=(--text-font-family "$text_font_family")
+        fi
         [[ -n $_SVHS_EMOJI_FONT_FAMILY ]] &&
             _SVHS_AGG_FONT_ARGS+=(--emoji-font-family "$_SVHS_EMOJI_FONT_FAMILY")
     fi

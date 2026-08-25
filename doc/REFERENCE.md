@@ -37,7 +37,7 @@ and `Render` reports the rest.
 | Command                             | Applies to | Default      | Description                                                                                                              |
 | ----------------------------------- | ---------- | ------------ | ------------------------------------------------------------------------------------------------------------------------ |
 | `SetFontSize <px>`                  | GIF, SVG   | `28`         | Rendered font size in pixels                                                                                             |
-| `SetFontFamily <family>`            | GIF, SVG   | renderer's   | Text font[^svg-fonts], keeping the Nerd Font and emoji fallbacks; excludes `SetFontFamilyExact`                          |
+| `SetFontFamily <family>`            | GIF, SVG   | renderer's   | Preferred text fonts[^svg-fonts]; if none are available, the renderer uses its defaults; Nerd Font and emoji fallbacks remain enabled; excludes `SetFontFamilyExact` |
 | `SetFontFamilyExact <list>`         | GIF, SVG   | renderer's   | Complete family list[^svg-fonts], bypassing all fallbacks; excludes `SetFontFamily` and `SetEmojiFontFamily`             |
 | `SetEmojiFontFamily <list>`         | GIF, SVG   | renderer's   | Families emoji are drawn with[^svg-fonts], replacing the renderer's own chain; excludes `SetFontFamilyExact`             |
 | `SetFontDir <dir>`                  | GIF        | —            | Additional font directory searched by the renderer, which must exist; repeatable                                         |
