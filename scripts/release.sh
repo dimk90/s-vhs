@@ -1365,7 +1365,7 @@ _release_wait_for_publication() {
             if ((attempt % 6 == 0)); then
                 _release_info "still waiting for the release workflow (HTTP ${status}, attempt ${attempt})"
             fi
-            sleep "$_RELEASE_PUBLICATION_INTERVAL"
+            _release_wait_with_spinner 'waiting for the release workflow'
         fi
     done
 
@@ -1458,12 +1458,29 @@ _release_verify_published_file() {
             if ((attempt % 6 == 0)); then
                 _release_info "still waiting for the ${label} (attempt ${attempt})"
             fi
-            sleep "$_RELEASE_PUBLICATION_INTERVAL"
+            _release_wait_with_spinner "waiting for the ${label}"
         fi
     done
 
     _release_stop "the ${label} did not publish matching content in time" \
                   "$failure_detail"
+}
+
+
+_release_wait_with_spinner() {
+    #
+    # Show publication progress while pausing before the next polling attempt.
+    #
+    # Parameters:
+    #   $1 - title - artifact or workflow currently being awaited.
+    #
+    # Example:
+    #   _release_wait_with_spinner 'waiting for the release workflow'
+    #
+    local title="$1"
+
+    gum spin --spinner minidot --title "$title" -- \
+             sleep "$_RELEASE_PUBLICATION_INTERVAL"
 }
 
 
