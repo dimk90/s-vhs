@@ -1,6 +1,6 @@
 # Changelog
 
-## `[v0.4.2]` - Unreleased
+## `[v0.4.2]` - 25.08.2026
 
 ### Fixed
 * Suppress Apple's zsh migration notice in Bash recordings on macOS.
