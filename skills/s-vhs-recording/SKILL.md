@@ -57,7 +57,7 @@ Name recordings `<topic>.rec.sh` and make them executable.
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
 # shellcheck disable=SC1090
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.4.1) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.4.2) && wait "$!" || exit 1
 
 # Every command the recorded shell drives, checked before anything starts
 Require 'git'
@@ -105,10 +105,9 @@ least one `SetOutput`.
   per renderer (`::: GIF: 60 cols x 8 rows x 40px font -> 1488 x 432 px`) —
   read it back and adjust the grid or the font size before a render that is
   far off the size the user asked for.
-- `SetFontFamily 'A, B'` takes a list and keeps agg's Nerd Font and emoji
-  fallbacks. Pass a family that exists on the rendering machine — agg fails
-  with `no faces matching font family options` when none of its defaults is
-  installed.
+- `SetFontFamily 'A, B'` takes a preferred list. For GIF output, agg's
+  default text-font chain follows it before the Nerd Font and emoji fallbacks;
+  the first installed text family wins.
 - The recorded shell is isolated by default: no personal rc files, no history,
   no user prompt in frame. Keep it that way unless the recording is *about*
   the user's setup (`SetPrompt 'native'`).
@@ -300,7 +299,7 @@ it for timing and framing.
 | `Start: session already exists` | A pinned `SetSession` name is taken, or a `SIGKILL`ed run left its session behind; `tmux -L s-vhs kill-server` |
 | `Require: <cmd> is not installed, required for the recording` | The recording drives a command the machine lacks — install it or drop that step |
 | `Wait: timeout waiting for: <pattern>` | The pattern never appeared — check the anchor and raise the timeout |
-| `no faces matching font family options` | `SetFontFamily` names no installed family, and agg's defaults are missing too |
+| `no faces matching font family options` | No `SetFontFamilyExact` family is installed, or no preferred or default agg text font is available |
 | `SetFontFamily: cannot be combined with SetFontFamilyExact` | agg rejects both flags; pick one |
 | Renderer rejects the theme name | Named themes differ between agg and asg; use a custom hex palette for both |
 | `::: SetOptimize: gifsicle is not installed` | Warning only — the GIF was written unoptimized |

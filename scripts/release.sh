@@ -2,9 +2,10 @@
 #
 # Release s-vhs from develop to master and GitHub.
 #
-# Prepare the version bump, dated changelog, completed-plan removal, pinned
-# remote imports, README, and rendered examples before running this script. The
-# prepared tree may be uncommitted or already committed and pushed to develop.
+# Prepare the version bump, dated changelog, completed-plan removal, README,
+# and rendered examples before running this script. The script pins remote
+# imports to the target tag. The prepared tree may be uncommitted or already
+# committed and pushed to develop.
 # The script performs its checks before publishing anything, asks for one
 # approval, and stops on the first failed release step without attempting
 # rollback.
@@ -44,6 +45,7 @@ readonly _RELEASE_LATEST_IMPORT_FILES=(
 
 _RELEASE_BLOCKERS=()
 _RELEASE_CANDIDATE_PATHS=()
+_RELEASE_IMPORT_PATHS_TO_PIN=()
 _RELEASE_CANDIDATE_MODE='invalid'
 _RELEASE_TMP_DIR=''
 _RELEASE_LOG_FILE=''
@@ -78,6 +80,7 @@ main() {
     _release_run_sanity_checks
     _release_confirm_release_plan
 
+    _release_pin_remote_imports
     _release_validate_release_tree
     _release_commit_release
     _release_push_develop
@@ -179,12 +182,12 @@ _release_run_sanity_checks() {
     _release_check_required_files
     _release_check_origin_remote
     _release_check_repository_state
-    _release_check_candidate_paths
     if _release_read_target_version; then
         _release_check_changelog
         _release_check_plan
         _release_check_remote_imports
     fi
+    _release_check_candidate_paths
     _release_check_origin_state
     _release_report_blockers
 }
@@ -282,8 +285,8 @@ _release_check_repository_state() {
 
 _release_check_candidate_paths() {
     #
-    # Classify the candidate from release-path changes and warn about unrelated
-    # worktree changes that will remain outside the release commit.
+    # Classify the candidate from release-path changes and planned import pins,
+    # then warn about unrelated worktree changes left outside the release commit.
     #
     # Parameters:
     #   None.
@@ -297,12 +300,16 @@ _release_check_candidate_paths() {
 
     while IFS= read -r -d '' path; do
         if _release_is_allowed_path "$path"; then
-            _RELEASE_CANDIDATE_PATHS+=("$path")
+            _release_add_candidate_path "$path"
         else
             unexpected_path_detail="${unexpected_path_detail}${unexpected_path_detail:+$'\n'}${path}"
         fi
     done < <(git diff HEAD --name-only -z
              git ls-files --others --exclude-standard -z)
+
+    for path in ${_RELEASE_IMPORT_PATHS_TO_PIN[@]+"${_RELEASE_IMPORT_PATHS_TO_PIN[@]}"}; do
+        _release_add_candidate_path "$path"
+    done
 
     if [[ -n $unexpected_path_detail ]]; then
         _release_warn 'the worktree holds changes outside the release paths' \
@@ -312,10 +319,34 @@ _release_check_candidate_paths() {
     if ((${#_RELEASE_CANDIDATE_PATHS[@]} == 0)); then
         _RELEASE_CANDIDATE_MODE='committed'
         _release_pass 'the release paths are clean; checking the committed develop tree'
+    elif ((${#_RELEASE_IMPORT_PATHS_TO_PIN[@]} > 0)); then
+        _RELEASE_CANDIDATE_MODE='worktree'
+        _release_pass \
+            "the release candidate has ${#_RELEASE_CANDIDATE_PATHS[@]} path(s), including ${#_RELEASE_IMPORT_PATHS_TO_PIN[@]} remote-import path(s) to pin"
     else
         _RELEASE_CANDIDATE_MODE='worktree'
         _release_pass "the worktree holds ${#_RELEASE_CANDIDATE_PATHS[@]} release path(s)"
     fi
+}
+
+
+_release_add_candidate_path() {
+    #
+    # Add one path to the release candidate unless it is already present.
+    #
+    # Parameters:
+    #   $1 - path - repository-relative release path.
+    #
+    # Example:
+    #   _release_add_candidate_path 'README.md'
+    #
+    local path="$1"
+    local candidate_path
+
+    for candidate_path in ${_RELEASE_CANDIDATE_PATHS[@]+"${_RELEASE_CANDIDATE_PATHS[@]}"}; do
+        [[ $path == "$candidate_path" ]] && return 0
+    done
+    _RELEASE_CANDIDATE_PATHS+=("$path")
 }
 
 
@@ -485,8 +516,8 @@ _release_allows_latest_import() {
 
 _release_check_remote_imports() {
     #
-    # Block unless immutable imports name the target tag and rolling imports
-    # retain the latest alias.
+    # Report immutable imports that the release step will pin to the target tag,
+    # and block on missing imports or rolling imports that do not use latest.
     #
     # Parameters:
     #   None.
@@ -512,8 +543,9 @@ _release_check_remote_imports() {
         if ((url_count == 0)); then
             _release_block "${file} contains no pinned remote import"
         elif [[ -n $stale_url_detail ]]; then
-            _release_block "${file} contains a remote import not pinned to ${_RELEASE_TARGET_TAG}" \
-                           "$stale_url_detail"
+            _RELEASE_IMPORT_PATHS_TO_PIN+=("$file")
+            _release_warn "${file} has remote imports to pin to ${_RELEASE_TARGET_TAG}" \
+                          "$stale_url_detail"
         elif _release_allows_latest_import "$file"; then
             _release_pass "${file} uses ${url_count} current remote import(s)"
         else
@@ -834,8 +866,8 @@ _release_report_blockers() {
 
 _release_confirm_release_plan() {
     #
-    # Freeze the approved candidate, present the plan, and require one explicit
-    # approval of an unchanged candidate.
+    # Freeze the candidate before automatic pinning, present the plan, and
+    # require one explicit approval of an unchanged candidate.
     #
     # Parameters:
     #   None.
@@ -845,7 +877,6 @@ _release_confirm_release_plan() {
     #
     _RELEASE_APPROVED_HEAD="$(git rev-parse HEAD)"
     _RELEASE_APPROVED_STATUS="$(git status --porcelain=v1 --untracked-files=all)"
-    readonly _RELEASE_APPROVED_HEAD _RELEASE_APPROVED_STATUS
 
     _release_print_release_plan
 
@@ -875,12 +906,14 @@ _release_print_release_plan() {
     local plan_lines=()
     local candidate_summary candidate_plan previous_version
 
+    candidate_plan=" 3. Commit reviewed release paths as [doc] Release ${_RELEASE_TARGET_TAG}"
     if [[ $_RELEASE_CANDIDATE_MODE == 'committed' ]]; then
         candidate_summary="$(git rev-parse --short HEAD) (already committed on develop)"
-        candidate_plan=' 2. Use the reviewed release tree already committed on develop'
+        candidate_plan=' 3. Use the reviewed release tree already committed on develop'
+    elif ((${#_RELEASE_IMPORT_PATHS_TO_PIN[@]} > 0)); then
+        candidate_summary="uncommitted/planned: ${_RELEASE_CANDIDATE_PATHS[*]-}"
     else
         candidate_summary="uncommitted: ${_RELEASE_CANDIDATE_PATHS[*]-}"
-        candidate_plan=" 2. Commit reviewed release paths as [doc] Release ${_RELEASE_TARGET_TAG}"
     fi
     previous_version="${_RELEASE_LATEST_VERSION:+v${_RELEASE_LATEST_VERSION}}"
     previous_version="${previous_version:-none}"
@@ -898,14 +931,15 @@ _release_print_release_plan() {
               ${summary_lines[@]+"${summary_lines[@]}"}
 
     plan_lines=(
-        ' 1. Validate: diff, ShellCheck, Bash syntax, scaffold, README template'
+        " 1. Pin remote imports to ${_RELEASE_TARGET_TAG}"
+        ' 2. Validate: diff, ShellCheck, Bash syntax, scaffold, README template'
         "$candidate_plan"
-        ' 3. Push develop to origin and verify the remote commit'
-        ' 4. Update master, merge develop with --no-ff, and revalidate the exact tree'
-        " 5. Verify version and clean state, then tag ${_RELEASE_TARGET_TAG}"
-        ' 6. Atomically push master and only the target tag (starts the release workflow)'
-        ' 7. Wait for the GitHub release and verify versioned/latest Pages library and skill'
-        ' 8. Return to develop and verify a clean worktree'
+        ' 4. Push develop to origin and verify the remote commit'
+        ' 5. Update master, merge develop with --no-ff, and revalidate the exact tree'
+        " 6. Verify version and clean state, then tag ${_RELEASE_TARGET_TAG}"
+        ' 7. Atomically push master and only the target tag (starts the release workflow)'
+        ' 8. Wait for the GitHub release and verify versioned/latest Pages library and skill'
+        ' 9. Return to develop and verify a clean worktree'
     )
     gum style --border rounded --border-foreground 244 --padding '0 2' --margin '1 0 0 0' -- \
               ${plan_lines[@]+"${plan_lines[@]}"}
@@ -938,6 +972,90 @@ _release_candidate_is_approved() {
 
 
 ### Release steps
+
+_release_pin_remote_imports() {
+    #
+    # Rewrite every stale immutable remote import to the target tag, then adopt
+    # the resulting worktree as the candidate approved by the release plan.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _release_pin_remote_imports
+    #
+    local file
+
+    _release_begin_step "Pin remote imports to ${_RELEASE_TARGET_TAG}"
+    if ! _release_candidate_is_approved; then
+        _release_stop 'the candidate changed after approval; run the preflight again'
+    fi
+
+    if ((${#_RELEASE_IMPORT_PATHS_TO_PIN[@]} == 0)); then
+        _release_pass "remote imports already use ${_RELEASE_TARGET_TAG}"
+    else
+        for file in ${_RELEASE_IMPORT_PATHS_TO_PIN[@]+"${_RELEASE_IMPORT_PATHS_TO_PIN[@]}"}; do
+            _release_pin_remote_import_file "$file"
+        done
+    fi
+
+    _RELEASE_APPROVED_HEAD="$(git rev-parse HEAD)"
+    _RELEASE_APPROVED_STATUS="$(git status --porcelain=v1 --untracked-files=all)"
+    readonly _RELEASE_APPROVED_HEAD _RELEASE_APPROVED_STATUS
+}
+
+
+_release_pin_remote_import_file() {
+    #
+    # Replace stale import URLs in one file while preserving an allowed latest
+    # alias and the file's mode.
+    #
+    # Parameters:
+    #   $1 - file - pinned-import file to update.
+    #
+    # Example:
+    #   _release_pin_remote_import_file 'README.md'
+    #
+    local file="$1"
+    local pinned_file="${_RELEASE_TMP_DIR}/pinned-import"
+    local stale_url_detail url
+    local url_count=0
+
+    if _release_allows_latest_import "$file"; then
+        sed -E \
+            "s#https://dimk90\\.github\\.io/s-vhs/v[0-9]+\\.[0-9]+\\.[0-9]+#${_RELEASE_PAGES_BASE_URL}/${_RELEASE_TARGET_TAG}#g" \
+            "$file" >"$pinned_file" || _release_stop "unable to pin remote imports in ${file}"
+    else
+        sed -E \
+            "s#https://dimk90\\.github\\.io/s-vhs/(latest|v[0-9]+\\.[0-9]+\\.[0-9]+)#${_RELEASE_PAGES_BASE_URL}/${_RELEASE_TARGET_TAG}#g" \
+            "$file" >"$pinned_file" || _release_stop "unable to pin remote imports in ${file}"
+    fi
+
+    if cmp -s "$file" "$pinned_file"; then
+        _release_stop "${file} had no remote imports to pin"
+    fi
+    cat "$pinned_file" >"$file" || _release_stop "unable to update ${file}"
+
+    stale_url_detail=''
+    while IFS= read -r url; do
+        url_count=$((url_count + 1))
+        if [[ ${url##*/} != "$_RELEASE_TARGET_TAG" ]] &&
+           ! { [[ ${url##*/} == 'latest' ]] && _release_allows_latest_import "$file"; }; then
+            stale_url_detail="${stale_url_detail}${stale_url_detail:+$'\n'}${url}"
+        fi
+    done < <(grep -Eo \
+        'https://dimk90\.github\.io/s-vhs/(latest|v[0-9]+\.[0-9]+\.[0-9]+)' "$file")
+
+    if ((url_count == 0)); then
+        _release_stop "${file} contains no remote import after pinning"
+    fi
+    if [[ -n $stale_url_detail ]]; then
+        _release_stop "${file} still has remote imports not pinned to ${_RELEASE_TARGET_TAG}" \
+                      "$stale_url_detail"
+    fi
+    _release_pass "${file} uses ${url_count} current remote import(s)"
+}
+
 
 _release_validate_release_tree() {
     #
@@ -1365,7 +1483,7 @@ _release_wait_for_publication() {
             if ((attempt % 6 == 0)); then
                 _release_info "still waiting for the release workflow (HTTP ${status}, attempt ${attempt})"
             fi
-            sleep "$_RELEASE_PUBLICATION_INTERVAL"
+            _release_wait_with_spinner 'waiting for the release workflow'
         fi
     done
 
@@ -1458,12 +1576,29 @@ _release_verify_published_file() {
             if ((attempt % 6 == 0)); then
                 _release_info "still waiting for the ${label} (attempt ${attempt})"
             fi
-            sleep "$_RELEASE_PUBLICATION_INTERVAL"
+            _release_wait_with_spinner "waiting for the ${label}"
         fi
     done
 
     _release_stop "the ${label} did not publish matching content in time" \
                   "$failure_detail"
+}
+
+
+_release_wait_with_spinner() {
+    #
+    # Show publication progress while pausing before the next polling attempt.
+    #
+    # Parameters:
+    #   $1 - title - artifact or workflow currently being awaited.
+    #
+    # Example:
+    #   _release_wait_with_spinner 'waiting for the release workflow'
+    #
+    local title="$1"
+
+    gum spin --spinner minidot --title "$title" -- \
+             sleep "$_RELEASE_PUBLICATION_INTERVAL"
 }
 
 
@@ -1792,7 +1927,7 @@ _release_begin_step() {
 
     _RELEASE_STEP_NUMBER=$((_RELEASE_STEP_NUMBER + 1))
     printf '\n%s %s\n' \
-           "$(gum style --bold --foreground 212 "[${_RELEASE_STEP_NUMBER}/8]")" "$title"
+           "$(gum style --bold --foreground 212 "[${_RELEASE_STEP_NUMBER}/9]")" "$title"
 }
 
 
