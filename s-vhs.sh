@@ -52,9 +52,10 @@ _SVHS_COLOR_RESET=$'\033[0m'
 _SVHS_COLS=100
 _SVHS_ROWS=40
 
-# Renderer fonts, empty = their defaults. FAMILY keeps the Nerd Font and
-# emoji fallbacks; FAMILY_EXACT replaces the whole chain, no fallbacks;
-# EMOJI_FONT_FAMILY replaces the emoji fallbacks alone
+# Renderer fonts, empty = their defaults. FAMILY comes before the renderer's
+# own text chain and keeps the Nerd Font and emoji fallbacks; FAMILY_EXACT
+# replaces the whole chain, no fallbacks; EMOJI_FONT_FAMILY replaces the emoji
+# fallbacks alone
 _SVHS_FONT_FAMILY=''
 _SVHS_FONT_FAMILY_EXACT=''
 _SVHS_EMOJI_FONT_FAMILY=''
@@ -63,7 +64,8 @@ _SVHS_EMOJI_FONT_FAMILY=''
 _SVHS_FONT_DIRS=()
 
 # agg's default text-font chain, appended after SetFontFamily so a missing
-# preferred face falls back normally; re-check agg's docs when upgrading it
+# preferred face falls back normally. It mirrors agg's own default, so
+# re-check `agg --help` when bumping agg
 _SVHS_AGG_TEXT_FONT_DEFAULTS='JetBrains Mono,Fira Code,SF Mono,Menlo,'
 _SVHS_AGG_TEXT_FONT_DEFAULTS+='Consolas,DejaVu Sans Mono,Liberation Mono'
 
