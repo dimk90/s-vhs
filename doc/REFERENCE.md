@@ -41,8 +41,6 @@ and `Render` reports the rest.
 | `SetFontFamilyExact <list>`         | GIF, SVG   | renderer's   | Complete family list[^svg-fonts], bypassing all fallbacks; excludes `SetFontFamily` and `SetEmojiFontFamily`             |
 | `SetEmojiFontFamily <list>`         | GIF, SVG   | renderer's   | Families emoji are drawn with[^svg-fonts], replacing the renderer's own chain; excludes `SetFontFamilyExact`             |
 | `SetFontDir <dir>`                  | GIF        | —            | Additional font directory searched by the renderer, which must exist; repeatable                                         |
-| `SetFontAntialiasing <levels\|off>` | GIF        | `6`          | Alpha-coverage levels (`2`..`256`, `off` = 2) kept in text glyph masks, sharpness against file size; `swash` engine only |
-| `SetFontHinting <on\|off>`          | GIF        | `on`         | Fit glyph outlines to the pixel grid, which matters at small font sizes; `swash` engine only                             |
 | `SetEngine <swash\|resvg>`          | GIF        | `swash`      | Frame rendering backend; `resvg` draws COLRv1 emoji in color                                                             |
 | `SetLineHeight <multiplier>`        | GIF, SVG   | `1.2`        | Line-height multiplier passed to the renderer                                                                            |
 | `SetTheme <theme>`                  | GIF, SVG   | `dracula`    | Theme name[^themes] or custom palette passed to each requested renderer                                                  |

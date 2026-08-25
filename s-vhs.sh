@@ -24,7 +24,7 @@ set -euo pipefail
 
 
 svhs_version() {
-    printf '%s\n' '0.4.0'
+    printf '%s\n' '0.4.1'
 }
 
 
@@ -91,13 +91,6 @@ _SVHS_LINE_HEIGHT=1.2
 _SVHS_CELL_ADVANCE=0.6
 _SVHS_WINDOW_BAR_WIDTH=40
 _SVHS_WINDOW_BAR_HEIGHT=60
-
-# Glyph rasterization, swash only: alpha-coverage levels kept in text glyph
-# masks, and outlines fitted to the pixel grid
-_SVHS_FONT_ANTIALIASING=6
-_SVHS_FONT_ANTIALIASING_SET=0
-_SVHS_FONT_HINTING='on'
-_SVHS_FONT_HINTING_SET=0
 
 # Render theme; headless recording has no host theme to inherit
 _SVHS_THEME='dracula'
@@ -478,63 +471,6 @@ SetFontSize() {
     fi
 
     _SVHS_FONT_SIZE="$font_size"
-}
-
-
-SetFontAntialiasing() {
-    #
-    # Set how many alpha-coverage levels the GIF renderer keeps in text glyph
-    # masks: fewer levels give harder glyph edges and a smaller file, 'off'
-    # being the two-level extreme.
-    #
-    # Parameters:
-    #   $1 - levels - number of levels from 2 to 256, or 'off' for 2.
-    #
-    # Example:
-    #   SetFontAntialiasing 16 || exit 1
-    #
-    local levels="${1-}"
-
-    _svhs_require_configuration_phase 'SetFontAntialiasing' || return 1
-
-    if [[ $levels != 'off' ]]; then
-        if ! _svhs_is_positive_integer "$levels" || ((levels < 2 || levels > 256)); then
-            printf 'SetFontAntialiasing: expected off or 2 to 256, got: %s\n' \
-                "$levels" >&2
-            return 1
-        fi
-    fi
-
-    _SVHS_FONT_ANTIALIASING="$levels"
-    _SVHS_FONT_ANTIALIASING_SET=1
-}
-
-
-SetFontHinting() {
-    #
-    # Fit glyph outlines to the pixel grid while rendering the GIF, which
-    # keeps small text legible; turning it off draws the font's own shapes.
-    #
-    # Parameters:
-    #   $1 - font_hinting - 'on' or 'off'.
-    #
-    # Example:
-    #   SetFontHinting 'off' || exit 1
-    #
-    local font_hinting="${1-}"
-
-    _svhs_require_configuration_phase 'SetFontHinting' || return 1
-
-    case "$font_hinting" in
-        on|off) ;;
-        *)
-            printf 'SetFontHinting: expected on or off, got: %s\n' "$font_hinting" >&2
-            return 1
-            ;;
-    esac
-
-    _SVHS_FONT_HINTING="$font_hinting"
-    _SVHS_FONT_HINTING_SET=1
 }
 
 
@@ -1610,8 +1546,6 @@ Render() {
     #
     local clean_lines=''
     local output
-    # agg spells hinting as a value rather than as a flag pair
-    local hinting='true'
     local asg_font_args=()
     local asg_frame_args=()
     local quiet_args=()
@@ -1643,7 +1577,6 @@ Render() {
         asg_font_args+=(--font-family "$(_svhs_svg_font_family)")
     fi
 
-    [[ $_SVHS_FONT_HINTING == 'off' ]] && hinting='false'
     [[ $_SVHS_QUIET == 1 ]] && quiet_args=(-q)
     # both renderers loop on their own and spell only the opt-out
     [[ $_SVHS_LOOP == 'off' ]] && loop_args=(--no-loop)
@@ -1686,8 +1619,6 @@ Render() {
                     --fps-cap "$_SVHS_FRAMERATE"                          \
                     --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT"            \
                     --last-frame-duration "$_SVHS_LAST_FRAME_DURATION"    \
-                    --font-antialiasing "$_SVHS_FONT_ANTIALIASING"        \
-                    --font-hinting "$hinting"                             \
                     --renderer "$_SVHS_ENGINE"                            \
                     "$_SVHS_CAST" "$output" || return 1
                 _svhs_optimize_gif "$output" || return 1
@@ -2531,8 +2462,7 @@ _svhs_report_skipped() {
 
 _svhs_report_gif_skips() {
     #
-    # Report the settings GIF output has no equivalent for, and the ones the
-    # selected engine ignores.
+    # Report the settings GIF output has no equivalent for.
     #
     # Parameters:
     #   $1 - output - GIF path that was rendered.
@@ -2541,15 +2471,6 @@ _svhs_report_gif_skips() {
     #   _svhs_report_gif_skips 'demo.gif'
     #
     local output="$1"
-
-    # both knobs act on the glyph masks swash rasterizes; resvg draws text
-    # through its own pipeline and takes neither
-    if [[ $_SVHS_ENGINE == 'resvg' ]]; then
-        [[ $_SVHS_FONT_ANTIALIASING_SET == 1 ]] &&
-            _svhs_report_skipped 'SetFontAntialiasing' "$output" 'the resvg engine'
-        [[ $_SVHS_FONT_HINTING_SET == 1 ]] &&
-            _svhs_report_skipped 'SetFontHinting' "$output" 'the resvg engine'
-    fi
 
     # a GIF is drawn without padding and without a window bar, and always with
     # the cursor, so only a value that would have shown is worth a line
@@ -2586,10 +2507,6 @@ _svhs_report_svg_skips() {
         _svhs_report_skipped 'SetBoldIsBright' "$output" 'SVG output'
     [[ $_SVHS_ENGINE_SET == 1 ]] &&
         _svhs_report_skipped 'SetEngine' "$output" 'SVG output'
-    [[ $_SVHS_FONT_ANTIALIASING_SET == 1 ]] &&
-        _svhs_report_skipped 'SetFontAntialiasing' "$output" 'SVG output'
-    [[ $_SVHS_FONT_HINTING_SET == 1 ]] &&
-        _svhs_report_skipped 'SetFontHinting' "$output" 'SVG output'
     # an SVG names fonts instead of loading them, so a directory means nothing
     [[ -n ${_SVHS_FONT_DIRS[*]-} ]] &&
         _svhs_report_skipped 'SetFontDir' "$output" 'SVG output'
@@ -2772,7 +2689,9 @@ _svhs_optimize_gif() {
         return 0
     fi
 
-    gifsicle --batch -O3 "$output" || return 1
+    # -w drops gifsicle's advisory warnings, such as the too-many-colors one a
+    # fully antialiased render draws; a read error still prints and fails here
+    gifsicle --batch -O3 -w "$output" || return 1
 }
 
 

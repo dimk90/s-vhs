@@ -39,7 +39,7 @@ A recording is a plain shell script that sources `s-vhs.sh`:
 
 # Import s-vhs straight from GitHub - no local copy needed.
 # A local copy works too - use "source ./s-vhs.sh"
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.4.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.4.1) && wait "$!" || exit 1
 
 # Where should we write the GIF?
 SetOutput 'demo.gif'
@@ -347,7 +347,7 @@ of keeping a local `s-vhs.sh` next to the recording script:
 
 ```bash
 # Remote import instead of "source ./s-vhs.sh"
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.4.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.4.1) && wait "$!" || exit 1
 
 SetOutput "remote-import.gif"
 
@@ -439,7 +439,7 @@ It writes:
 ```bash
 #!/usr/bin/env bash
 
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.4.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.4.1) && wait "$!" || exit 1
 
 SetOutput 'demo.gif'
 
@@ -489,18 +489,7 @@ SetOptimize 'on' # <---
 | 193,964 bytes                                                                | 164,541 bytes, identical frames                                        |
 
 How much it saves depends on the recording - long, scrolling ones gain the
-most:
-
-| Recording                        | Plain render | `SetOptimize 'on'`  | Lossy pass          |
-| -------------------------------- | ------------ | ------------------- | ------------------- |
-| this example, 30 scrolling lines | 189.4 KiB    | 160.7 KiB (-15.2 %) | 160.7 KiB (-15.2 %) |
-| a short typed one-liner          | 12.3 KiB     | 10.9 KiB (-11.5 %)  | 10.9 KiB (-11.5 %)  |
-| a 24 s build log, 984x700 px     | 12.8 MiB     | 9.8 MiB (-23.4 %)   | 9.8 MiB (-23.5 %)   |
-
-> The last column is the lossy pass agg's docs suggest
-> (`gifsicle --lossy=80 -k 128 -O2`). Terminal frames use fewer than 128 colors,
-> so it saves 1-2 % at best and loses to the lossless pass on short recordings -
-> which is why `SetOptimize` only ever runs the lossless one.
+most.
 
 ### Dependency
 
@@ -526,7 +515,6 @@ Reduce what the renderer has to encode before optimizing it:
 | Render fewer pixels   | Choose the smallest useful `SetCols`, `SetRows` and `SetFontSize`                          | Less terminal space or smaller text; a large GIF scaled down in HTML is sharper but costs more bytes |
 | Render fewer frames   | Lower `SetFramerate`, for example from `30` to `15` or `10`                                | Fast typing and motion look less smooth                                                              |
 | Shorten inactive gaps | Lower `SetIdleTimeLimit`, for example from `5` to `1`                                      | Long pauses play back faster; the retained `.cast` keeps its original timing                         |
-| Use fewer edge shades | Use `SetFontAntialiasing 3` or `'off'` instead of the default `6`                          | Text edges become less smooth; this affects GIF output only                                          |
 | Record less activity  | Put setup and noisy intermediate commands between `Hide` and `Show`, or use `RunOffRecord` | Hidden activity does not appear in the recording                                                     |
 
 > [!TIP]
