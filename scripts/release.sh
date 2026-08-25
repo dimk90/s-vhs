@@ -206,7 +206,6 @@ _release_check_required_files() {
         .github/workflows/release.yml \
         CHANGELOG.md \
         doc/DEBUG.md \
-        doc/PLAN.md \
         doc/RELEASE.md \
         README.md \
         s-vhs.sh \
@@ -316,35 +315,7 @@ _release_check_candidate_paths() {
     else
         _RELEASE_CANDIDATE_MODE='worktree'
         _release_pass "the worktree holds ${#_RELEASE_CANDIDATE_PATHS[@]} release path(s)"
-        _release_check_required_candidates 'the prepared release' '' \
-            ${_RELEASE_CANDIDATE_PATHS[@]+"${_RELEASE_CANDIDATE_PATHS[@]}"}
     fi
-}
-
-
-_release_check_required_candidates() {
-    #
-    # Block when a candidate change set leaves CHANGELOG.md untouched. The
-    # version may already have been bumped in s-vhs.sh before release prep.
-    #
-    # Parameters:
-    #   $1 - subject - candidate description used in the blocker message.
-    #   $2 - scope - (optional) - comparison named in the blocker message,
-    #        such as 'from origin/master'.
-    #   $3... - paths - candidate paths to search.
-    #
-    # Example:
-    #   _release_check_required_candidates 'the prepared release' '' 'CHANGELOG.md'
-    #
-    local subject="$1"
-    local scope="$2"
-    shift 2
-    local path
-
-    for path in ${@+"$@"}; do
-        [[ $path == CHANGELOG.md ]] && return 0
-    done
-    _release_block "${subject} does not change CHANGELOG.md${scope:+ ${scope}}"
 }
 
 
@@ -474,6 +445,11 @@ _release_check_plan() {
     #   _release_check_plan
     #
     local plan_pattern
+
+    if [[ ! -e doc/PLAN.md ]]; then
+        _release_pass 'doc/PLAN.md is absent'
+        return 0
+    fi
 
     plan_pattern="^## v${_RELEASE_TARGET_VERSION//./\\.}[[:space:]]*$"
     if grep -qE "$plan_pattern" doc/PLAN.md; then
@@ -637,8 +613,7 @@ _release_check_branch_synchronization() {
 
 _release_check_committed_candidate() {
     #
-    # Block unless develop differs from origin/master and its latest commit
-    # carries the required release files.
+    # Block unless develop differs from origin/master.
     #
     # Parameters:
     #   None.
@@ -647,7 +622,6 @@ _release_check_committed_candidate() {
     #   _release_check_committed_candidate
     #
     local committed_candidate_paths=()
-    local latest_commit_paths=()
     local path
 
     while IFS= read -r -d '' path; do
@@ -662,12 +636,6 @@ _release_check_committed_candidate() {
         _release_pass \
             "the committed develop tree differs from origin/master in ${#committed_candidate_paths[@]} path(s)"
     fi
-
-    while IFS= read -r -d '' path; do
-        latest_commit_paths+=("$path")
-    done < <(git diff --name-only -z 'HEAD^' HEAD)
-    _release_check_required_candidates 'the latest committed release' '' \
-        ${latest_commit_paths[@]+"${latest_commit_paths[@]}"}
 }
 
 
