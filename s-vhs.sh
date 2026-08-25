@@ -2689,7 +2689,9 @@ _svhs_optimize_gif() {
         return 0
     fi
 
-    gifsicle --batch -O3 "$output" || return 1
+    # -w drops gifsicle's advisory warnings, such as the too-many-colors one a
+    # fully antialiased render draws; a read error still prints and fails here
+    gifsicle --batch -O3 -w "$output" || return 1
 }
 
 

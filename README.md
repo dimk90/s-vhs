@@ -489,18 +489,7 @@ SetOptimize 'on' # <---
 | 193,964 bytes                                                                | 164,541 bytes, identical frames                                        |
 
 How much it saves depends on the recording - long, scrolling ones gain the
-most:
-
-| Recording                        | Plain render | `SetOptimize 'on'`  | Lossy pass          |
-| -------------------------------- | ------------ | ------------------- | ------------------- |
-| this example, 30 scrolling lines | 189.4 KiB    | 160.7 KiB (-15.2 %) | 160.7 KiB (-15.2 %) |
-| a short typed one-liner          | 12.3 KiB     | 10.9 KiB (-11.5 %)  | 10.9 KiB (-11.5 %)  |
-| a 24 s build log, 984x700 px     | 12.8 MiB     | 9.8 MiB (-23.4 %)   | 9.8 MiB (-23.5 %)   |
-
-> The last column is the lossy pass agg's docs suggest
-> (`gifsicle --lossy=80 -k 128 -O2`). Terminal frames use fewer than 128 colors,
-> so it saves 1-2 % at best and loses to the lossless pass on short recordings -
-> which is why `SetOptimize` only ever runs the lossless one.
+most.
 
 ### Dependency
 
