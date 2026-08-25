@@ -2065,9 +2065,10 @@ _svhs_build_shell() {
     case "$_SVHS_SHELL" in
         bash)
             # bash and zsh both read and write the user's history through
-            # HISTFILE, and leave it alone when it names no file
+            # HISTFILE, and leave it alone when it names no file. Apple's
+            # Bash 3.2 also needs this variable to omit its zsh migration notice
             _SVHS_SHELL_COMMAND=(bash)
-            _SVHS_SHELL_ENV=('HISTFILE=')
+            _SVHS_SHELL_ENV=('HISTFILE=' 'BASH_SILENCE_DEPRECATION_WARNING=1')
             if [[ $isolated == 1 ]]; then
                 _SVHS_SHELL_COMMAND+=(--norc --noprofile)
                 _SVHS_SHELL_ENV+=("PS1=$(_svhs_prompt_body)")
