@@ -526,7 +526,6 @@ Reduce what the renderer has to encode before optimizing it:
 | Render fewer pixels   | Choose the smallest useful `SetCols`, `SetRows` and `SetFontSize`                          | Less terminal space or smaller text; a large GIF scaled down in HTML is sharper but costs more bytes |
 | Render fewer frames   | Lower `SetFramerate`, for example from `30` to `15` or `10`                                | Fast typing and motion look less smooth                                                              |
 | Shorten inactive gaps | Lower `SetIdleTimeLimit`, for example from `5` to `1`                                      | Long pauses play back faster; the retained `.cast` keeps its original timing                         |
-| Use fewer edge shades | Use `SetFontAntialiasing 3` or `'off'` instead of the default `6`                          | Text edges become less smooth; this affects GIF output only                                          |
 | Record less activity  | Put setup and noisy intermediate commands between `Hide` and `Show`, or use `RunOffRecord` | Hidden activity does not appear in the recording                                                     |
 
 > [!TIP]

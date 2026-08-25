@@ -1,5 +1,11 @@
 # Changelog
 
+## `[v0.4.1]` - 25.08.2026
+
+### Changed
+* Defer `SetFontAntialiasing` and `SetFontHinting` until next agg release.
+
+
 ## `[v0.4.0]` - 23.08.2026
 
 ### New
