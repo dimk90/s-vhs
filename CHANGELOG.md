@@ -1,5 +1,12 @@
 # Changelog
 
+## `[v0.5.0]` - Unreleased
+
+### New
+
+### Changed
+
+
 ## `[v0.4.2]` - 25.08.2026
 
 ### Fixed
