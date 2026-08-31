@@ -3,8 +3,10 @@
 ## `[v0.5.0]` - Unreleased
 
 ### New
+* Add `Finally`: run a cleanup command in the host shell however the recording ends.
 
 ### Changed
+* Change `_svhs_cleanup` to public `svhs_cleanup` - the teardown installed as the `EXIT` trap.
 
 
 ## `[v0.4.2]` - 25.08.2026

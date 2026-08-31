@@ -340,6 +340,11 @@ Enter; Sleep 2.5
 
 <img src="examples/require-env.gif" width="500px" alt="A commit recorded with the git identity exported by Env">
 
+> [!TIP]
+> `Finally 'rm -rf "$TMP_DIR"'` clears a fixture the recording script made in
+> `TMP_DIR` however the script ends, including the `Wait` timeout that fails a
+> recording mid-take.
+
 ### Remote Import
 
 Import an immutable release directly from GitHub via `curl` instead

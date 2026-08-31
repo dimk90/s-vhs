@@ -149,6 +149,9 @@ _SVHS_POWERLINE_SEPARATOR=$'\xee\x82\xb0'
 # NAME=VALUE pairs exported into the recorded shell by Env
 _SVHS_ENV=()
 
+# Host-shell command lines registered by Finally, run by svhs_cleanup at exit
+_SVHS_FINALLY_COMMANDS=()
+
 # Named per process so parallel recordings do not share copied text
 _SVHS_COPY_BUFFER="s-vhs-copy-$$"
 _SVHS_COPY_BUFFER_SET=0
@@ -1102,6 +1105,32 @@ Require() {
 ## Session
 
 
+Finally() {
+    #
+    # Register a command to run in the host shell when the script exits,
+    # however it ends - success, a failed Wait, or Ctrl-C. Repeatable, and
+    # the last registered runs first, so fixtures unwind in reverse creation
+    # order. Legal before Start and mid-recording alike.
+    #
+    # Parameters:
+    #   $1 - command_line - shell command line evaluated by svhs_cleanup once
+    #        the session and the recorder are gone. Nothing is typed into the
+    #        session - the opposite of Run and RunOffRecord.
+    #
+    # Example:
+    #   Finally 'rm -rf "$WORK_DIR"' || exit 1
+    #
+    local command_line="${1-}"
+
+    if [[ -z $command_line ]]; then
+        printf 'Finally: expected a command to run at exit\n' >&2
+        return 1
+    fi
+
+    _SVHS_FINALLY_COMMANDS+=("$command_line")
+}
+
+
 Start() {
     #
     # Start a fresh detached tmux session with the configured geometry, shell
@@ -1193,6 +1222,56 @@ Start() {
 }
 
 
+svhs_cleanup() {
+    #
+    # Kill the recording session and recorder, remove an unrequested temporary
+    # cast and the Copy buffer, then run the commands registered with Finally.
+    # Installed as the EXIT trap while sourcing, and safe to call when neither
+    # the session nor the recorder is alive. A recording registers its own
+    # cleanup with Finally; this is public for the one case Finally cannot
+    # cover - an EXIT trap of the recording's own, which replaces this one and
+    # so has to chain it: trap 'svhs_cleanup; my_cleanup' EXIT
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   svhs_cleanup
+    #
+    local index
+
+    # An exit before Start - a failed setter, a name collision, or merely
+    # sourcing the library - must leave a session of that name alone: s-vhs
+    # did not create it, so it is the user's own
+    if [[ $_SVHS_STARTED == 1 ]]; then
+        tmux -L "$_SVHS_TMUX_SOCKET" kill-session \
+            -t "$_SVHS_SESSION" 2> /dev/null || true
+    fi
+    if [[ -n $_SVHS_REC_PID ]] && kill -0 "$_SVHS_REC_PID" 2> /dev/null; then
+        kill "$_SVHS_REC_PID" 2> /dev/null || true
+    fi
+    if [[ -n $_SVHS_TEMP_CAST ]]; then
+        rm -f -- "$_SVHS_TEMP_CAST"
+    fi
+    if [[ $_SVHS_COPY_BUFFER_SET == 1 ]]; then
+        tmux -L "$_SVHS_TMUX_SOCKET" delete-buffer \
+            -b "$_SVHS_COPY_BUFFER" 2> /dev/null || true
+    fi
+
+    # Handlers run last, and in reverse registration order: the recorded
+    # process reads the fixtures they remove until the session dies, and a
+    # later fixture may live inside an earlier one. A failing handler must
+    # neither stop the rest nor change the script's exit status
+    # bash 3.2 (stock macOS) treats an empty array as unset, so the count is
+    # read only once Finally has registered a non-empty command line
+    if [[ -n ${_SVHS_FINALLY_COMMANDS[*]-} ]]; then
+        for ((index = ${#_SVHS_FINALLY_COMMANDS[@]} - 1; index >= 0; index--)); do
+            eval "${_SVHS_FINALLY_COMMANDS[index]}" || true
+        done
+    fi
+}
+
+
 svhs_watch() {
     #
     # Watch a recording's pane live from another terminal, by repainting a
@@ -1219,7 +1298,7 @@ svhs_watch() {
     _svhs_require_command 'svhs_watch' 'tmux' 'the live pane viewer' || return 1
 
     # the viewer takes the terminal over, so its restoring EXIT trap runs in a
-    # subshell of its own rather than replacing the caller's _svhs_cleanup
+    # subshell of its own rather than replacing the caller's svhs_cleanup
     (
         trap 'printf "%s" "$_SVHS_WATCH_RESTORE"' EXIT
         trap 'exit 130' INT TERM
@@ -2734,37 +2813,6 @@ _svhs_send() {
 }
 
 
-_svhs_cleanup() {
-    #
-    # Kill the recording session and recorder on exit; safe to call when
-    # neither is alive, and remove an unrequested temporary cast.
-    #
-    # Parameters:
-    #   None.
-    #
-    # Example:
-    #   _svhs_cleanup
-    #
-    # An exit before Start - a failed setter, a name collision, or merely
-    # sourcing the library - must leave a session of that name alone: s-vhs
-    # did not create it, so it is the user's own
-    if [[ $_SVHS_STARTED == 1 ]]; then
-        tmux -L "$_SVHS_TMUX_SOCKET" kill-session \
-            -t "$_SVHS_SESSION" 2> /dev/null || true
-    fi
-    if [[ -n $_SVHS_REC_PID ]] && kill -0 "$_SVHS_REC_PID" 2> /dev/null; then
-        kill "$_SVHS_REC_PID" 2> /dev/null || true
-    fi
-    if [[ -n $_SVHS_TEMP_CAST ]]; then
-        rm -f -- "$_SVHS_TEMP_CAST"
-    fi
-    if [[ $_SVHS_COPY_BUFFER_SET == 1 ]]; then
-        tmux -L "$_SVHS_TMUX_SOCKET" delete-buffer \
-            -b "$_SVHS_COPY_BUFFER" 2> /dev/null || true
-    fi
-}
-
-
 ## CLI
 
 
@@ -2826,5 +2874,6 @@ if [[ -z ${BASH_SOURCE[0]-} || ${BASH_SOURCE[0]} == "$0" ]]; then
 fi
 
 # Any exit of the sourcing script - including a set -e failure mid-recording -
-# tears down the tmux session and recorder. A no-op before Start
-trap _svhs_cleanup EXIT
+# tears down the tmux session and recorder, then runs the Finally commands.
+# A no-op before Start with nothing registered
+trap svhs_cleanup EXIT

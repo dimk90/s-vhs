@@ -34,28 +34,28 @@ One renderer per output format, named by the `Applies to` column:
 A setting the other renderer lacks is applied to the outputs that support it,
 and `Render` reports the rest.
 
-| Command                             | Applies to | Default      | Description                                                                                                              |
-| ----------------------------------- | ---------- | ------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| `SetFontSize <px>`                  | GIF, SVG   | `28`         | Rendered font size in pixels                                                                                             |
-| `SetFontFamily <family>`            | GIF, SVG   | renderer's   | Preferred text fonts[^svg-fonts]; if none are available, the renderer uses its defaults; Nerd Font and emoji fallbacks remain enabled; excludes `SetFontFamilyExact` |
-| `SetFontFamilyExact <list>`         | GIF, SVG   | renderer's   | Complete family list[^svg-fonts], bypassing all fallbacks; excludes `SetFontFamily` and `SetEmojiFontFamily`             |
-| `SetEmojiFontFamily <list>`         | GIF, SVG   | renderer's   | Families emoji are drawn with[^svg-fonts], replacing the renderer's own chain; excludes `SetFontFamilyExact`             |
-| `SetFontDir <dir>`                  | GIF        | —            | Additional font directory searched by the renderer, which must exist; repeatable                                         |
-| `SetEngine <swash\|resvg>`          | GIF        | `swash`      | Frame rendering backend; `resvg` draws COLRv1 emoji in color                                                             |
-| `SetLineHeight <multiplier>`        | GIF, SVG   | `1.2`        | Line-height multiplier passed to the renderer                                                                            |
-| `SetTheme <theme>`                  | GIF, SVG   | `dracula`    | Theme name[^themes] or custom palette passed to each requested renderer                                                  |
-| `SetBoldIsBright <on\|off>`         | GIF        | `off`        | Draw bold text in the bright ANSI color, as most terminals do                                                            |
-| `SetPadding <px>`                   | SVG        | `0`          | Padding around the terminal on both axes, in output pixels                                                               |
-| `SetPaddingX <px>`                  | SVG        | `SetPadding` | Padding left and right of the terminal, overriding `SetPadding` on that axis                                             |
-| `SetPaddingY <px>`                  | SVG        | `SetPadding` | Padding above and below the terminal, overriding `SetPadding` on that axis                                               |
-| `SetWindowBar <on\|off>`            | SVG        | `off`        | Draw macOS-style window decorations - a bar with three buttons - above the terminal                                      |
-| `SetCursor <on\|off>`               | SVG        | `on`         | Draw the terminal cursor                                                                                                 |
-| `SetFramerate <fps>`                | GIF, SVG   | `30`         | Maximum number of rendered frames per second                                                                             |
-| `SetPlaybackSpeed <multiplier>`     | GIF, SVG   | `1`          | Playback speed of the rendered animation                                                                                 |
-| `SetIdleTimeLimit <seconds>`        | GIF, SVG   | `5`          | Cap on idle gaps, applied at render time so the cast keeps its own timing                                                |
-| `SetLoop <on\|off>`                 | GIF, SVG   | `on`         | Repeat the animation instead of stopping after one pass                                                                  |
-| `SetLastFrameDuration <seconds>`    | GIF        | `3`          | How long the last frame is held before the loop restarts                                                                 |
-| `SetOptimize <on\|off>`             | GIF        | `off`        | Shrink the rendered GIF with a lossless `gifsicle` pass; without `gifsicle` installed the GIF is left unoptimized         |
+| Command                          | Applies to | Default      | Description                                                                                                                                                          |
+| -------------------------------- | ---------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SetFontSize <px>`               | GIF, SVG   | `28`         | Rendered font size in pixels                                                                                                                                         |
+| `SetFontFamily <family>`         | GIF, SVG   | renderer's   | Preferred text fonts[^svg-fonts]; if none are available, the renderer uses its defaults; Nerd Font and emoji fallbacks remain enabled; excludes `SetFontFamilyExact` |
+| `SetFontFamilyExact <list>`      | GIF, SVG   | renderer's   | Complete family list[^svg-fonts], bypassing all fallbacks; excludes `SetFontFamily` and `SetEmojiFontFamily`                                                         |
+| `SetEmojiFontFamily <list>`      | GIF, SVG   | renderer's   | Families emoji are drawn with[^svg-fonts], replacing the renderer's own chain; excludes `SetFontFamilyExact`                                                         |
+| `SetFontDir <dir>`               | GIF        | —            | Additional font directory searched by the renderer, which must exist; repeatable                                                                                     |
+| `SetEngine <swash\|resvg>`       | GIF        | `swash`      | Frame rendering backend; `resvg` draws COLRv1 emoji in color                                                                                                         |
+| `SetLineHeight <multiplier>`     | GIF, SVG   | `1.2`        | Line-height multiplier passed to the renderer                                                                                                                        |
+| `SetTheme <theme>`               | GIF, SVG   | `dracula`    | Theme name[^themes] or custom palette passed to each requested renderer                                                                                              |
+| `SetBoldIsBright <on\|off>`      | GIF        | `off`        | Draw bold text in the bright ANSI color, as most terminals do                                                                                                        |
+| `SetPadding <px>`                | SVG        | `0`          | Padding around the terminal on both axes, in output pixels                                                                                                           |
+| `SetPaddingX <px>`               | SVG        | `SetPadding` | Padding left and right of the terminal, overriding `SetPadding` on that axis                                                                                         |
+| `SetPaddingY <px>`               | SVG        | `SetPadding` | Padding above and below the terminal, overriding `SetPadding` on that axis                                                                                           |
+| `SetWindowBar <on\|off>`         | SVG        | `off`        | Draw macOS-style window decorations - a bar with three buttons - above the terminal                                                                                  |
+| `SetCursor <on\|off>`            | SVG        | `on`         | Draw the terminal cursor                                                                                                                                             |
+| `SetFramerate <fps>`             | GIF, SVG   | `30`         | Maximum number of rendered frames per second                                                                                                                         |
+| `SetPlaybackSpeed <multiplier>`  | GIF, SVG   | `1`          | Playback speed of the rendered animation                                                                                                                             |
+| `SetIdleTimeLimit <seconds>`     | GIF, SVG   | `5`          | Cap on idle gaps, applied at render time so the cast keeps its own timing                                                                                            |
+| `SetLoop <on\|off>`              | GIF, SVG   | `on`         | Repeat the animation instead of stopping after one pass                                                                                                              |
+| `SetLastFrameDuration <seconds>` | GIF        | `3`          | How long the last frame is held before the loop restarts                                                                                                             |
+| `SetOptimize <on\|off>`          | GIF        | `off`        | Shrink the rendered GIF with a lossless `gifsicle` pass; without `gifsicle` installed the GIF is left unoptimized                                                    |
 
 [^svg-fonts]: An SVG names but does not embed fonts, so its appearance depends
     on fonts installed on the viewer's system, falling back through a chain of
@@ -102,19 +102,21 @@ and `Render` reports the rest.
 | `Run <command> [settle]`            | Type and run a command, then wait (default: 2s)                                                                                                                                                |
 | `RunOffRecord <command> [settle]`   | Run a command off camera: `Hide` + `Run` + `Show`; fails when not recording                                                                                                                    |
 | `Render`                            | End the recording and write every requested output                                                                                                                                             |
+| `Finally <command>`                 | Register a command to run on exit or fail[^finally]; repeatable, last registered runs first, and a failing one neither stops the others nor changes the exit status                            |
 
 [^keys]: Named keys: `Enter`, `Tab`, `Space`, `Backspace`, `Escape`, `Up`,
     `Down`, `Left`, `Right`, `PageUp`, `PageDown`, `Home`, `End`, `Insert`,
     `Delete`. A modified key stays with `Key` and tmux notation: `Key C-r`.
 
+[^finally]: Teardown is automatic: sourcing `s-vhs.sh` installs an `EXIT` trap
+    (`svhs_cleanup`) that kills the session and the recorder, then runs the
+    registered commands, so a failed script never leaves either running.
+    `Finally` is legal before `Start` and mid-recording alike.
+
 > [!NOTE]
 > `[delay]`, `[settle]`, and `[timeout]` are in seconds; `[delay]` defaults to
 > `SetTypingSpeed` for `Type` and to `SetKeyDelay` for `Key`, which sleeps that
 > long after every one of its `[count]` presses (default: `1`).
-
-> [!NOTE]
-> Teardown is automatic: sourcing `s-vhs.sh` installs an `EXIT` trap that kills the
-> session and the recorder, so a failed script never leaves either running.
 
 ## Utility & CLI
 
@@ -122,5 +124,9 @@ and `Render` reports the rest.
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `svhs_version`             | Print the version of the sourced `s-vhs.sh`                                                                                                                                                                             |
 | `svhs_watch [session]`     | Function form of `s-vhs.sh watch`, for use after sourcing `s-vhs.sh`                                                                                                                                                    |
+| `svhs_cleanup`[^teardown]  | Kill the session and the recorder, delete an unrequested temporary cast and the `Copy` buffer, then run the `Finally` commands; installed as the `EXIT` trap                                                            |
 | `s-vhs.sh new [path]`      | Write an executable recording script with a pinned import, or print it when the path is omitted                                                                                                                         |
 | `s-vhs.sh watch [session]` | Watch a recording live from another terminal without attaching a tmux client; wait for a named session, or follow the newest `s-vhs-<pid>` session when omitted; return to waiting after it ends and run until `Ctrl-C` |
+
+[^teardown]: Teardown is automatic - no need to call this function
+    manually. Register extra teardown steps with `Finally` if needed.

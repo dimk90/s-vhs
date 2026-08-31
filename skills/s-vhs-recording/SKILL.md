@@ -262,7 +262,11 @@ local copy — which waits for the session, follows it, and needs no tmux client
 after the script's PID (`s-vhs-$$`), so parallel runs never collide and need no
 `SetSession`; call it only to pin a fixed, predictable attach target. Any exit,
 including a mid-recording failure, tears the session down through the `EXIT`
-trap installed at `source` time.
+trap installed at `source` time. Anything else the recording creates - a
+`mktemp -d` fixture, a started server - is removed by registering a
+`Finally 'rm -rf "$WORK_DIR"'` at creation time, single-quoted so it expands at
+exit; a last line of cleanup only covers the take that succeeds, and a `Wait`
+timeout is the most common way one does not.
 
 ## 8. Verify
 
