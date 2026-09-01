@@ -17,6 +17,7 @@ Settings for the recording session, its cast metadata and its outputs.
 | `SetRows <rows>`           | `40`       | Terminal height in character cells                                                        |
 | `SetShell <shell>`         | `bash`     | Shell run inside the session: `bash`, `zsh` or `fish`; a missing shell falls back to bash |
 | `SetPrompt <prompt>`       | `arrow`    | Prompt theme, literal prompt, or `native`[^prompts]                                       |
+| `SetHighlightColors <bg> [fg] [attrs]` | tmux's `bg=yellow,fg=black` | Colors `Highlight` paints its selection with; each is a tmux style value - a name, a `colour0`..`colour255` index or `#rrggbb` - and `[attrs]` is a comma-separated list of tmux style attributes such as `bold,underscore` |
 | `SetTypingSpeed <seconds>` | `0.07`     | Default delay between characters typed by `Type`                                          |
 | `SetKeyDelay <seconds>`    | `0.0`      | Default pause after a key press sent by `Key`                                             |
 | `Env <name> <value>`       | —          | Export a variable into the recorded shell; repeatable                                     |
@@ -96,6 +97,7 @@ and `Render` reports the rest.
 | `Paste`                             | Paste the text stored by `Copy` as a bracketed paste                                                                                                                                           |
 | `Key <key-name> [count] [delay]`    | Press a tmux-named key[^keys] (`Enter`, `Down`, `C-r`) `count` times                                                                                                                           |
 | `Enter`, `Tab`, … `[count] [delay]` | Press one named key[^keys]; same arguments as `Key`                                                                                                                                            |
+| `Highlight <text> [hold]`           | Sweep a selection across `<text>` on the visible pane like a mouse drag, hold it (default: `1`s) and release it; matched literally on a single row, nothing is copied, of several occurrences the one closest to the cursor is taken, and a text that is not on screen is reported and skipped |
 | `Sleep <seconds>`                   | Pause the recording, holding the last frame on screen                                                                                                                                          |
 | `Wait <pattern> [timeout]`          | Poll the visible pane until a grep pattern appears (default: 15s)                                                                                                                              |
 | `WaitLine <pattern> [timeout]`      | Poll the cursor's current row until a grep pattern appears (default: 15s)                                                                                                                      |

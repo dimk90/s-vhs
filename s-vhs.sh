@@ -156,9 +156,17 @@ _SVHS_FINALLY_COMMANDS=()
 _SVHS_COPY_BUFFER="s-vhs-copy-$$"
 _SVHS_COPY_BUFFER_SET=0
 
+# tmux style the Highlight selection is painted with, assembled by
+# SetHighlightColors; empty = tmux's own mode-style, bg=yellow,fg=black
+_SVHS_HIGHLIGHT_STYLE=''
+
 # Delays in seconds
 _SVHS_TYPING_SPEED=0.07
 _SVHS_KEY_DELAY=0.0
+
+# Per cell of a Highlight sweep; a drag reads as one motion rather than as
+# typing, so it is not tied to SetTypingSpeed or SetKeyDelay
+_SVHS_HIGHLIGHT_SWEEP_DELAY=0.03
 
 # tmux poll interval, and how long the recorder may take to attach
 _SVHS_POLL_INTERVAL=0.2
@@ -989,6 +997,43 @@ SetPrompt() {
 }
 
 
+SetHighlightColors() {
+    #
+    # Set the colors Highlight paints its selection with. Each color is a tmux
+    # style value: a name ('yellow'), an index ('colour208') or a hex triplet
+    # ('#5f87ff').
+    #
+    # Parameters:
+    #   $1 - background - selection background color.
+    #   $2 - foreground - (optional) - color of the selected text.
+    #   $3 - attributes - (optional) - comma-separated tmux style attributes
+    #        the selection is drawn with, such as 'bold' or 'bold,underscore'.
+    #
+    # Example:
+    #   SetHighlightColors 'yellow' 'black' 'bold' || exit 1
+    #
+    local background="${1-}"
+    local foreground="${2-}"
+    local attributes="${3-}"
+    local style
+
+    _svhs_require_configuration_phase 'SetHighlightColors' || return 1
+
+    if [[ -z $background ]]; then
+        printf 'SetHighlightColors: background must not be empty\n' >&2
+        return 1
+    fi
+
+    # Colors and attributes are passed through to tmux, which knows its own
+    # palette and attribute names; Start reports what it rejects
+    style="bg=$background"
+    [[ -n $foreground ]] && style+=",fg=$foreground"
+    [[ -n $attributes ]] && style+=",$attributes"
+
+    _SVHS_HIGHLIGHT_STYLE="$style"
+}
+
+
 SetTypingSpeed() {
     #
     # Set the default delay between typed characters in seconds.
@@ -1206,6 +1251,8 @@ Start() {
     # xterm's older modifyOtherKeys sequences
     tmux -L "$_SVHS_TMUX_SOCKET" set -g extended-keys-format csi-u
     tmux -L "$_SVHS_TMUX_SOCKET" set-option -t "$_SVHS_SESSION" status off
+
+    _svhs_apply_highlight_style || return 1
 
     if [[ $wait_mode != 'no-wait' ]]; then
         _svhs_wait_for_shell || return 1
@@ -1483,6 +1530,51 @@ Paste() {
 
     tmux -L "$_SVHS_TMUX_SOCKET" paste-buffer -p \
         -b "$_SVHS_COPY_BUFFER" -t "$_SVHS_SESSION"
+}
+
+
+Highlight() {
+    #
+    # Sweep a selection across text already on screen the way a mouse drag
+    # would, hold it, then release it. Purely visual: nothing is copied, and
+    # the pane is left exactly as it was found.
+    #
+    # The text is matched literally against the visible pane, so it has to sit
+    # on a single row; a text that is not there is reported and skipped,
+    # leaving the frame as it is. When it occurs more than once, the occurrence
+    # closest to the cursor is selected.
+    #
+    # Parameters:
+    #   $1 - text - text to select, as it appears on screen.
+    #   $2 - hold - (optional) - seconds to keep the selection up (default: 1).
+    #
+    # Example:
+    #   Highlight 'Welcome to s-vhs' 2
+    #
+    local text="${1-}"
+    local hold="${2:-1}"
+
+    if [[ -z $text ]]; then
+        printf 'Highlight: text must not be empty\n' >&2
+        return 1
+    fi
+
+    if ! _svhs_is_nonnegative_number "$hold"; then
+        printf 'Highlight: expected a non-negative number, got: %s\n' "$hold" >&2
+        return 1
+    fi
+
+    # Missing text is the recording's own timing rather than a scripting
+    # error - a Wait away from working - so it must not end the run
+    if ! tmux -L "$_SVHS_TMUX_SOCKET" capture-pane -p -t "$_SVHS_SESSION" |
+        grep -qF -- "$text"; then
+        _svhs_warn "Highlight: not on screen, nothing selected: $text"
+        return 0
+    fi
+
+    _svhs_sweep_selection "$text"
+    sleep "$hold"
+    _svhs_send -X cancel
 }
 
 
@@ -2783,6 +2875,64 @@ _svhs_optimize_gif() {
     # -w drops gifsicle's advisory warnings, such as the too-many-colors one a
     # fully antialiased render draws; a read error still prints and fails here
     gifsicle --batch -O3 -w "$output" || return 1
+}
+
+
+_svhs_apply_highlight_style() {
+    #
+    # Apply the selection style Highlight sweeps with, and switch copy mode's
+    # search styling off: Highlight searches only to put the cursor on the
+    # match, and a painted match would give the whole text away before the
+    # sweep reaches it.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_apply_highlight_style || return 1
+    #
+    local option
+
+    for option in 'copy-mode-match-style' 'copy-mode-current-match-style'; do
+        tmux -L "$_SVHS_TMUX_SOCKET" set -g "$option" 'default' || return 1
+    done
+
+    [[ -z $_SVHS_HIGHLIGHT_STYLE ]] && return 0
+
+    tmux -L "$_SVHS_TMUX_SOCKET" set -g mode-style "$_SVHS_HIGHLIGHT_STYLE" || {
+        printf 'Start: tmux rejected the SetHighlightColors style: %s\n' \
+            "$_SVHS_HIGHLIGHT_STYLE" >&2
+        return 1
+    }
+}
+
+
+_svhs_sweep_selection() {
+    #
+    # Select the on-screen text one cell at a time, and leave the selection
+    # up. Copy mode paints the selection in mode-style, which is what makes
+    # the sweep visible; -H hides its position indicator, and the search is
+    # only how the cursor reaches the first cell of the match.
+    #
+    # Parameters:
+    #   $1 - text - text to select, known to be on the visible pane.
+    #
+    # Example:
+    #   _svhs_sweep_selection 'Welcome to s-vhs'
+    #
+    local text="$1"
+    local cell
+
+    tmux -L "$_SVHS_TMUX_SOCKET" copy-mode -H -t "$_SVHS_SESSION"
+    _svhs_send -X search-backward-text "$text"
+    _svhs_send -X begin-selection
+
+    # The selection ends before the cursor, so the last cell needs a step of
+    # its own; every character on screen is one cell wide
+    for ((cell = 0; cell < ${#text}; cell++)); do
+        _svhs_send -X cursor-right
+        sleep "$_SVHS_HIGHLIGHT_SWEEP_DELAY"
+    done
 }
 
 
