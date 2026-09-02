@@ -8,4 +8,4 @@
 - [x] Write advanced example with emulating mouse selection: https://github.com/charmbracelet/vhs/issues/66.
   - [x] Add new commands to [REFERENCE](REFERENCE.md) if possible: e.g `Highlight`.
   - [x] Add feature + issue ref (https://github.com/charmbracelet/vhs/issues/66) to README;
-  - [ ] Add demo to README.
+  - [x] Add demo to README.

@@ -21,6 +21,9 @@ A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superi
   ([#644](https://github.com/charmbracelet/vhs/discussions/644),
   [#109](https://github.com/charmbracelet/vhs/issues/109),
   [#105](https://github.com/charmbracelet/vhs/issues/105)).
+- **[Highlight](#highlight) what matters** - a selection swept over text on
+  screen, the way a mouse drag would
+  ([#66](https://github.com/charmbracelet/vhs/issues/66)).
 - **No Chromium** downloaded behind your back - just
   `tmux` + [asciinema](https://github.com/asciinema/asciinema) + [renderer](#output-formats)
   ([#528](https://github.com/charmbracelet/vhs/issues/528),
@@ -223,6 +226,25 @@ Type 'echo "and on we go"'
 ```
 
 <img src="examples/wait.gif" width="500px" alt="The recording pausing until 'build succeeded' appears in the pane">
+
+### Highlight
+
+`Highlight` drags a selection across text that is already on screen, holds it,
+and lets go:
+
+```bash
+SetHighlightColors 'colour214' 'black' 'bold' # selection style
+SetHighlightSpeed 0.03  # seconds per swept cell
+
+Type 'echo "s-vhs records what VHS cannot"'
+Enter; Sleep 1
+
+# Select the match closest to the cursor and hold it for 1.5s
+Highlight 'VHS cannot' 1.5
+```
+
+<img src="examples/highlight.gif" width="500px" alt="A selection sweeping across the words 'VHS cannot' in the terminal output">
+
 
 ### Color Theme
 
