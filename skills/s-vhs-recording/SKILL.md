@@ -159,6 +159,15 @@ least one `SetOutput`.
 - `Copy 'text'` then `Paste` puts a whole line on screen in one frame — a
   recording-local tmux buffer sent as a bracketed paste, never the system
   clipboard.
+- `Highlight 'text' [hold]` sweeps a selection across text **already on the
+  visible pane**, the way a mouse drag would, then releases it; nothing is
+  copied. Matching is literal and confined to a single row, and of several
+  occurrences the one closest to the cursor wins — the output line, not the
+  command echoed above it. Text that has not arrived yet is only warned about,
+  so `Wait` for it first instead of trusting a `Sleep`.
+  `SetHighlightColors 'colour214' 'black' 'bold'` picks the colors it is
+  painted with, and `SetHighlightSpeed` how fast it sweeps - per call,
+  `Highlight 'text' 1.5 0.01`.
 - **Prefer `Wait` over `Sleep` for anything whose duration is not yours to
   decide.** Anchor the pattern so it does not match the command echoed above
   the output:
@@ -307,6 +316,7 @@ it for timing and framing.
 | `SetFontFamily: cannot be combined with SetFontFamilyExact` | agg rejects both flags; pick one |
 | Renderer rejects the theme name | Named themes differ between agg and asg; use a custom hex palette for both |
 | `::: SetOptimize: gifsicle is not installed` | Warning only — the GIF was written unoptimized |
+| `::: Highlight: not on screen, nothing selected` | Warning only — the text had not arrived, or it wraps across two rows; `Wait` for it, or highlight a shorter part of it |
 | `::: Set…: skipped for <output>` | Warning only — that renderer has no such option |
 | Variable is empty in the recording | It was expanded by the recording script — use single quotes in `Type` |
 | Setup commands are in the GIF | Move them above `Show`, or into `RunOffRecord` |
