@@ -45,7 +45,7 @@ Follow the `shell-code` and `code-style` skills; load `s-vhs-recording` when
 writing or running a `*.rec.sh` script. Project-specific points:
 
 - **Sourced library with subcommands.** Sourcing `s-vhs.sh` only defines
-  functions and installs the `EXIT` trap (`_svhs_cleanup`); executing it —
+  functions and installs the `EXIT` trap (`svhs_cleanup`); executing it —
   including the piped `curl … | bash -s -- new …` — runs `new` or `watch` and
   exits. Each is a thin wrapper around a function usable from a recording
   script. Do not grow it into a CLI or add a general `main`; dispatch detects

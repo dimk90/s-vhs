@@ -11,6 +11,7 @@
 | `backspace`      | `Backspace 18 0.05` deleting typed text                                     |
 | `ctrl`           | `Key C-u` and tmux modifier notation (`C-`, `M-`, `S-`)                     |
 | `clipboard`      | `Copy` and `Paste` - a bracketed paste arriving in a single frame           |
+| `highlight`      | `Highlight` sweeping a selection over on-screen text, styled by `SetHighlightColors` and paced by `SetHighlightSpeed` |
 | `wait`           | `Wait '^build succeeded'` synchronizing on output instead of a sleep        |
 | `wait-line`      | `WaitLine '^Username:$'` matching only the cursor's current row             |
 | `cols-rows`      | `SetCols`/`SetRows` - the terminal is sized in cells, not pixels            |

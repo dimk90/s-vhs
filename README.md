@@ -21,6 +21,9 @@ A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superi
   ([#644](https://github.com/charmbracelet/vhs/discussions/644),
   [#109](https://github.com/charmbracelet/vhs/issues/109),
   [#105](https://github.com/charmbracelet/vhs/issues/105)).
+- **[Highlight](#highlight) what matters** - a selection swept over text on
+  screen, the way a mouse drag would
+  ([#66](https://github.com/charmbracelet/vhs/issues/66)).
 - **No Chromium** downloaded behind your back - just
   `tmux` + [asciinema](https://github.com/asciinema/asciinema) + [renderer](#output-formats)
   ([#528](https://github.com/charmbracelet/vhs/issues/528),
@@ -39,7 +42,7 @@ A recording is a plain shell script that sources `s-vhs.sh`:
 
 # Import s-vhs straight from GitHub - no local copy needed.
 # A local copy works too - use "source ./s-vhs.sh"
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.4.2) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.5.0) && wait "$!" || exit 1
 
 # Where should we write the GIF?
 SetOutput 'demo.gif'
@@ -224,6 +227,25 @@ Type 'echo "and on we go"'
 
 <img src="examples/wait.gif" width="500px" alt="The recording pausing until 'build succeeded' appears in the pane">
 
+### Highlight
+
+`Highlight` drags a selection across text that is already on screen, holds it,
+and lets go:
+
+```bash
+SetHighlightColors 'colour214' 'black' 'bold' # selection style
+SetHighlightSpeed 0.03  # seconds per swept cell
+
+Type 'echo "s-vhs records what VHS cannot"'
+Enter; Sleep 1
+
+# Select the match closest to the cursor and hold it for 1.5s
+Highlight 'VHS cannot' 1.5
+```
+
+<img src="examples/highlight.gif" width="500px" alt="A selection sweeping across the words 'VHS cannot' in the terminal output">
+
+
 ### Color Theme
 
 ```bash
@@ -340,6 +362,11 @@ Enter; Sleep 2.5
 
 <img src="examples/require-env.gif" width="500px" alt="A commit recorded with the git identity exported by Env">
 
+> [!TIP]
+> `Finally 'rm -rf "$TMP_DIR"'` clears a fixture the recording script made in
+> `TMP_DIR` however the script ends, including the `Wait` timeout that fails a
+> recording mid-take.
+
 ### Remote Import
 
 Import an immutable release directly from GitHub via `curl` instead
@@ -347,7 +374,7 @@ of keeping a local `s-vhs.sh` next to the recording script:
 
 ```bash
 # Remote import instead of "source ./s-vhs.sh"
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.4.2) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.5.0) && wait "$!" || exit 1
 
 SetOutput "remote-import.gif"
 
@@ -439,7 +466,7 @@ It writes:
 ```bash
 #!/usr/bin/env bash
 
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.4.2) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.5.0) && wait "$!" || exit 1
 
 SetOutput 'demo.gif'
 

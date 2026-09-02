@@ -1,5 +1,17 @@
 # Changelog
 
+## `[v0.5.0]` - 02.09.2026
+
+### New
+* Add `Highlight`: sweep a selection over text on screen, the way a mouse drag would.
+* Add `SetHighlightColors`: pick the colors and attributes of the `Highlight` selection.
+* Add `SetHighlightSpeed`: set how fast `Highlight` sweeps its selection.
+* Add `Finally`: run a cleanup command in the host shell however the recording ends.
+
+### Changed
+* Change `_svhs_cleanup` to public `svhs_cleanup` - the teardown installed as the `EXIT` trap.
+
+
 ## `[v0.4.2]` - 25.08.2026
 
 ### Fixed
