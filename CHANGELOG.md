@@ -5,6 +5,7 @@
 ### New
 * Add `Highlight`: sweep a selection over text on screen, the way a mouse drag would.
 * Add `SetHighlightColors`: pick the colors and attributes of the `Highlight` selection.
+* Add `SetHighlightSpeed`: set how fast `Highlight` sweeps its selection.
 * Add `Finally`: run a cleanup command in the host shell however the recording ends.
 
 ### Changed

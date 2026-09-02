@@ -160,13 +160,11 @@ _SVHS_COPY_BUFFER_SET=0
 # SetHighlightColors; empty = tmux's own mode-style, bg=yellow,fg=black
 _SVHS_HIGHLIGHT_STYLE=''
 
-# Delays in seconds
+# Delays in seconds; HIGHLIGHT_SPEED is per cell of a sweep, and stands apart
+# from the other two because a drag reads as one motion rather than as typing
 _SVHS_TYPING_SPEED=0.07
 _SVHS_KEY_DELAY=0.0
-
-# Per cell of a Highlight sweep; a drag reads as one motion rather than as
-# typing, so it is not tied to SetTypingSpeed or SetKeyDelay
-_SVHS_HIGHLIGHT_SWEEP_DELAY=0.03
+_SVHS_HIGHLIGHT_SPEED=0.03
 
 # tmux poll interval, and how long the recorder may take to attach
 _SVHS_POLL_INTERVAL=0.2
@@ -1034,6 +1032,30 @@ SetHighlightColors() {
 }
 
 
+SetHighlightSpeed() {
+    #
+    # Set the default delay Highlight sweeps one cell of its selection with.
+    #
+    # Parameters:
+    #   $1 - highlight_speed - non-negative number of seconds.
+    #
+    # Example:
+    #   SetHighlightSpeed 0.05 || exit 1
+    #
+    local highlight_speed="${1-}"
+
+    _svhs_require_configuration_phase 'SetHighlightSpeed' || return 1
+
+    if ! _svhs_is_nonnegative_number "$highlight_speed"; then
+        printf 'SetHighlightSpeed: expected a non-negative number, got: %s\n' \
+            "$highlight_speed" >&2
+        return 1
+    fi
+
+    _SVHS_HIGHLIGHT_SPEED="$highlight_speed"
+}
+
+
 SetTypingSpeed() {
     #
     # Set the default delay between typed characters in seconds.
@@ -1547,12 +1569,15 @@ Highlight() {
     # Parameters:
     #   $1 - text - text to select, as it appears on screen.
     #   $2 - hold - (optional) - seconds to keep the selection up (default: 1).
+    #   $3 - delay - (optional) - seconds per swept cell
+    #        (default: SetHighlightSpeed).
     #
     # Example:
     #   Highlight 'Welcome to s-vhs' 2
     #
     local text="${1-}"
     local hold="${2:-1}"
+    local delay="${3:-$_SVHS_HIGHLIGHT_SPEED}"
 
     if [[ -z $text ]]; then
         printf 'Highlight: text must not be empty\n' >&2
@@ -1564,6 +1589,11 @@ Highlight() {
         return 1
     fi
 
+    if ! _svhs_is_nonnegative_number "$delay"; then
+        printf 'Highlight: expected a non-negative delay, got: %s\n' "$delay" >&2
+        return 1
+    fi
+
     # Missing text is the recording's own timing rather than a scripting
     # error - a Wait away from working - so it must not end the run
     if ! tmux -L "$_SVHS_TMUX_SOCKET" capture-pane -p -t "$_SVHS_SESSION" |
@@ -1572,7 +1602,7 @@ Highlight() {
         return 0
     fi
 
-    _svhs_sweep_selection "$text"
+    _svhs_sweep_selection "$text" "$delay"
     sleep "$hold"
     _svhs_send -X cancel
 }
@@ -2916,11 +2946,13 @@ _svhs_sweep_selection() {
     #
     # Parameters:
     #   $1 - text - text to select, known to be on the visible pane.
+    #   $2 - delay - seconds to pause after each swept cell.
     #
     # Example:
-    #   _svhs_sweep_selection 'Welcome to s-vhs'
+    #   _svhs_sweep_selection 'Welcome to s-vhs' 0.03
     #
     local text="$1"
+    local delay="$2"
     local cell
 
     tmux -L "$_SVHS_TMUX_SOCKET" copy-mode -H -t "$_SVHS_SESSION"
@@ -2931,7 +2963,7 @@ _svhs_sweep_selection() {
     # its own; every character on screen is one cell wide
     for ((cell = 0; cell < ${#text}; cell++)); do
         _svhs_send -X cursor-right
-        sleep "$_SVHS_HIGHLIGHT_SWEEP_DELAY"
+        sleep "$delay"
     done
 }
 

@@ -9,21 +9,22 @@ release, marked `(planned)`.
 
 Settings for the recording session, its cast metadata and its outputs.
 
-| Command                    | Default    | Description                                                                               |
-| -------------------------- | ---------- | ----------------------------------------------------------------------------------------- |
-| `SetOutput <path.ext>`     | —          | Add an output; repeatable. `.cast`, `.txt`, `.gif` and `.svg`[^svg-fonts] are supported   |
-| `SetSession <name>`        | `s-vhs-$$` | Session name on the dedicated s-vhs tmux server                                           |
-| `SetCols <cols>`           | `100`      | Terminal width in character cells                                                         |
-| `SetRows <rows>`           | `40`       | Terminal height in character cells                                                        |
-| `SetShell <shell>`         | `bash`     | Shell run inside the session: `bash`, `zsh` or `fish`; a missing shell falls back to bash |
-| `SetPrompt <prompt>`       | `arrow`    | Prompt theme, literal prompt, or `native`[^prompts]                                       |
-| `SetHighlightColors <bg> [fg] [attrs]` | tmux's `bg=yellow,fg=black` | Colors `Highlight` paints its selection with; each is a tmux style value - a name, a `colour0`..`colour255` index or `#rrggbb` - and `[attrs]` is a comma-separated list of tmux style attributes such as `bold,underscore` |
-| `SetTypingSpeed <seconds>` | `0.07`     | Default delay between characters typed by `Type`                                          |
-| `SetKeyDelay <seconds>`    | `0.0`      | Default pause after a key press sent by `Key`                                             |
-| `Env <name> <value>`       | —          | Export a variable into the recorded shell; repeatable                                     |
-| `SetTitle <text>`          | —          | Title stored in the cast metadata and shown by players                                    |
-| `SetQuiet`                 | `off`      | Suppress recorder, text converter, GIF renderer and s-vhs `:::` messages, keeping errors  |
-| `Require <cmd>...`         | —          | Fail unless every command is available on `PATH`                                          |
+| Command                                | Default               | Description                                                                                                                                                                                                                 |
+| -------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SetOutput <path.ext>`                 | —                     | Add an output; repeatable. `.cast`, `.txt`, `.gif` and `.svg`[^svg-fonts] are supported                                                                                                                                     |
+| `SetSession <name>`                    | `s-vhs-$$`            | Session name on the dedicated s-vhs tmux server                                                                                                                                                                             |
+| `SetCols <cols>`                       | `100`                 | Terminal width in character cells                                                                                                                                                                                           |
+| `SetRows <rows>`                       | `40`                  | Terminal height in character cells                                                                                                                                                                                          |
+| `SetShell <shell>`                     | `bash`                | Shell run inside the session: `bash`, `zsh` or `fish`; a missing shell falls back to bash                                                                                                                                   |
+| `SetPrompt <prompt>`                   | `arrow`               | Prompt theme, literal prompt, or `native`[^prompts]                                                                                                                                                                         |
+| `SetHighlightColors <bg> [fg] [attrs]` | `bg=yellow, fg=black` | Colors `Highlight` paints its selection with; each is a tmux style value - a name, a `colour0`..`colour255` index or `#rrggbb` - and `[attrs]` is a comma-separated list of tmux style attributes such as `bold,underscore` |
+| `SetHighlightSpeed <seconds>`          | `0.03`                | Default delay per cell swept by `Highlight`                                                                                                                                                                                 |
+| `SetTypingSpeed <seconds>`             | `0.07`                | Default delay between characters typed by `Type`                                                                                                                                                                            |
+| `SetKeyDelay <seconds>`                | `0.0`                 | Default pause after a key press sent by `Key`                                                                                                                                                                               |
+| `Env <name> <value>`                   | —                     | Export a variable into the recorded shell; repeatable                                                                                                                                                                       |
+| `SetTitle <text>`                      | —                     | Title stored in the cast metadata and shown by players                                                                                                                                                                      |
+| `SetQuiet`                             | `off`                 | Suppress recorder, text converter, GIF renderer and s-vhs `:::` messages, keeping errors                                                                                                                                    |
+| `Require <cmd>...`                     | —                     | Fail unless every command is available on `PATH`                                                                                                                                                                            |
 
 ### Render
 
@@ -87,24 +88,24 @@ and `Render` reports the rest.
 
 ## Core
 
-| Command                             | Description                                                                                                                                                                                    |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Start [no-wait]`                   | Check dependencies, start the detached session on the dedicated s-vhs tmux server, wait until the shell's line editor starts reading, and print how to attach to it; `no-wait` skips that wait |
-| `Show`                              | Start recording; later calls append to the same cast                                                                                                                                           |
-| `Hide`                              | Stop recording, leaving the session alive                                                                                                                                                      |
-| `Type <text> [delay]`               | Emulate typing literal text, one character at a time                                                                                                                                           |
-| `Copy <text>`                       | Store non-empty text in a recording-local tmux buffer without touching the system clipboard                                                                                                    |
-| `Paste`                             | Paste the text stored by `Copy` as a bracketed paste                                                                                                                                           |
-| `Key <key-name> [count] [delay]`    | Press a tmux-named key[^keys] (`Enter`, `Down`, `C-r`) `count` times                                                                                                                           |
-| `Enter`, `Tab`, … `[count] [delay]` | Press one named key[^keys]; same arguments as `Key`                                                                                                                                            |
-| `Highlight <text> [hold]`           | Sweep a selection across `<text>` on the visible pane like a mouse drag, hold it (default: `1`s) and release it; matched literally on a single row, nothing is copied, of several occurrences the one closest to the cursor is taken, and a text that is not on screen is reported and skipped |
-| `Sleep <seconds>`                   | Pause the recording, holding the last frame on screen                                                                                                                                          |
-| `Wait <pattern> [timeout]`          | Poll the visible pane until a grep pattern appears (default: 15s)                                                                                                                              |
-| `WaitLine <pattern> [timeout]`      | Poll the cursor's current row until a grep pattern appears (default: 15s)                                                                                                                      |
-| `Run <command> [settle]`            | Type and run a command, then wait (default: 2s)                                                                                                                                                |
-| `RunOffRecord <command> [settle]`   | Run a command off camera: `Hide` + `Run` + `Show`; fails when not recording                                                                                                                    |
-| `Render`                            | End the recording and write every requested output                                                                                                                                             |
-| `Finally <command>`                 | Register a command to run on exit or fail[^finally]; repeatable, last registered runs first, and a failing one neither stops the others nor changes the exit status                            |
+| Command                             | Description                                                                                                                                                                                                                                                                                    |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Start [no-wait]`                   | Check dependencies, start the detached session on the dedicated s-vhs tmux server, wait until the shell's line editor starts reading, and print how to attach to it; `no-wait` skips that wait                                                                                                 |
+| `Show`                              | Start recording; later calls append to the same cast                                                                                                                                                                                                                                           |
+| `Hide`                              | Stop recording, leaving the session alive                                                                                                                                                                                                                                                      |
+| `Type <text> [delay]`               | Emulate typing literal text, one character at a time                                                                                                                                                                                                                                           |
+| `Copy <text>`                       | Store non-empty text in a recording-local tmux buffer without touching the system clipboard                                                                                                                                                                                                    |
+| `Paste`                             | Paste the text stored by `Copy` as a bracketed paste                                                                                                                                                                                                                                           |
+| `Key <key-name> [count] [delay]`    | Press a tmux-named key[^keys] (`Enter`, `Down`, `C-r`) `count` times                                                                                                                                                                                                                           |
+| `Enter`, `Tab`, … `[count] [delay]` | Press one named key[^keys]; same arguments as `Key`                                                                                                                                                                                                                                            |
+| `Highlight <text> [hold] [delay]`   | Sweep a selection across `<text>` on the visible pane like a mouse drag, hold it (default: `1`s) and release it; matched literally on a single row, nothing is copied, of several occurrences the one closest to the cursor is taken, and a text that is not on screen is reported and skipped |
+| `Sleep <seconds>`                   | Pause the recording, holding the last frame on screen                                                                                                                                                                                                                                          |
+| `Wait <pattern> [timeout]`          | Poll the visible pane until a grep pattern appears (default: 15s)                                                                                                                                                                                                                              |
+| `WaitLine <pattern> [timeout]`      | Poll the cursor's current row until a grep pattern appears (default: 15s)                                                                                                                                                                                                                      |
+| `Run <command> [settle]`            | Type and run a command, then wait (default: 2s)                                                                                                                                                                                                                                                |
+| `RunOffRecord <command> [settle]`   | Run a command off camera: `Hide` + `Run` + `Show`; fails when not recording                                                                                                                                                                                                                    |
+| `Render`                            | End the recording and write every requested output                                                                                                                                                                                                                                             |
+| `Finally <command>`                 | Register a command to run on exit or fail[^finally]; repeatable, last registered runs first, and a failing one neither stops the others nor changes the exit status                                                                                                                            |
 
 [^keys]: Named keys: `Enter`, `Tab`, `Space`, `Backspace`, `Escape`, `Up`,
     `Down`, `Left`, `Right`, `PageUp`, `PageDown`, `Home`, `End`, `Insert`,
@@ -116,9 +117,10 @@ and `Render` reports the rest.
     `Finally` is legal before `Start` and mid-recording alike.
 
 > [!NOTE]
-> `[delay]`, `[settle]`, and `[timeout]` are in seconds; `[delay]` defaults to
-> `SetTypingSpeed` for `Type` and to `SetKeyDelay` for `Key`, which sleeps that
-> long after every one of its `[count]` presses (default: `1`).
+> `[delay]`, `[hold]`, `[settle]`, and `[timeout]` are in seconds; `[delay]`
+> defaults to `SetTypingSpeed` for `Type`, to `SetHighlightSpeed` for
+> `Highlight`, and to `SetKeyDelay` for `Key`, which sleeps that long after
+> every one of its `[count]` presses (default: `1`).
 
 ## Utility & CLI
 
