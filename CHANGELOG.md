@@ -1,6 +1,6 @@
 # Changelog
 
-## `[v0.5.0]` - Unreleased
+## `[v0.5.0]` - 02.09.2026
 
 ### New
 * Add `Highlight`: sweep a selection over text on screen, the way a mouse drag would.
