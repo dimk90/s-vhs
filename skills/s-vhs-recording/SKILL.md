@@ -1,7 +1,7 @@
 ---
 name: s-vhs-recording
-description: Write, run and verify s-vhs recording scripts (`*.rec.sh`) that record a terminal session and render it as an animated GIF, an animated SVG, an asciinema cast or a text log. Use when asked to record a terminal demo, produce a demo GIF or animation for a README, script an asciinema cast, automate typing into a terminal for a screencast, or port a VHS `.tape` file. Covers scaffolding, the `Set*` → `Start` → `Show` → `Render` lifecycle, typing and key presses, hiding setup steps, painting typed text with color, and verifying the result without watching the GIF.
-compatibility: Requires bash, tmux and asciinema on PATH; agg is additionally required for GIF output, asg for SVG output, gifsicle for GIF optimization. Linux or macOS.
+description: Write, run and verify s-vhs recording scripts (`*.rec.sh`) that record a terminal session and render it as an animated GIF, WebP or SVG, an asciinema cast or a text log. Use when asked to record a terminal demo, produce a demo GIF or animation for a README, script an asciinema cast, automate typing into a terminal for a screencast, or port a VHS `.tape` file. Covers scaffolding, the `Set*` → `Start` → `Show` → `Render` lifecycle, typing and key presses, hiding setup steps, painting typed text with color, and verifying the result without watching the GIF.
+compatibility: Requires bash, tmux and asciinema on PATH; agg for GIF and WebP output, ffmpeg with libwebp_anim for WebP, asg for SVG, gifsicle for GIF optimization. Linux or macOS.
 allowed-tools: Read Write Edit Bash(command -v:*) Bash(curl:*) Bash(chmod:*) Bash(asciinema convert:*) Bash(tmux -L s-vhs:*) Bash(ls:*)
 ---
 
@@ -23,7 +23,8 @@ Read it before using any command not shown below; the API is pre-1.0 and moves.
 | ------------ | ------------------------------------------------------ |
 | `tmux`       | always                                                 |
 | `asciinema`  | always; also writes `.cast` and `.txt` outputs         |
-| `agg`        | `.gif` output                                          |
+| `agg`        | `.gif` and `.webp` output                              |
+| `ffmpeg`     | `.webp` output; must include `libwebp_anim`             |
 | `asg`        | `.svg` output                                          |
 | `gifsicle`   | `SetOptimize 'on'`; optional, a missing one only warns |
 
@@ -89,8 +90,10 @@ Every `Set*` call goes **before `Start`** and fails afterwards. `Start` needs at
 least one `SetOutput`.
 
 - `SetOutput` is repeatable and the extension picks the format: `.gif` (agg),
-  `.svg` (asg), `.cast` (replayable, re-renderable later) and `.txt` (plain
-  text log). A cast-only recording needs no renderer at all.
+  `.webp` (agg + FFmpeg), `.svg` (asg), `.cast` (replayable, re-renderable
+  later) and `.txt` (plain text log). A cast-only recording needs no renderer.
+  WebP preserves the rendered GIF's pixels and timing losslessly, usually in
+  fewer bytes; it shares GIF's settings except `SetOptimize` (GIF-only).
 - **`Require 'cmd'…` lists what the recorded shell will run.** It fails before
   the session starts instead of leaving a `command not found` frame in the
   middle of the GIF. Skip it only for shell builtins and coreutils.
@@ -105,7 +108,7 @@ least one `SetOutput`.
   per renderer (`::: GIF: 60 cols x 8 rows x 40px font -> 1488 x 432 px`) —
   read it back and adjust the grid or the font size before a render that is
   far off the size the user asked for.
-- `SetFontFamily 'A, B'` takes a preferred list. For GIF output, agg's
+- `SetFontFamily 'A, B'` takes a preferred list. For GIF and WebP, agg's
   default text-font chain follows it before the Nerd Font and emoji fallbacks;
   the first installed text family wins.
 - The recorded shell is isolated by default: no personal rc files, no history,
@@ -116,11 +119,11 @@ least one `SetOutput`.
 - `Env NAME value` exports into the recorded shell; repeatable.
 - Playback is fixed at render time, not by re-recording: `SetPlaybackSpeed`,
   `SetFramerate`, `SetIdleTimeLimit` (caps long pauses), `SetLoop` and
-  `SetLastFrameDuration` (GIF only).
+  `SetLastFrameDuration` (GIF and WebP).
 - A setting only one renderer supports is applied where it works, and `Render`
   reports the skipped output in yellow. Nothing fails, so a recording that
   writes both a GIF and an SVG may still use `SetWindowBar 'on'` (SVG) or
-  `SetBoldIsBright 'on'` (GIF).
+  `SetBoldIsBright 'on'` (GIF and WebP).
 
 ## 4. Body
 
@@ -279,7 +282,7 @@ timeout is the most common way one does not.
 
 ## 8. Verify
 
-A GIF or SVG cannot be reviewed by an agent — verify through the text log
+A GIF, WebP or SVG cannot be reviewed by an agent — verify through the text log
 instead. Add a `.txt` output (keep it if the project wants one, otherwise drop
 the line after checking):
 
@@ -300,7 +303,7 @@ Then confirm each requested file exists and is non-empty — `Render` prints
 `::: Wrote <path>` per output, and any yellow `::: ` line is a warning worth
 reading back to the user.
 
-State plainly that the GIF or SVG itself was not viewed; ask the user to eyeball
+State plainly that the animation itself was not viewed; ask the user to eyeball
 it for timing and framing.
 
 ## Troubleshooting

@@ -21,6 +21,9 @@ A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superi
   ([#644](https://github.com/charmbracelet/vhs/discussions/644),
   [#109](https://github.com/charmbracelet/vhs/issues/109),
   [#105](https://github.com/charmbracelet/vhs/issues/105)).
+- **[Animated WebP](#output-formats) output** - a modern alternative to GIF
+  with better compression
+  ([#50](https://github.com/charmbracelet/vhs/issues/50)).
 - **[Highlight](#highlight) what matters** - a selection swept over text on
   screen, the way a mouse drag would
   ([#66](https://github.com/charmbracelet/vhs/issues/66)).
@@ -101,8 +104,8 @@ You should see a new file called `demo.gif` in the same directory:
   > favorite distro 😉
 
 > [!NOTE]
-> Only the formats you request need a renderer - a cast-only recording
-> invokes neither, see [Output Formats](#output-formats).
+> Renderers are needed only for the output formats you request. Cast-only
+> recordings need none. See [Output Formats](#output-formats).
 
 > [!TIP]
 > Some installs below use `cargo`, which puts binaries into `~/.cargo/bin` -
@@ -129,6 +132,24 @@ For GIF output, install [`agg`](https://github.com/asciinema/agg#installation):
 > [!TIP]
 > GIF size can be reduced by [`gifsicle`](https://github.com/kohler/gifsicle)
 > without quality loss, see [`GIF Size Optimization`](#gif-size-optimization).
+
+### Renderer: WebP
+
+For animated WebP output, install [`agg`](#renderer-gif) and
+[ffmpeg](https://ffmpeg.org/download.html):
+
+- **macOS**
+  ```bash
+  brew install agg ffmpeg
+  ```
+
+- **Linux**
+  ```bash
+  cargo install --git https://github.com/asciinema/agg --locked
+  ```
+  ```bash
+  sudo pacman -S ffmpeg
+  ```
 
 ### Renderer: SVG
 
@@ -426,12 +447,13 @@ such as [context-usage.rec.sh](https://github.com/dimk90/pi-context-view/blob/de
 
 The extension of the path passed to `SetOutput` picks the format:
 
-| Format  | Description                              | Render dependency      |
-| ------- | ---------------------------------------- | ---------------------- |
-| `.cast` | Editable, replayable asciicast recording | None                   |
-| `.txt`  | Plain-text terminal log                  | None                   |
-| `.gif`  | Animated raster image                    | [`agg`](#renderer-gif) |
-| `.svg`  | Sharp, CSS-animated vector image         | [`asg`](#renderer-svg) |
+| Format  | Description                                                                 | Render dependency                |
+| ------- | --------------------------------------------------------------------------- | -------------------------------- |
+| `.cast` | Editable, replayable asciicast recording                                    | None                             |
+| `.txt`  | Plain-text terminal log                                                     | None                             |
+| `.gif`  | Animated raster image                                                       | [`agg`](#renderer-gif)           |
+| `.webp` | Animated raster image with lossless compression, typically smaller than GIF | [`agg` + ffmpeg](#renderer-webp) |
+| `.svg`  | Sharp, CSS-animated vector image                                            | [`asg`](#renderer-svg)           |
 
 `SetOutput` is repeatable - one recording, several outputs:
 
@@ -439,6 +461,7 @@ The extension of the path passed to `SetOutput` picks the format:
 SetOutput 'multi-output.cast'
 SetOutput 'multi-output.txt'
 SetOutput 'multi-output.gif'
+SetOutput 'multi-output.webp'
 SetOutput 'multi-output.svg'
 ```
 
