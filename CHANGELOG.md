@@ -1,5 +1,10 @@
 # Changelog
 
+## `[v0.6.0]` - Unreleased
+
+### New
+* Add animated WebP output through `agg`+`ffmpeg`.
+
 ## `[v0.5.0]` - 02.09.2026
 
 ### New

@@ -11,7 +11,7 @@ Settings for the recording session, its cast metadata and its outputs.
 
 | Command                                | Default               | Description                                                                                                                                                                                                                 |
 | -------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SetOutput <path.ext>`                 | —                     | Add an output; repeatable. `.cast`, `.txt`, `.gif` and `.svg`[^svg-fonts] are supported                                                                                                                                     |
+| `SetOutput <path.ext>`                 | —                     | Add an output; repeatable. `.cast`, `.txt`, `.gif`, `.webp` and `.svg`[^svg-fonts] are supported; WebP uses agg + FFmpeg losslessly                                                                                         |
 | `SetSession <name>`                    | `s-vhs-$$`            | Session name on the dedicated s-vhs tmux server                                                                                                                                                                             |
 | `SetCols <cols>`                       | `100`                 | Terminal width in character cells                                                                                                                                                                                           |
 | `SetRows <rows>`                       | `40`                  | Terminal height in character cells                                                                                                                                                                                          |
@@ -23,41 +23,42 @@ Settings for the recording session, its cast metadata and its outputs.
 | `SetKeyDelay <seconds>`                | `0.0`                 | Default pause after a key press sent by `Key`                                                                                                                                                                               |
 | `Env <name> <value>`                   | —                     | Export a variable into the recorded shell; repeatable                                                                                                                                                                       |
 | `SetTitle <text>`                      | —                     | Title stored in the cast metadata and shown by players                                                                                                                                                                      |
-| `SetQuiet`                             | `off`                 | Suppress recorder, text converter, GIF renderer and s-vhs `:::` messages, keeping errors                                                                                                                                    |
+| `SetQuiet`                             | `off`                 | Suppress recorder, text converter, raster renderer and s-vhs `:::` messages, keeping errors                                                                                                                                 |
 | `Require <cmd>...`                     | —                     | Fail unless every command is available on `PATH`                                                                                                                                                                            |
 
 ### Render
 
-One renderer per output format, named by the `Applies to` column:
+Renderers and converters for the formats in the `Applies to` column:
 
 - `agg` -> `GIF` output.
+- `agg` + `ffmpeg` (`libwebp_anim`) -> `WebP` output.
 - `asg` -> `SVG` output.
 
 A setting the other renderer lacks is applied to the outputs that support it,
 and `Render` reports the rest.
 
-| Command                          | Applies to | Default      | Description                                                                                                                                                          |
-| -------------------------------- | ---------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SetFontSize <px>`               | GIF, SVG   | `28`         | Rendered font size in pixels                                                                                                                                         |
-| `SetFontFamily <family>`         | GIF, SVG   | renderer's   | Preferred text fonts[^svg-fonts]; if none are available, the renderer uses its defaults; Nerd Font and emoji fallbacks remain enabled; excludes `SetFontFamilyExact` |
-| `SetFontFamilyExact <list>`      | GIF, SVG   | renderer's   | Complete family list[^svg-fonts], bypassing all fallbacks; excludes `SetFontFamily` and `SetEmojiFontFamily`                                                         |
-| `SetEmojiFontFamily <list>`      | GIF, SVG   | renderer's   | Families emoji are drawn with[^svg-fonts], replacing the renderer's own chain; excludes `SetFontFamilyExact`                                                         |
-| `SetFontDir <dir>`               | GIF        | —            | Additional font directory searched by the renderer, which must exist; repeatable                                                                                     |
-| `SetEngine <swash\|resvg>`       | GIF        | `swash`      | Frame rendering backend; `resvg` draws COLRv1 emoji in color                                                                                                         |
-| `SetLineHeight <multiplier>`     | GIF, SVG   | `1.2`        | Line-height multiplier passed to the renderer                                                                                                                        |
-| `SetTheme <theme>`               | GIF, SVG   | `dracula`    | Theme name[^themes] or custom palette passed to each requested renderer                                                                                              |
-| `SetBoldIsBright <on\|off>`      | GIF        | `off`        | Draw bold text in the bright ANSI color, as most terminals do                                                                                                        |
-| `SetPadding <px>`                | SVG        | `0`          | Padding around the terminal on both axes, in output pixels                                                                                                           |
-| `SetPaddingX <px>`               | SVG        | `SetPadding` | Padding left and right of the terminal, overriding `SetPadding` on that axis                                                                                         |
-| `SetPaddingY <px>`               | SVG        | `SetPadding` | Padding above and below the terminal, overriding `SetPadding` on that axis                                                                                           |
-| `SetWindowBar <on\|off>`         | SVG        | `off`        | Draw macOS-style window decorations - a bar with three buttons - above the terminal                                                                                  |
-| `SetCursor <on\|off>`            | SVG        | `on`         | Draw the terminal cursor                                                                                                                                             |
-| `SetFramerate <fps>`             | GIF, SVG   | `30`         | Maximum number of rendered frames per second                                                                                                                         |
-| `SetPlaybackSpeed <multiplier>`  | GIF, SVG   | `1`          | Playback speed of the rendered animation                                                                                                                             |
-| `SetIdleTimeLimit <seconds>`     | GIF, SVG   | `5`          | Cap on idle gaps, applied at render time so the cast keeps its own timing                                                                                            |
-| `SetLoop <on\|off>`              | GIF, SVG   | `on`         | Repeat the animation instead of stopping after one pass                                                                                                              |
-| `SetLastFrameDuration <seconds>` | GIF        | `3`          | How long the last frame is held before the loop restarts                                                                                                             |
-| `SetOptimize <on\|off>`          | GIF        | `off`        | Shrink the rendered GIF with a lossless `gifsicle` pass; without `gifsicle` installed the GIF is left unoptimized                                                    |
+| Command                          | Applies to     | Default      | Description                                                                                                                                                          |
+| -------------------------------- | -------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SetFontSize <px>`               | GIF, WebP, SVG | `28`         | Rendered font size in pixels                                                                                                                                         |
+| `SetFontFamily <family>`         | GIF, WebP, SVG | renderer's   | Preferred text fonts[^svg-fonts]; if none are available, the renderer uses its defaults; Nerd Font and emoji fallbacks remain enabled; excludes `SetFontFamilyExact` |
+| `SetFontFamilyExact <list>`      | GIF, WebP, SVG | renderer's   | Complete family list[^svg-fonts], bypassing all fallbacks; excludes `SetFontFamily` and `SetEmojiFontFamily`                                                         |
+| `SetEmojiFontFamily <list>`      | GIF, WebP, SVG | renderer's   | Families emoji are drawn with[^svg-fonts], replacing the renderer's own chain; excludes `SetFontFamilyExact`                                                         |
+| `SetFontDir <dir>`               | GIF, WebP      | —            | Additional font directory searched by the renderer, which must exist; repeatable                                                                                     |
+| `SetEngine <swash\|resvg>`       | GIF, WebP      | `swash`      | Frame rendering backend; `resvg` draws COLRv1 emoji in color                                                                                                         |
+| `SetLineHeight <multiplier>`     | GIF, WebP, SVG | `1.2`        | Line-height multiplier passed to the renderer                                                                                                                        |
+| `SetTheme <theme>`               | GIF, WebP, SVG | `dracula`    | Theme name[^themes] or custom palette passed to each requested renderer                                                                                              |
+| `SetBoldIsBright <on\|off>`      | GIF, WebP      | `off`        | Draw bold text in the bright ANSI color, as most terminals do                                                                                                        |
+| `SetPadding <px>`                | SVG            | `0`          | Padding around the terminal on both axes, in output pixels                                                                                                           |
+| `SetPaddingX <px>`               | SVG            | `SetPadding` | Padding left and right of the terminal, overriding `SetPadding` on that axis                                                                                         |
+| `SetPaddingY <px>`               | SVG            | `SetPadding` | Padding above and below the terminal, overriding `SetPadding` on that axis                                                                                           |
+| `SetWindowBar <on\|off>`         | SVG            | `off`        | Draw macOS-style window decorations - a bar with three buttons - above the terminal                                                                                  |
+| `SetCursor <on\|off>`            | SVG            | `on`         | Draw the terminal cursor                                                                                                                                             |
+| `SetFramerate <fps>`             | GIF, WebP, SVG | `30`         | Maximum number of rendered frames per second                                                                                                                         |
+| `SetPlaybackSpeed <multiplier>`  | GIF, WebP, SVG | `1`          | Playback speed of the rendered animation                                                                                                                             |
+| `SetIdleTimeLimit <seconds>`     | GIF, WebP, SVG | `5`          | Cap on idle gaps, applied at render time so the cast keeps its own timing                                                                                            |
+| `SetLoop <on\|off>`              | GIF, WebP, SVG | `on`         | Repeat the animation instead of stopping after one pass                                                                                                              |
+| `SetLastFrameDuration <seconds>` | GIF, WebP      | `3`          | How long the last frame is held before the loop restarts                                                                                                             |
+| `SetOptimize <on\|off>`          | GIF            | `off`        | Shrink the rendered GIF with a lossless `gifsicle` pass; without `gifsicle` installed the GIF is left unoptimized; skipped for WebP                                  |
 
 [^svg-fonts]: An SVG names but does not embed fonts, so its appearance depends
     on fonts installed on the viewer's system, falling back through a chain of
@@ -71,7 +72,7 @@ and `Render` reports the rest.
     accepts `asciinema`, `dracula`, `github-dark`, `github-light`, `monokai`,
     `solarized-dark` and `solarized-light`; `kanagawa`, `kanagawa-dragon`,
     `kanagawa-light`, `nord`, `gruvbox-dark` and `custom` are `agg`-only. Use
-    a custom palette when one recording requests both GIF and SVG.
+    a custom palette when one recording requests GIF or WebP alongside SVG.
 
 [^prompts]: Bundled prompt themes: `arrow`, `plain`, `path` or `powerline`.
     A literal prompt in the shell's own syntax, or `native`. A theme and a

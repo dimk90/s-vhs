@@ -2,7 +2,7 @@
 #
 # S-VHS - a scriptable terminal recorder.
 # A thin wrapper around tmux + asciinema + output renderers:
-# agg for GIF, asg for SVG.
+# agg for GIF, agg + ffmpeg for WebP, asg for SVG.
 #
 # Source this file from a recording script (*.rec.sh), or execute it:
 #   s-vhs.sh new demo.rec.sh   scaffold a recording script
@@ -60,7 +60,7 @@ _SVHS_FONT_FAMILY=''
 _SVHS_FONT_FAMILY_EXACT=''
 _SVHS_EMOJI_FONT_FAMILY=''
 
-# Extra font directories added by SetFontDir, searched by the GIF renderer
+# Extra font directories added by SetFontDir, searched by the raster renderer
 _SVHS_FONT_DIRS=()
 
 # agg's default text-font chain, appended after SetFontFamily so a missing
@@ -200,6 +200,8 @@ _SVHS_AGG_FONT_ARGS=()
 _SVHS_STARTED=0
 _SVHS_CAST=''
 _SVHS_TEMP_CAST=''
+# Shared raster intermediate, removed after Render or on exit
+_SVHS_TEMP_GIF=''
 _SVHS_REC_PID=''
 _SVHS_RECORDED=''
 
@@ -245,10 +247,10 @@ TEMPLATE
 
 SetOutput() {
     #
-    # Add a cast, plain-text, GIF, or animated SVG output for the recording.
+    # Add a cast, plain-text, GIF, animated WebP, or animated SVG output.
     #
     # Parameters:
-    #   $1 - output - path ending in .cast, .txt, .gif, or .svg.
+    #   $1 - output - path ending in .cast, .txt, .gif, .webp, or .svg.
     #
     # Example:
     #   SetOutput 'demo.gif' || exit 1
@@ -258,7 +260,7 @@ SetOutput() {
     _svhs_require_configuration_phase 'SetOutput' || return 1
 
     case "$output" in
-        *.cast|*.txt|*.gif|*.svg) ;;
+        *.cast|*.txt|*.gif|*.webp|*.svg) ;;
         '')
             printf 'SetOutput: output path must not be empty\n' >&2
             return 1
@@ -408,7 +410,7 @@ SetFontFamilyExact() {
 SetEmojiFontFamily() {
     #
     # Set the families emoji are drawn with, in place of the renderer's own
-    # emoji chain. The GIF renderer picks the first family carrying the glyph;
+    # emoji chain. The raster renderer picks the first family carrying the glyph;
     # the SVG only names them, so the viewer's system decides.
     #
     # Parameters:
@@ -438,7 +440,7 @@ SetEmojiFontFamily() {
 
 SetFontDir() {
     #
-    # Add a directory the GIF renderer searches for fonts on top of the
+    # Add a directory the raster renderer searches for fonts on top of the
     # installed ones; repeatable. Fonts kept next to the recording script
     # render the same on a machine that has none of them installed.
     #
@@ -566,7 +568,7 @@ SetBoldIsBright() {
 
 SetEngine() {
     #
-    # Select the backend the GIF renderer rasterizes frames with. 'resvg'
+    # Select the backend GIF and WebP frames are rasterized with. 'resvg'
     # draws COLRv1 emoji - recent Noto Color Emoji - in color, which 'swash'
     # renders monochrome; 'swash' is the faster one and the only one font
     # hinting applies to.
@@ -854,7 +856,7 @@ SetLoop() {
 
 SetLastFrameDuration() {
     #
-    # Set how long the last GIF frame is held before the loop restarts.
+    # Set how long the last GIF or WebP frame is held before the loop restarts.
     #
     # Parameters:
     #   $1 - last_frame_duration - non-negative number of seconds.
@@ -902,7 +904,7 @@ SetTitle() {
 
 SetQuiet() {
     #
-    # Suppress recorder, text converter, GIF renderer and s-vhs informational
+    # Suppress recorder, text converter, raster renderer and s-vhs informational
     # messages while keeping errors visible.
     #
     # Parameters:
@@ -1294,7 +1296,7 @@ Start() {
 svhs_cleanup() {
     #
     # Kill the recording session and recorder, remove an unrequested temporary
-    # cast and the Copy buffer, then run the commands registered with Finally.
+    # cast, the temporary GIF and the Copy buffer, then run Finally commands.
     # Installed as the EXIT trap while sourcing, and safe to call when neither
     # the session nor the recorder is alive. A recording registers its own
     # cleanup with Finally; this is public for the one case Finally cannot
@@ -1321,6 +1323,9 @@ svhs_cleanup() {
     fi
     if [[ -n $_SVHS_TEMP_CAST ]]; then
         rm -f -- "$_SVHS_TEMP_CAST"
+    fi
+    if [[ -n $_SVHS_TEMP_GIF ]]; then
+        rm -f -- "$_SVHS_TEMP_GIF"
     fi
     if [[ $_SVHS_COPY_BUFFER_SET == 1 ]]; then
         tmux -L "$_SVHS_TMUX_SOCKET" delete-buffer \
@@ -1758,7 +1763,6 @@ Render() {
     local asg_frame_args=()
     local quiet_args=()
     local loop_args=()
-    local bold_args=()
 
     # As in Hide, the closing frame needs an event of its own - without it the
     # Sleep before Render is dropped - and the kill's noise is truncated away
@@ -1788,8 +1792,6 @@ Render() {
     [[ $_SVHS_QUIET == 1 ]] && quiet_args=(-q)
     # both renderers loop on their own and spell only the opt-out
     [[ $_SVHS_LOOP == 'off' ]] && loop_args=(--no-loop)
-    # agg spells only the opt-in; its default is the literal color asg draws
-    [[ $_SVHS_BOLD_IS_BRIGHT == 'on' ]] && bold_args=(--bold-is-bright)
 
     # SVG-only frame: an axis override is named only once it was set, so both
     # axes otherwise follow --padding, and asg spells a window bar as the
@@ -1813,24 +1815,8 @@ Render() {
                     ${quiet_args[@]+"${quiet_args[@]}"} \
                     "$_SVHS_CAST" "$output" || return 1
                 ;;
-            # bash 3.2 (stock macOS) rejects an empty array under set -u, so
-            # expand optional renderer arguments only when they were set
-            *.gif)
-                agg ${_SVHS_AGG_FONT_ARGS[@]+"${_SVHS_AGG_FONT_ARGS[@]}"} \
-                    ${quiet_args[@]+"${quiet_args[@]}"}                   \
-                    ${loop_args[@]+"${loop_args[@]}"}                     \
-                    ${bold_args[@]+"${bold_args[@]}"}                     \
-                    --font-size "$_SVHS_FONT_SIZE"                        \
-                    --line-height "$_SVHS_LINE_HEIGHT"                    \
-                    --theme "$_SVHS_THEME"                                \
-                    --speed "$_SVHS_PLAYBACK_SPEED"                       \
-                    --fps-cap "$_SVHS_FRAMERATE"                          \
-                    --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT"            \
-                    --last-frame-duration "$_SVHS_LAST_FRAME_DURATION"    \
-                    --renderer "$_SVHS_ENGINE"                            \
-                    "$_SVHS_CAST" "$output" || return 1
-                _svhs_optimize_gif "$output" || return 1
-                _svhs_report_gif_skips "$output"
+            *.gif|*.webp)
+                _svhs_render_raster "$output" || return 1
                 ;;
             *.svg)
                 asg ${asg_font_args[@]+"${asg_font_args[@]}"}   \
@@ -1856,6 +1842,10 @@ Render() {
     if [[ -n $_SVHS_TEMP_CAST ]]; then
         rm -f -- "$_SVHS_TEMP_CAST"
         _SVHS_TEMP_CAST=''
+    fi
+    if [[ -n $_SVHS_TEMP_GIF ]]; then
+        rm -f -- "$_SVHS_TEMP_GIF"
+        _SVHS_TEMP_GIF=''
     fi
     _SVHS_CAST=''
 }
@@ -1923,6 +1913,7 @@ _svhs_require_dependencies() {
     #   _svhs_require_dependencies || return 1
     #
     local output
+    local webp=0
 
     _svhs_require_command 'Start' 'tmux' 'the recording session' || return 1
     _svhs_require_command 'Start' 'asciinema' 'the recorder' || return 1
@@ -1931,8 +1922,22 @@ _svhs_require_dependencies() {
         case "$output" in
             *.gif) _svhs_require_command 'Start' 'agg' 'GIF output' || return 1 ;;
             *.svg) _svhs_require_command 'Start' 'asg' 'SVG output' || return 1 ;;
+            *.webp)
+                _svhs_require_command 'Start' 'agg' 'WebP output' || return 1
+                _svhs_require_command 'Start' 'ffmpeg' 'WebP output' || return 1
+                webp=1
+                ;;
         esac
     done
+
+    # ffmpeg builds can omit libwebp; drain the list to avoid SIGPIPE with pipefail
+    if [[ $webp == 1 ]]; then
+        if ! ffmpeg -hide_banner -encoders 2> /dev/null |
+            grep ' libwebp_anim ' > /dev/null; then
+            printf 'Start: ffmpeg lacks the libwebp_anim encoder, required for WebP output\n' >&2
+            return 1
+        fi
+    fi
 }
 
 
@@ -2673,30 +2678,37 @@ _svhs_report_skipped() {
 }
 
 
-_svhs_report_gif_skips() {
+_svhs_report_raster_skips() {
     #
-    # Report the settings GIF output has no equivalent for.
+    # Report settings GIF and WebP output have no equivalent for.
     #
     # Parameters:
-    #   $1 - output - GIF path that was rendered.
+    #   $1 - output - GIF or WebP path that was rendered.
     #
     # Example:
-    #   _svhs_report_gif_skips 'demo.gif'
+    #   _svhs_report_raster_skips 'demo.webp'
     #
     local output="$1"
+    local format='GIF output'
 
-    # a GIF is drawn without padding and without a window bar, and always with
-    # the cursor, so only a value that would have shown is worth a line
+    if [[ $output == *.webp ]]; then
+        format='WebP output'
+        [[ $_SVHS_OPTIMIZE == 'on' ]] &&
+            _svhs_report_skipped 'SetOptimize' "$output" "$format"
+    fi
+
+    # agg draws no padding or window bar, and always draws the cursor, so
+    # only a value that would have shown is worth a line
     ((_SVHS_PADDING > 0)) &&
-        _svhs_report_skipped 'SetPadding' "$output" 'GIF output'
+        _svhs_report_skipped 'SetPadding' "$output" "$format"
     ((${_SVHS_PADDING_X:-0} > 0)) &&
-        _svhs_report_skipped 'SetPaddingX' "$output" 'GIF output'
+        _svhs_report_skipped 'SetPaddingX' "$output" "$format"
     ((${_SVHS_PADDING_Y:-0} > 0)) &&
-        _svhs_report_skipped 'SetPaddingY' "$output" 'GIF output'
+        _svhs_report_skipped 'SetPaddingY' "$output" "$format"
     [[ $_SVHS_WINDOW_BAR == 'on' ]] &&
-        _svhs_report_skipped 'SetWindowBar' "$output" 'GIF output'
+        _svhs_report_skipped 'SetWindowBar' "$output" "$format"
     [[ $_SVHS_CURSOR == 'off' ]] &&
-        _svhs_report_skipped 'SetCursor' "$output" 'GIF output'
+        _svhs_report_skipped 'SetCursor' "$output" "$format"
     return 0
 }
 
@@ -2836,6 +2848,7 @@ _svhs_report_geometry() {
     local grid="$_SVHS_COLS cols x $_SVHS_ROWS rows x ${_SVHS_FONT_SIZE}px font"
     local output
     local gif=0
+    local webp=0
     local svg=0
     local padding_x="${_SVHS_PADDING_X:-$_SVHS_PADDING}"
     local padding_y="${_SVHS_PADDING_Y:-$_SVHS_PADDING}"
@@ -2847,25 +2860,32 @@ _svhs_report_geometry() {
     for output in "${_SVHS_OUTPUTS[@]}"; do
         case "$output" in
             *.gif) gif=1 ;;
+            *.webp) webp=1 ;;
             *.svg) svg=1 ;;
         esac
     done
 
     # a cast and a text export commit to no pixels, leaving only the grid
-    if [[ $gif == 0 && $svg == 0 ]]; then
+    if [[ $gif == 0 && $webp == 0 && $svg == 0 ]]; then
         printf '::: %s\n' "$grid"
         return 0
     fi
 
     # agg pads a GIF by one cell left and right and by half a row above and
     # below; a failed probe leaves the nominal advance, marked as a guess
-    if [[ $gif == 1 ]]; then
+    if [[ $gif == 1 || $webp == 1 ]]; then
         if ! width=$(_svhs_gif_width); then
             width=$(_svhs_grid_width "$((_SVHS_COLS + 2))" 0)
             estimated='~'
         fi
-        printf '::: GIF: %s -> %s%s x %s px\n' "$grid" "$estimated" "$width" \
-            "$(_svhs_grid_height "$((_SVHS_ROWS + 1))" 0)"
+        if [[ $gif == 1 ]]; then
+            printf '::: GIF: %s -> %s%s x %s px\n' "$grid" "$estimated" "$width" \
+                "$(_svhs_grid_height "$((_SVHS_ROWS + 1))" 0)"
+        fi
+        if [[ $webp == 1 ]]; then
+            printf '::: WebP: %s -> %s%s x %s px\n' "$grid" "$estimated" "$width" \
+                "$(_svhs_grid_height "$((_SVHS_ROWS + 1))" 0)"
+        fi
     fi
 
     if [[ $svg == 1 ]]; then
@@ -2878,6 +2898,89 @@ _svhs_report_geometry() {
             "$(_svhs_grid_height "$_SVHS_ROWS" "$((2 * padding_y + window_height))")"
     fi
     return 0
+}
+
+
+_svhs_prepare_gif() {
+    #
+    # Render one temporary GIF shared by all GIF and WebP outputs. Register
+    # it in cleanup state before rendering so errors cannot leak it.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_prepare_gif || return 1
+    #
+    local quiet_args=()
+    local loop_args=()
+    local bold_args=()
+
+    [[ -n $_SVHS_TEMP_GIF ]] && return 0
+    _SVHS_TEMP_GIF=$(mktemp) || return 1
+
+    [[ $_SVHS_QUIET == 1 ]] && quiet_args=(-q)
+    [[ $_SVHS_LOOP == 'off' ]] && loop_args=(--no-loop)
+    [[ $_SVHS_BOLD_IS_BRIGHT == 'on' ]] && bold_args=(--bold-is-bright)
+
+    # bash 3.2 rejects an empty array under set -u; expand only set arguments
+    agg ${_SVHS_AGG_FONT_ARGS[@]+"${_SVHS_AGG_FONT_ARGS[@]}"} \
+        ${quiet_args[@]+"${quiet_args[@]}"}                   \
+        ${loop_args[@]+"${loop_args[@]}"}                     \
+        ${bold_args[@]+"${bold_args[@]}"}                     \
+        --font-size "$_SVHS_FONT_SIZE"                        \
+        --line-height "$_SVHS_LINE_HEIGHT"                    \
+        --theme "$_SVHS_THEME"                                \
+        --speed "$_SVHS_PLAYBACK_SPEED"                       \
+        --fps-cap "$_SVHS_FRAMERATE"                          \
+        --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT"            \
+        --last-frame-duration "$_SVHS_LAST_FRAME_DURATION"    \
+        --renderer "$_SVHS_ENGINE"                            \
+        "$_SVHS_CAST" "$_SVHS_TEMP_GIF" || return 1
+}
+
+
+_svhs_render_raster() {
+    #
+    # Copy the shared GIF or convert it to lossless animated WebP. Optimize
+    # only requested GIFs, leaving the conversion source unchanged.
+    #
+    # Parameters:
+    #   $1 - output - GIF or WebP path to write.
+    #
+    # Example:
+    #   _svhs_render_raster 'demo.webp' || return 1
+    #
+    local output="$1"
+    local loop=0
+
+    _svhs_prepare_gif || return 1
+
+    case "$output" in
+        *.gif)
+            # Redirection gives a new output normal permissions, not mktemp's 0600
+            cat -- "$_SVHS_TEMP_GIF" > "$output" || return 1
+            _svhs_optimize_gif "$output" || return 1
+            ;;
+        *.webp)
+            [[ $_SVHS_LOOP == 'off' ]] && loop=1
+            # libwebp_anim guesses the last delay from preceding timestamps.
+            # Feed GIF's 10ms grid to preserve every delay, including the final
+            # hold; the encoder merges identical frames back into long holds.
+            # BGRA avoids chroma loss, and no preset is used: even "text"
+            # overrides -lossless. Quality here is compression effort only.
+            ffmpeg -hide_banner -loglevel error -nostdin -y \
+                -ignore_loop 1 -min_delay 0                 \
+                -i "$_SVHS_TEMP_GIF"                        \
+                -vf fps=100                                 \
+                -c:v libwebp_anim -lossless 1 -pix_fmt bgra \
+                -compression_level 4 -quality 75            \
+                -loop "$loop"                               \
+                "file:$output" || return 1
+            ;;
+    esac
+
+    _svhs_report_raster_skips "$output"
 }
 
 
