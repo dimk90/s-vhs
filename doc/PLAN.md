@@ -16,7 +16,7 @@
 
 - [ ] Add `SUPPORT-MATRIX` to the README documentation section.
 
-- [ ] Switch from `BRE` to `ERE` pattern matching.
+- [x] Switch from `BRE` to `ERE` pattern matching.
 
 
 ## `[v0.7.0]`

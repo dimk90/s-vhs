@@ -232,8 +232,8 @@ Backspace 18 0.05
 
 ### Wait
 
-`Wait` polls the visible pane until a grep pattern shows up, so a recording
-keeps up with a slow command instead of guessing a `sleep`:
+`Wait` polls the visible pane until an extended regular expression (`grep -E`)
+matches, so a recording keeps up with a slow command instead of guessing a `sleep`:
 
 ```bash
 Type 'sleep 2 && echo "build succeeded"'

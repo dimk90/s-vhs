@@ -1640,7 +1640,7 @@ Wait() {
     # sleeps. Return 1 on timeout.
     #
     # Parameters:
-    #   $1 - pattern - grep pattern to wait for.
+    #   $1 - pattern - extended regular expression (grep -E) to wait for.
     #   $2 - timeout - (optional) - seconds before giving up (default: 15).
     #
     # Example:
@@ -1659,7 +1659,7 @@ WaitLine() {
     # an earlier occurrence elsewhere in the visible pane.
     #
     # Parameters:
-    #   $1 - pattern - grep pattern to wait for.
+    #   $1 - pattern - extended regular expression (grep -E) to wait for.
     #   $2 - timeout - (optional) - seconds before giving up (default: 15).
     #
     # Example:
@@ -2415,12 +2415,12 @@ _svhs_tty_reads_input() {
 
 _svhs_wait_for_pattern() {
     #
-    # Poll either the whole visible pane or its cursor row for a grep pattern.
+    # Poll either the whole visible pane or its cursor row for an ERE match.
     #
     # Parameters:
     #   $1 - caller - public command name used in the timeout error.
     #   $2 - scope - 'screen' or 'line'.
-    #   $3 - pattern - grep pattern to wait for.
+    #   $3 - pattern - extended regular expression (grep -E) to wait for.
     #   $4 - timeout - seconds before giving up.
     #
     # Example:
@@ -2441,7 +2441,7 @@ _svhs_wait_for_pattern() {
 
     until tmux -L "$_SVHS_TMUX_SOCKET" capture-pane \
         -p ${capture_args[@]+"${capture_args[@]}"} \
-        -t "$_SVHS_SESSION" | grep -q "$pattern"; do
+        -t "$_SVHS_SESSION" | grep -qE -- "$pattern"; do
         if ((SECONDS >= deadline)); then
             printf '%s: timeout waiting for: %s\n' "$caller" "$pattern" >&2
             return 1

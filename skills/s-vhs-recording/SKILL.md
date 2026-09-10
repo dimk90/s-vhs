@@ -172,8 +172,9 @@ least one `SetOutput`.
   painted with, and `SetHighlightSpeed` how fast it sweeps - per call,
   `Highlight 'text' 1.5 0.01`.
 - **Prefer `Wait` over `Sleep` for anything whose duration is not yours to
-  decide.** Anchor the pattern so it does not match the command echoed above
-  the output:
+  decide.** Both `Wait` and `WaitLine` use extended regular expressions
+  (`grep -E`); escape regex metacharacters when matching literal text. Anchor
+  the pattern so it does not match the command echoed above the output:
 
   ```bash
   Type 'make build'

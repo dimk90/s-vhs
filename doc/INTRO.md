@@ -64,7 +64,7 @@ Each command is a thin wrapper over one of the tools:
 | `Start`         | `tmux new-session -d -x <cols> -y <rows>` - detached, no personal config                   |
 | `Show`          | `asciinema rec --headless -c 'tmux attach' demo.cast &` in the background                  |
 | `Type`, `Key`   | `tmux send-keys` into the session                                                          |
-| `Wait`          | `tmux capture-pane -p` piped through `grep` until the pattern appears                      |
+| `Wait`          | `tmux capture-pane -p` piped through `grep -E` until the pattern matches                      |
 | `Hide`          | `tmux detach-client` - the recorder stops, the session keeps running                       |
 | `Render`        | `tmux kill-session`, then `asciinema convert`, `agg`, `asg` or `agg` + `ffmpeg` per output |
 

@@ -101,12 +101,21 @@ and `Render` reports the rest.
 | `Enter`, `Tab`, … `[count] [delay]` | Press one named key[^keys]; same arguments as `Key`                                                                                                                                                                                                                                            |
 | `Highlight <text> [hold] [delay]`   | Sweep a selection across `<text>` on the visible pane like a mouse drag, hold it (default: `1`s) and release it; matched literally on a single row, nothing is copied, of several occurrences the one closest to the cursor is taken, and a text that is not on screen is reported and skipped |
 | `Sleep <seconds>`                   | Pause the recording, holding the last frame on screen                                                                                                                                                                                                                                          |
-| `Wait <pattern> [timeout]`          | Poll the visible pane until a grep pattern appears (default: 15s)                                                                                                                                                                                                                              |
-| `WaitLine <pattern> [timeout]`      | Poll the cursor's current row until a grep pattern appears (default: 15s)                                                                                                                                                                                                                      |
+| `Wait <pattern> [timeout]`          | Poll the visible pane until a pattern[^wait-patterns] matches (default: 15s)                                                                                                                                                                                                                   |
+| `WaitLine <pattern> [timeout]`      | Poll the cursor's current row until a pattern[^wait-patterns] matches (default: 15s)                                                                                                                                                                                                           |
 | `Run <command> [settle]`            | Type and run a command, then wait (default: 2s)                                                                                                                                                                                                                                                |
 | `RunOffRecord <command> [settle]`   | Run a command off camera: `Hide` + `Run` + `Show`; fails when not recording                                                                                                                                                                                                                    |
-| `Render`                            | End the recording and write every requested output                                                                                                                                                                                                                                             |
+| `Render`                            | End the recording and write every requested output; GIF and WebP share one temporary GIF render, deleted afterwards                                                                                                                                                                            |
 | `Finally <command>`                 | Register a command to run on exit or fail[^finally]; repeatable, last registered runs first, and a failing one neither stops the others nor changes the exit status                                                                                                                            |
+
+[^wait-patterns]: Patterns are case-sensitive extended regular expressions
+    (`grep -E`). A match anywhere within a row is enough; `^` and `$` anchor
+    the start and end of the row. `.` matches any character, `[0-9]` matches
+    a digit, `(...)` groups, and `|` separates alternatives. `*`, `+`, `?`
+    and `{m,n}` repeat the preceding expression zero or more, one or more,
+    zero or one, and m to n times, respectively. Escape metacharacters to match
+    them literally (`\.` for a dot, `\+` for a plus), and single-quote patterns
+    to preserve backslashes and prevent shell expansion.
 
 [^keys]: Named keys: `Enter`, `Tab`, `Space`, `Backspace`, `Escape`, `Up`,
     `Down`, `Left`, `Right`, `PageUp`, `PageDown`, `Home`, `End`, `Insert`,
@@ -129,7 +138,7 @@ and `Render` reports the rest.
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `svhs_version`             | Print the version of the sourced `s-vhs.sh`                                                                                                                                                                             |
 | `svhs_watch [session]`     | Function form of `s-vhs.sh watch`, for use after sourcing `s-vhs.sh`                                                                                                                                                    |
-| `svhs_cleanup`[^teardown]  | Kill the session and the recorder, delete an unrequested temporary cast and the `Copy` buffer, then run the `Finally` commands; installed as the `EXIT` trap                                                            |
+| `svhs_cleanup`[^teardown]  | Kill the session and the recorder, delete an unrequested temporary cast, the temporary GIF and the `Copy` buffer, then run the `Finally` commands; installed as the `EXIT` trap                                         |
 | `s-vhs.sh new [path]`      | Write an executable recording script with a pinned import, or print it when the path is omitted                                                                                                                         |
 | `s-vhs.sh watch [session]` | Watch a recording live from another terminal without attaching a tmux client; wait for a named session, or follow the newest `s-vhs-<pid>` session when omitted; return to waiting after it ends and run until `Ctrl-C` |
 
