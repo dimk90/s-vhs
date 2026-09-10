@@ -10,6 +10,7 @@
 
 - [ ] Update `SetOptimize` for WEBP:
   - Enable to spend more time for a bit higher compression gain (still lossless).
+  - better printf format for ffmpeg status text?
 
 - [ ] Use better examples from `pi-context-view`.
 
@@ -29,3 +30,8 @@
 
 - [ ] Update `SetOptimize` for video:
   - What is should do for video?
+
+- [ ] Add note about compression efficiency:
+  - use `logo` as example example.
+  - SetOptimize on/off
+  - Quality drop for video.

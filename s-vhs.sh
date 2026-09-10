@@ -92,8 +92,8 @@ _SVHS_FONT_SIZE=28
 _SVHS_LINE_HEIGHT=1.2
 
 # Nominal monospace advance in em, the cell width asg is fixed at. agg takes
-# its own from the primary font, so a GIF width is measured by probing agg and
-# only falls back to this. asg's window bar costs these fixed pixels on top of
+# its own from the primary font, so a raster width is measured by probing agg
+# and only falls back to this. asg's window bar costs these fixed pixels on top of
 # the grid and the padding
 _SVHS_CELL_ADVANCE=0.6
 _SVHS_WINDOW_BAR_WIDTH=40
@@ -410,8 +410,8 @@ SetFontFamilyExact() {
 SetEmojiFontFamily() {
     #
     # Set the families emoji are drawn with, in place of the renderer's own
-    # emoji chain. The raster renderer picks the first family carrying the glyph;
-    # the SVG only names them, so the viewer's system decides.
+    # emoji chain. The raster renderer picks the first family carrying the
+    # glyph; the SVG only names them, so the viewer's system decides.
     #
     # Parameters:
     #   $1 - emoji_font_family - non-empty comma-separated family list.
@@ -1914,6 +1914,7 @@ _svhs_require_dependencies() {
     #
     local output
     local webp=0
+    local encoders
 
     _svhs_require_command 'Start' 'tmux' 'the recording session' || return 1
     _svhs_require_command 'Start' 'asciinema' 'the recorder' || return 1
@@ -1921,23 +1922,28 @@ _svhs_require_dependencies() {
     for output in "${_SVHS_OUTPUTS[@]}"; do
         case "$output" in
             *.gif) _svhs_require_command 'Start' 'agg' 'GIF output' || return 1 ;;
-            *.svg) _svhs_require_command 'Start' 'asg' 'SVG output' || return 1 ;;
             *.webp)
                 _svhs_require_command 'Start' 'agg' 'WebP output' || return 1
                 _svhs_require_command 'Start' 'ffmpeg' 'WebP output' || return 1
                 webp=1
                 ;;
+            *.svg) _svhs_require_command 'Start' 'asg' 'SVG output' || return 1 ;;
         esac
     done
 
-    # ffmpeg builds can omit libwebp; drain the list to avoid SIGPIPE with pipefail
-    if [[ $webp == 1 ]]; then
-        if ! ffmpeg -hide_banner -encoders 2> /dev/null |
-            grep ' libwebp_anim ' > /dev/null; then
-            printf 'Start: ffmpeg lacks the libwebp_anim encoder, required for WebP output\n' >&2
-            return 1
-        fi
+    [[ $webp == 0 ]] && return 0
+
+    # ffmpeg builds can omit libwebp; a listing that fails at all is a broken
+    # ffmpeg rather than a missing encoder, and worth a line of its own
+    if ! encoders=$(ffmpeg -hide_banner -encoders 2> /dev/null); then
+        printf 'Start: ffmpeg failed to list its encoders\n' >&2
+        return 1
     fi
+    if [[ $encoders != *' libwebp_anim '* ]]; then
+        printf 'Start: ffmpeg lacks the libwebp_anim encoder, required for WebP output\n' >&2
+        return 1
+    fi
+    return 0
 }
 
 
@@ -2691,11 +2697,11 @@ _svhs_report_raster_skips() {
     local output="$1"
     local format='GIF output'
 
-    if [[ $output == *.webp ]]; then
-        format='WebP output'
-        [[ $_SVHS_OPTIMIZE == 'on' ]] &&
-            _svhs_report_skipped 'SetOptimize' "$output" "$format"
-    fi
+    [[ $output == *.webp ]] && format='WebP output'
+
+    # gifsicle rewrites a GIF only, so the pass has nothing to do for a WebP
+    [[ $output == *.webp && $_SVHS_OPTIMIZE == 'on' ]] &&
+        _svhs_report_skipped 'SetOptimize' "$output" "$format"
 
     # agg draws no padding or window bar, and always draws the cursor, so
     # only a value that would have shown is worth a line
@@ -2879,12 +2885,12 @@ _svhs_report_geometry() {
             estimated='~'
         fi
         if [[ $gif == 1 ]]; then
-            printf '::: GIF: %s -> %s%s x %s px\n' "$grid" "$estimated" "$width" \
-                "$(_svhs_grid_height "$((_SVHS_ROWS + 1))" 0)"
+            printf '::: GIF: %s -> %s%s x %s px\n' "$grid" "$estimated" \
+                "$width" "$(_svhs_grid_height "$((_SVHS_ROWS + 1))" 0)"
         fi
         if [[ $webp == 1 ]]; then
-            printf '::: WebP: %s -> %s%s x %s px\n' "$grid" "$estimated" "$width" \
-                "$(_svhs_grid_height "$((_SVHS_ROWS + 1))" 0)"
+            printf '::: WebP: %s -> %s%s x %s px\n' "$grid" "$estimated" \
+                "$width" "$(_svhs_grid_height "$((_SVHS_ROWS + 1))" 0)"
         fi
     fi
 
@@ -2901,7 +2907,7 @@ _svhs_report_geometry() {
 }
 
 
-_svhs_prepare_gif() {
+_svhs_render_shared_gif() {
     #
     # Render one temporary GIF shared by all GIF and WebP outputs. Register
     # it in cleanup state before rendering so errors cannot leak it.
@@ -2910,7 +2916,7 @@ _svhs_prepare_gif() {
     #   None.
     #
     # Example:
-    #   _svhs_prepare_gif || return 1
+    #   _svhs_render_shared_gif || return 1
     #
     local quiet_args=()
     local loop_args=()
@@ -2942,8 +2948,9 @@ _svhs_prepare_gif() {
 
 _svhs_render_raster() {
     #
-    # Copy the shared GIF or convert it to lossless animated WebP. Optimize
-    # only requested GIFs, leaving the conversion source unchanged.
+    # Copy the shared GIF or convert it to lossless animated WebP, then report
+    # the settings that format drops. Optimize only requested GIFs, leaving
+    # the conversion source unchanged.
     #
     # Parameters:
     #   $1 - output - GIF or WebP path to write.
@@ -2953,23 +2960,28 @@ _svhs_render_raster() {
     #
     local output="$1"
     local loop=0
+    local stats_args=()
 
-    _svhs_prepare_gif || return 1
+    _svhs_render_shared_gif || return 1
 
     case "$output" in
         *.gif)
-            # Redirection gives a new output normal permissions, not mktemp's 0600
+            # Redirection gives the output normal permissions, not mktemp's 0600
             cat -- "$_SVHS_TEMP_GIF" > "$output" || return 1
             _svhs_optimize_gif "$output" || return 1
             ;;
         *.webp)
             [[ $_SVHS_LOOP == 'off' ]] && loop=1
+            # a lossless WebP costs minutes on a long recording, and ffmpeg's
+            # frame counter is the only sign it is still working
+            [[ $_SVHS_QUIET == 0 ]] && stats_args=(-stats)
             # libwebp_anim guesses the last delay from preceding timestamps.
             # Feed GIF's 10ms grid to preserve every delay, including the final
             # hold; the encoder merges identical frames back into long holds.
             # BGRA avoids chroma loss, and no preset is used: even "text"
             # overrides -lossless. Quality here is compression effort only.
             ffmpeg -hide_banner -loglevel error -nostdin -y \
+                ${stats_args[@]+"${stats_args[@]}"}         \
                 -ignore_loop 1 -min_delay 0                 \
                 -i "$_SVHS_TEMP_GIF"                        \
                 -vf fps=100                                 \
