@@ -58,7 +58,7 @@ and `Render` reports the rest.
 | `SetIdleTimeLimit <seconds>`     | GIF, WebP, SVG | `5`          | Cap on idle gaps, applied at render time so the cast keeps its own timing                                                                                            |
 | `SetLoop <on\|off>`              | GIF, WebP, SVG | `on`         | Repeat the animation instead of stopping after one pass                                                                                                              |
 | `SetLastFrameDuration <seconds>` | GIF, WebP      | `3`          | How long the last frame is held before the loop restarts                                                                                                             |
-| `SetOptimize <on\|off>`          | GIF            | `off`        | Shrink the rendered GIF with a lossless `gifsicle` pass; without `gifsicle` installed the GIF is left unoptimized; skipped for WebP                                  |
+| `SetOptimize <on\|off>`          | GIF, WebP      | `off`        | Shrink the output losslessly at the cost of a slower render: a `gifsicle` pass for GIF, the encoder's slowest effort for WebP; without `gifsicle` installed the GIF is left unoptimized |
 
 [^svg-fonts]: An SVG names but does not embed fonts, so its appearance depends
     on fonts installed on the viewer's system, falling back through a chain of

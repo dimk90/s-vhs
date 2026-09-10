@@ -8,9 +8,10 @@
   - Update README output formats and installation instructions.
   - Add the feature near the beginning of the README, linking VHS issue #50.
 
-- [ ] Update `SetOptimize` for WEBP:
+- [x] Update `SetOptimize` for WEBP:
   - Enable to spend more time for a bit higher compression gain (still lossless).
-  - better printf format for ffmpeg status text?
+
+- [ ] Replace ffmpeg's `-stats` line with a `::: `-prefixed progress message.
 
 - [ ] Use better examples from `pi-context-view`.
 

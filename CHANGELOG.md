@@ -6,6 +6,7 @@
 * Add animated WebP output through `agg`+`ffmpeg`.
 
 ### Changed
+* `SetOptimize`: also shrink WebP output, through the encoder's slowest lossless effort.
 * Use extended regular expressions (ERE) instead of BRE in `Wait` and `WaitLine`.
 
 ## `[v0.5.0]` - 02.09.2026

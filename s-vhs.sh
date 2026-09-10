@@ -598,9 +598,11 @@ SetEngine() {
 
 SetOptimize() {
     #
-    # Shrink the rendered GIF with a lossless `gifsicle` pass, typically by a
-    # fifth to a quarter, at the cost of a slower `Render`. Without gifsicle
-    # installed the GIF is written unoptimized.
+    # Shrink the rendered animation at the cost of a slower `Render`, without
+    # changing a pixel: a GIF through a lossless `gifsicle` pass, typically by
+    # a fifth to a quarter, a WebP through the encoder's slowest lossless
+    # effort, typically by a few per cent. Without gifsicle installed the GIF
+    # is written unoptimized.
     #
     # Parameters:
     #   $1 - optimize - 'on' or 'off'.
@@ -2699,10 +2701,6 @@ _svhs_report_raster_skips() {
 
     [[ $output == *.webp ]] && format='WebP output'
 
-    # gifsicle rewrites a GIF only, so the pass has nothing to do for a WebP
-    [[ $output == *.webp && $_SVHS_OPTIMIZE == 'on' ]] &&
-        _svhs_report_skipped 'SetOptimize' "$output" "$format"
-
     # agg draws no padding or window bar, and always draws the cursor, so
     # only a value that would have shown is worth a line
     ((_SVHS_PADDING > 0)) &&
@@ -2949,8 +2947,8 @@ _svhs_render_shared_gif() {
 _svhs_render_raster() {
     #
     # Copy the shared GIF or convert it to lossless animated WebP, then report
-    # the settings that format drops. Optimize only requested GIFs, leaving
-    # the conversion source unchanged.
+    # the settings that format drops. Optimize a requested GIF in place and a
+    # WebP through the encoder, leaving the shared source unchanged.
     #
     # Parameters:
     #   $1 - output - GIF or WebP path to write.
@@ -2961,6 +2959,7 @@ _svhs_render_raster() {
     local output="$1"
     local loop=0
     local stats_args=()
+    local effort_args=()
 
     _svhs_render_shared_gif || return 1
 
@@ -2979,14 +2978,19 @@ _svhs_render_raster() {
             # Feed GIF's 10ms grid to preserve every delay, including the final
             # hold; the encoder merges identical frames back into long holds.
             # BGRA avoids chroma loss, and no preset is used: even "text"
-            # overrides -lossless. Quality here is compression effort only.
+            # overrides -lossless. The encoding stays lossless either way:
+            # -compression_level is libwebp's method and -quality its search
+            # effort, so SetOptimize only trades render time for bytes.
+            effort_args=(-compression_level 4 -quality 75)
+            [[ $_SVHS_OPTIMIZE == 'on' ]] &&
+                effort_args=(-compression_level 6 -quality 100)
             ffmpeg -hide_banner -loglevel error -nostdin -y \
                 ${stats_args[@]+"${stats_args[@]}"}         \
                 -ignore_loop 1 -min_delay 0                 \
                 -i "$_SVHS_TEMP_GIF"                        \
                 -vf fps=100                                 \
                 -c:v libwebp_anim -lossless 1 -pix_fmt bgra \
-                -compression_level 4 -quality 75            \
+                ${effort_args[@]+"${effort_args[@]}"}       \
                 -loop "$loop"                               \
                 "file:$output" || return 1
             ;;

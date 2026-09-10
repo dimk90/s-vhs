@@ -26,7 +26,7 @@ Read it before using any command not shown below; the API is pre-1.0 and moves.
 | `agg`        | `.gif` and `.webp` output                              |
 | `ffmpeg`     | `.webp` output; must include `libwebp_anim`             |
 | `asg`        | `.svg` output                                          |
-| `gifsicle`   | `SetOptimize 'on'`; optional, a missing one only warns |
+| `gifsicle`   | `SetOptimize 'on'` for GIF; optional, a missing one only warns |
 
 ```bash
 command -v tmux asciinema agg
@@ -93,14 +93,15 @@ least one `SetOutput`.
   `.webp` (agg + FFmpeg), `.svg` (asg), `.cast` (replayable, re-renderable
   later) and `.txt` (plain text log). A cast-only recording needs no renderer.
   WebP preserves the rendered GIF's pixels and timing losslessly, usually in
-  fewer bytes; it shares GIF's settings except `SetOptimize` (GIF-only).
+  fewer bytes, and shares GIF's settings.
 - **`Require 'cmd'…` lists what the recorded shell will run.** It fails before
   the session starts instead of leaving a `command not found` frame in the
   middle of the GIF. Skip it only for shell builtins and coreutils.
-- **`SetOptimize 'on'` for any GIF committed to a repository** — a lossless
-  `gifsicle -O3` pass, 12-25 % smaller, roughly doubling render time. Without
-  `gifsicle` installed `Render` warns and keeps the unoptimized GIF, so it is
-  safe to leave on.
+- **`SetOptimize 'on'` for any GIF or WebP committed to a repository** — a
+  lossless `gifsicle -O3` pass for GIF, 12-25 % smaller, roughly doubling
+  render time; for WebP the encoder's slowest lossless effort, a few per cent
+  smaller for several times the encoding time. Without `gifsicle` installed
+  `Render` warns and keeps the unoptimized GIF, so it is safe to leave on.
 - `SetCols`/`SetRows` size the grid in **cells, not pixels**. Fit them to the
   content: a two-line demo in a 40-row terminal is mostly empty frame.
 - `SetFontSize` is the only pixel setting; it scales the render without
@@ -319,7 +320,7 @@ it for timing and framing.
 | `no faces matching font family options` | No `SetFontFamilyExact` family is installed, or no preferred or default agg text font is available |
 | `SetFontFamily: cannot be combined with SetFontFamilyExact` | agg rejects both flags; pick one |
 | Renderer rejects the theme name | Named themes differ between agg and asg; use a custom hex palette for both |
-| `::: SetOptimize: gifsicle is not installed` | Warning only — the GIF was written unoptimized |
+| `::: SetOptimize: gifsicle is not installed` | Warning only — the GIF was written unoptimized; WebP is unaffected |
 | `::: Highlight: not on screen, nothing selected` | Warning only — the text had not arrived, or it wraps across two rows; `Wait` for it, or highlight a shorter part of it |
 | `::: Set…: skipped for <output>` | Warning only — that renderer has no such option |
 | Variable is empty in the recording | It was expanded by the recording script — use single quotes in `Type` |

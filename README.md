@@ -131,7 +131,7 @@ For GIF output, install [`agg`](https://github.com/asciinema/agg#installation):
 
 > [!TIP]
 > GIF size can be reduced by [`gifsicle`](https://github.com/kohler/gifsicle)
-> without quality loss, see [`GIF Size Optimization`](#gif-size-optimization).
+> without quality loss, see [`Output Size Optimization`](#output-size-optimization).
 
 ### Renderer: WebP
 
@@ -521,7 +521,7 @@ Render
 ```
 
 
-## GIF Size Optimization
+## Output Size Optimization
 
 
 GIFs come out of the renderer generously encoded. `SetOptimize 'on'` runs the
@@ -541,10 +541,15 @@ SetOptimize 'on' # <---
 How much it saves depends on the recording - long, scrolling ones gain the
 most.
 
+For a `.webp` output the same setting switches the encoder to its slowest
+lossless effort instead, typically a few per cent smaller for several times
+the encoding time - same frames, same timing, no extra dependency.
+
 ### Dependency
 
-You need `gifsicle`. Without it, `Render` leaves GIFs unoptimized and reports
-the skipped pass.
+GIF optimization needs `gifsicle`. Without it, `Render` leaves GIFs
+unoptimized and reports the skipped pass; WebP optimization only needs the
+`ffmpeg` it already renders with.
 
 - **macOS**
   ```bash
