@@ -48,6 +48,10 @@ _SVHS_QUIET=0
 _SVHS_WARNING_COLOR=$'\033[33m'
 _SVHS_COLOR_RESET=$'\033[0m'
 
+# Rewinds to the start of a progress line and wipes what the last update left,
+# so a shorter message cannot inherit the tail of a longer one
+_SVHS_ERASE_LINE=$'\r\033[K'
+
 # Terminal size in cells, not pixels
 _SVHS_COLS=100
 _SVHS_ROWS=40
@@ -2957,9 +2961,6 @@ _svhs_render_raster() {
     #   _svhs_render_raster 'demo.webp' || return 1
     #
     local output="$1"
-    local loop=0
-    local stats_args=()
-    local effort_args=()
 
     _svhs_render_shared_gif || return 1
 
@@ -2970,29 +2971,7 @@ _svhs_render_raster() {
             _svhs_optimize_gif "$output" || return 1
             ;;
         *.webp)
-            [[ $_SVHS_LOOP == 'off' ]] && loop=1
-            # a lossless WebP costs minutes on a long recording, and ffmpeg's
-            # frame counter is the only sign it is still working
-            [[ $_SVHS_QUIET == 0 ]] && stats_args=(-stats)
-            # libwebp_anim guesses the last delay from preceding timestamps.
-            # Feed GIF's 10ms grid to preserve every delay, including the final
-            # hold; the encoder merges identical frames back into long holds.
-            # BGRA avoids chroma loss, and no preset is used: even "text"
-            # overrides -lossless. The encoding stays lossless either way:
-            # -compression_level is libwebp's method and -quality its search
-            # effort, so SetOptimize only trades render time for bytes.
-            effort_args=(-compression_level 4 -quality 75)
-            [[ $_SVHS_OPTIMIZE == 'on' ]] &&
-                effort_args=(-compression_level 6 -quality 100)
-            ffmpeg -hide_banner -loglevel error -nostdin -y \
-                ${stats_args[@]+"${stats_args[@]}"}         \
-                -ignore_loop 1 -min_delay 0                 \
-                -i "$_SVHS_TEMP_GIF"                        \
-                -vf fps=100                                 \
-                -c:v libwebp_anim -lossless 1 -pix_fmt bgra \
-                ${effort_args[@]+"${effort_args[@]}"}       \
-                -loop "$loop"                               \
-                "file:$output" || return 1
+            _svhs_encode_webp "$output" || return 1
             ;;
     esac
 
@@ -3024,6 +3003,87 @@ _svhs_optimize_gif() {
     # -w drops gifsicle's advisory warnings, such as the too-many-colors one a
     # fully antialiased render draws; a read error still prints and fails here
     gifsicle --batch -O3 -w "$output" || return 1
+}
+
+
+_svhs_encode_webp() {
+    #
+    # Encode the shared GIF as a lossless animated WebP, keeping a live line
+    # up while the encoder runs.
+    #
+    # Parameters:
+    #   $1 - output - WebP path to write.
+    #
+    # Example:
+    #   _svhs_encode_webp 'demo.webp' || return 1
+    #
+    local output="$1"
+    local loop=0
+    local progress='/dev/null'
+    local effort_args=()
+
+    [[ $_SVHS_LOOP == 'off' ]] && loop=1
+
+    # a lossless WebP costs minutes on a long recording, so a live line is the
+    # only sign it is still working; quiet mode drops the stream at ffmpeg
+    # rather than closing the pipe under it
+    [[ $_SVHS_QUIET == 0 ]] && progress='pipe:1'
+
+    # libwebp_anim guesses the last delay from preceding timestamps. Feed
+    # GIF's 10ms grid to preserve every delay, including the final hold; the
+    # encoder merges identical frames back into long holds. BGRA avoids chroma
+    # loss, and no preset is used: even "text" overrides -lossless. The
+    # encoding stays lossless either way: -compression_level is libwebp's
+    # method and -quality its search effort, so SetOptimize only trades render
+    # time for bytes.
+    effort_args=(-compression_level 4 -quality 75)
+    [[ $_SVHS_OPTIMIZE == 'on' ]] &&
+        effort_args=(-compression_level 6 -quality 100)
+
+    # pipefail makes a failed encode the status of the whole pipeline; the
+    # reporter reads stdout, leaving ffmpeg's own errors on stderr
+    ffmpeg -hide_banner -loglevel error -nostdin -y \
+        -progress "$progress"                       \
+        -ignore_loop 1 -min_delay 0                 \
+        -i "$_SVHS_TEMP_GIF"                        \
+        -vf fps=100                                 \
+        -c:v libwebp_anim -lossless 1 -pix_fmt bgra \
+        ${effort_args[@]+"${effort_args[@]}"}       \
+        -loop "$loop"                               \
+        "file:$output" |
+        _svhs_report_encode_progress "$output" || return 1
+}
+
+
+_svhs_report_encode_progress() {
+    #
+    # Rewrite one line in place while an encode runs, and leave its last state
+    # on screen once it ends. libwebp_anim holds every frame until it writes
+    # the file, so ffmpeg reports no position to show - its -progress blocks
+    # on stdin serve only as a heartbeat, one every half second. An empty
+    # stream - quiet mode - prints nothing.
+    #
+    # Parameters:
+    #   $1 - output - path being encoded, named in the message.
+    #
+    # Example:
+    #   ffmpeg -progress pipe:1 … | _svhs_report_encode_progress 'demo.webp'
+    #
+    local output="$1"
+    local key
+    local value
+
+    # SECONDS counts from the assignment, in the subshell the pipe puts this
+    # reporter in; ffmpeg closes every block with progress=continue - or, for
+    # the last one, progress=end
+    SECONDS=0
+    while IFS='=' read -r key value; do
+        [[ $key == 'progress' ]] || continue
+        printf '%s::: Encoding %s: %ss' "$_SVHS_ERASE_LINE" "$output" "$SECONDS"
+        [[ $value == 'end' ]] && printf '\n'
+    done
+
+    return 0
 }
 
 

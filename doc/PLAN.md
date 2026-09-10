@@ -11,7 +11,7 @@
 - [x] Update `SetOptimize` for WEBP:
   - Enable to spend more time for a bit higher compression gain (still lossless).
 
-- [ ] Replace ffmpeg's `-stats` line with a `::: `-prefixed progress message.
+- [x] Replace ffmpeg's `-stats` line with a `::: `-prefixed progress message.
 
 - [ ] Use better examples from `pi-context-view`.
 
