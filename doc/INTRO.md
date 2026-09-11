@@ -16,6 +16,7 @@ recording into the requested formats.
 | **asciinema** | Terminal session recorder | Stores terminal output, control sequences, geometry, and timestamps in a `.cast` file, and can export it as plain text. |
 | **`.cast`**   | asciicast v3 file         | The recording itself - text plus timings, the hand-off point between recording and rendering.                           |
 | **agg**       | asciinema GIF generator   | Replays the cast into GIF frames using the selected font, font size, line height, and color theme.                      |
+| **ffmpeg**    | Media converter           | Converts agg's GIF to video and animated WebP formats.                                                                  |
 | **asg**       | asciinema SVG generator   | Replays the cast into a sharp, CSS-animated SVG using the selected font, font size, line height, and color theme.       |
 | **s-vhs**     | ~1k lines of bash         | Glues them together and gives you `Type`, `Key`, `Wait`, `Show`, `Render` instead of raw tmux commands.                 |
 
@@ -58,14 +59,14 @@ the command sketches below omit that shared prefix.
 
 Each command is a thin wrapper over one of the tools:
 
-| `s-vhs` command | Under the hood                                                            |
-| --------------- | ------------------------------------------------------------------------- |
-| `Start`         | `tmux new-session -d -x <cols> -y <rows>` - detached, no personal config  |
-| `Show`          | `asciinema rec --headless -c 'tmux attach' demo.cast &` in the background |
-| `Type`, `Key`   | `tmux send-keys` into the session                                         |
-| `Wait`          | `tmux capture-pane -p` piped through `grep` until the pattern appears     |
-| `Hide`          | `tmux detach-client` - the recorder stops, the session keeps running      |
-| `Render`        | `tmux kill-session`, then `asciinema convert`, `agg` or `asg` per output  |
+| `s-vhs` command | Under the hood                                                                             |
+| --------------- | ------------------------------------------------------------------------------------------ |
+| `Start`         | `tmux new-session -d -x <cols> -y <rows>` - detached, no personal config                   |
+| `Show`          | `asciinema rec --headless -c 'tmux attach' demo.cast &` in the background                  |
+| `Type`, `Key`   | `tmux send-keys` into the session                                                          |
+| `Wait`          | `tmux capture-pane -p` piped through `grep -E` until the pattern matches                      |
+| `Hide`          | `tmux detach-client` - the recorder stops, the session keeps running                       |
+| `Render`        | `tmux kill-session`, then `asciinema convert`, `agg`, `asg` or `agg` + `ffmpeg` per output |
 
 > [!TIP]
 > Two shells are involved, and mixing them up is the classic first bug:
@@ -95,10 +96,9 @@ This separation has useful consequences:
 - changing output resolution does not change the recorded timing.
 
 Today s-vhs can retain the cast directly, export it as plain text with
-`asciinema convert`, render it to GIF with `agg`, or render it to animated SVG
-with `asg`. Other cast-compatible renderers or converters can occupy the same
-final stage - for example, a video renderer - without changing how tmux runs
-the terminal or how asciinema records it.
+`asciinema`, render it to GIF with `agg`, convert that GIF to animated
+WebP or video with `ffmpeg`, or render it to animated SVG with `asg`.
+GIF and WebP outputs share one temporary GIF render.
 
 ## Links
 

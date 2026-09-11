@@ -21,6 +21,9 @@ A terminal recorder like [VHS](https://github.com/charmbracelet/vhs), but superi
   ([#644](https://github.com/charmbracelet/vhs/discussions/644),
   [#109](https://github.com/charmbracelet/vhs/issues/109),
   [#105](https://github.com/charmbracelet/vhs/issues/105)).
+- **[Animated WebP](#output-formats) output** - a modern alternative to GIF
+  with better compression
+  ([#50](https://github.com/charmbracelet/vhs/issues/50)).
 - **[Highlight](#highlight) what matters** - a selection swept over text on
   screen, the way a mouse drag would
   ([#66](https://github.com/charmbracelet/vhs/issues/66)).
@@ -42,7 +45,7 @@ A recording is a plain shell script that sources `s-vhs.sh`:
 
 # Import s-vhs straight from GitHub - no local copy needed.
 # A local copy works too - use "source ./s-vhs.sh"
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.5.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.6.0) && wait "$!" || exit 1
 
 # Where should we write the GIF?
 SetOutput 'demo.gif'
@@ -101,8 +104,8 @@ You should see a new file called `demo.gif` in the same directory:
   > favorite distro 😉
 
 > [!NOTE]
-> Only the formats you request need a renderer - a cast-only recording
-> invokes neither, see [Output Formats](#output-formats).
+> Renderers are needed only for the output formats you request. Cast-only
+> recordings need none. See [Output Formats](#output-formats).
 
 > [!TIP]
 > Some installs below use `cargo`, which puts binaries into `~/.cargo/bin` -
@@ -128,7 +131,25 @@ For GIF output, install [`agg`](https://github.com/asciinema/agg#installation):
 
 > [!TIP]
 > GIF size can be reduced by [`gifsicle`](https://github.com/kohler/gifsicle)
-> without quality loss, see [`GIF Size Optimization`](#gif-size-optimization).
+> without quality loss, see [`Output Size Optimization`](#output-size-optimization).
+
+### Renderer: WebP
+
+For animated WebP output, install [`agg`](#renderer-gif) and
+[ffmpeg](https://ffmpeg.org/download.html):
+
+- **macOS**
+  ```bash
+  brew install agg ffmpeg
+  ```
+
+- **Linux**
+  ```bash
+  cargo install --git https://github.com/asciinema/agg --locked
+  ```
+  ```bash
+  sudo pacman -S ffmpeg
+  ```
 
 ### Renderer: SVG
 
@@ -211,8 +232,8 @@ Backspace 18 0.05
 
 ### Wait
 
-`Wait` polls the visible pane until a grep pattern shows up, so a recording
-keeps up with a slow command instead of guessing a `sleep`:
+`Wait` polls the visible pane until an extended regular expression (`grep -E`)
+matches, so a recording keeps up with a slow command instead of guessing a `sleep`:
 
 ```bash
 Type 'sleep 2 && echo "build succeeded"'
@@ -374,7 +395,7 @@ of keeping a local `s-vhs.sh` next to the recording script:
 
 ```bash
 # Remote import instead of "source ./s-vhs.sh"
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.5.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.6.0) && wait "$!" || exit 1
 
 SetOutput "remote-import.gif"
 
@@ -417,7 +438,7 @@ animated by CSS, sharp at any zoom:
 
 
 📌 [pi-context-view](https://github.com/dimk90/pi-context-view) - demo GIFs,
-such as [context-usage.rec.sh](https://github.com/dimk90/pi-context-view/blob/develop/scripts/recordings/context-usage.rec.sh).  
+such as [palettes.rec.sh](https://github.com/dimk90/pi-context-view/tree/develop/scripts/recordings).  
 📌 [S-VHS logo](examples/logo.rec.sh) recording.
 
 
@@ -426,12 +447,13 @@ such as [context-usage.rec.sh](https://github.com/dimk90/pi-context-view/blob/de
 
 The extension of the path passed to `SetOutput` picks the format:
 
-| Format  | Description                              | Render dependency      |
-| ------- | ---------------------------------------- | ---------------------- |
-| `.cast` | Editable, replayable asciicast recording | None                   |
-| `.txt`  | Plain-text terminal log                  | None                   |
-| `.gif`  | Animated raster image                    | [`agg`](#renderer-gif) |
-| `.svg`  | Sharp, CSS-animated vector image         | [`asg`](#renderer-svg) |
+| Format  | Description                                                                 | Render dependency                  |
+| ------- | --------------------------------------------------------------------------- | ---------------------------------- |
+| `.cast` | Editable, replayable asciicast recording                                    | None                               |
+| `.txt`  | Plain-text terminal log                                                     | None                               |
+| `.gif`  | Animated raster image                                                       | [`agg`](#renderer-gif)             |
+| `.webp` | Animated raster image with lossless compression, typically smaller than GIF | [`agg` + `ffmpeg`](#renderer-webp) |
+| `.svg`  | Sharp, CSS-animated vector image                                            | [`asg`](#renderer-svg)             |
 
 `SetOutput` is repeatable - one recording, several outputs:
 
@@ -439,6 +461,7 @@ The extension of the path passed to `SetOutput` picks the format:
 SetOutput 'multi-output.cast'
 SetOutput 'multi-output.txt'
 SetOutput 'multi-output.gif'
+SetOutput 'multi-output.webp'
 SetOutput 'multi-output.svg'
 ```
 
@@ -466,7 +489,7 @@ It writes:
 ```bash
 #!/usr/bin/env bash
 
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.5.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.6.0) && wait "$!" || exit 1
 
 SetOutput 'demo.gif'
 
@@ -498,7 +521,7 @@ Render
 ```
 
 
-## GIF Size Optimization
+## Output Size Optimization
 
 
 GIFs come out of the renderer generously encoded. `SetOptimize 'on'` runs the
@@ -518,10 +541,15 @@ SetOptimize 'on' # <---
 How much it saves depends on the recording - long, scrolling ones gain the
 most.
 
+For a `.webp` output the same setting switches the encoder to its slowest
+lossless effort instead, typically a few per cent smaller for several times
+the encoding time - same frames, same timing, no extra dependency.
+
 ### Dependency
 
-You need `gifsicle`. Without it, `Render` leaves GIFs unoptimized and reports
-the skipped pass.
+GIF optimization needs `gifsicle`. Without it, `Render` leaves GIFs
+unoptimized and reports the skipped pass; WebP optimization only needs the
+`ffmpeg` it already renders with.
 
 - **macOS**
   ```bash
