@@ -13,9 +13,7 @@
 
 - [x] Replace ffmpeg's `-stats` line with a `::: `-prefixed progress message.
 
-- [ ] Use better examples from `pi-context-view`.
-
-- [ ] Add `SUPPORT-MATRIX` to the README documentation section.
+- [x] Use better examples from `pi-context-view`.
 
 - [x] Switch from `BRE` to `ERE` pattern matching.
 
@@ -31,6 +29,8 @@
 
 - [ ] Update `SetOptimize` for video:
   - What is should do for video?
+
+- [ ] Add `SUPPORT-MATRIX` to the README documentation section.
 
 - [ ] Add note about compression efficiency:
   - use `logo` as example example.
