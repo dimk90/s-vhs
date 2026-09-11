@@ -1,23 +1,4 @@
 
-## `[v0.6.0]`
-
-- [x] Add WebP output:
-  - Convert agg's shared GIF render via FFmpeg's `libwebp_anim` encoder.
-  - Use lossless BGRA, method 4 and compression effort 75 for sharp terminal text.
-  - Preserve GIF frame timing, the final hold and loop control.
-  - Update README output formats and installation instructions.
-  - Add the feature near the beginning of the README, linking VHS issue #50.
-
-- [x] Update `SetOptimize` for WEBP:
-  - Enable to spend more time for a bit higher compression gain (still lossless).
-
-- [x] Replace ffmpeg's `-stats` line with a `::: `-prefixed progress message.
-
-- [x] Use better examples from `pi-context-view`.
-
-- [x] Switch from `BRE` to `ERE` pattern matching.
-
-
 ## `[v0.7.0]`
 
 - [ ] Add MP4 & WebM output:

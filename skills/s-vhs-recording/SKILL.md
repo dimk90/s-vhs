@@ -58,7 +58,7 @@ Name recordings `<topic>.rec.sh` and make them executable.
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
 # shellcheck disable=SC1090
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.5.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.6.0) && wait "$!" || exit 1
 
 # Every command the recorded shell drives, checked before anything starts
 Require 'git'
