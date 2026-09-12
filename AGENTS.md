@@ -11,22 +11,24 @@ and used only to render the other outputs (GIF, SVG).
 
 ## Layout
 
-| Path                 | Purpose                                                      |
-| -------------------- | ------------------------------------------------------------ |
-| `s-vhs.sh`           | The whole implementation. Sourced library + two subcommands. |
-| `README.md`          | User-facing docs.                                            |
-| `CHANGELOG.md`       | One line per significant change, newest version on top.      |
-| `doc/REFERENCE.md`   | Commands today + planned settings. Keep in sync.             |
-| `doc/PLAN.md`        | Roadmap / checklist. Tick boxes when a task lands.           |
-| `doc/INTRO.md`       | How the pipeline works, for users.                           |
-| `doc/SVG.md`         | Animated SVG pitfalls and workarounds, for users.            |
-| `doc/DEBUG.md`       | Debugging recording scripts (`watch`, live pane).            |
-| `doc/DEPLOY.md`      | GitHub Pages deployment (remote imports, skill).             |
-| `doc/RELEASE.md`     | Release procedure, read when cutting a release.              |
-| `doc/HISTORY.md`     | Verbatim archive of code removed from `s-vhs.sh`.            |
-| `skills/*/SKILL.md`  | Agent skills teaching recording scripts; published to Pages. |
-| `examples/`          | Example recording scripts, rendered output, catalogue.       |
-| `scripts/release.sh` | Release tooling; its own changes stay out of the changelog.  |
+| Path                        | Purpose                                                      |
+| --------------------------- | ------------------------------------------------------------ |
+| `s-vhs.sh`                  | The whole implementation. Sourced library + two subcommands. |
+| `README.md`                 | User-facing docs.                                            |
+| `CHANGELOG.md`              | One line per significant change, newest version on top.      |
+| `doc/REFERENCE.md`          | Commands today + planned settings. Keep in sync.             |
+| `doc/PLAN.md`               | Roadmap / checklist. Tick boxes when a task lands.           |
+| `doc/INTRO.md`              | How the pipeline works, for users.                           |
+| `doc/SVG.md`                | Animated SVG pitfalls and workarounds, for users.            |
+| `doc/ENCODING.md`           | Measurements behind the video encoding contracts.            |
+| `doc/DEBUG.md`              | Debugging recording scripts (`watch`, live pane).            |
+| `doc/DEPLOY.md`             | GitHub Pages deployment (remote imports, skill).             |
+| `doc/RELEASE.md`            | Release procedure, read when cutting a release.              |
+| `doc/HISTORY.md`            | Verbatim archive of code removed from `s-vhs.sh`.            |
+| `skills/*/SKILL.md`         | Agent skills teaching recording scripts; published to Pages. |
+| `examples/`                 | Example recording scripts, rendered output, catalogue.       |
+| `scripts/release.sh`        | Release tooling; its own changes stay out of the changelog.  |
+| `scripts/encoding-bench.sh` | Reproduces `doc/ENCODING.md`; input from `stress.rec.sh`.    |
 
 No build system, no test suite. The only CI is
 `.github/workflows/release.yml` (tag push → GitHub release + Pages deploy).
