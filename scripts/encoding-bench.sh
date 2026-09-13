@@ -11,7 +11,12 @@
 # frame index. Timing is measured separately; a good pixel score cannot
 # establish correct playback. Lossless RGB also gets a frame-hash check.
 #
-# Usage: scripts/encoding-bench.sh [work-dir]
+# Usage: scripts/encoding-bench.sh [--timing] [work-dir]
+#
+# --timing runs the timing tables alone, which need no encoder but libx264.
+# That is how another ffmpeg build is checked, the version floor included:
+#
+#   PATH=/opt/ffmpeg-5.1/bin:$PATH scripts/encoding-bench.sh --timing work-dir
 #
 
 set -uo pipefail
@@ -24,8 +29,10 @@ _BENCH_DECODE=(-ignore_loop 1 -min_delay 0)
 # 4:2:0 needs even dimensions; examples/logo.gif is 899px wide
 readonly _BENCH_PAD='pad=ceil(iw/2)*2:ceil(ih/2)*2:0:0'
 
-# treat the rendered GIF as sRGB; matrix/range conversion keeps its transfer
-readonly _BENCH_COLOR='scale=out_color_matrix=bt470bg:out_range=tv:flags=full_chroma_int+accurate_rnd,format=yuv420p,setparams=colorspace=smpte170m:color_primaries=bt709:color_trc=iec61966-2-1:range=tv'
+# treat the rendered GIF as sRGB; matrix/range conversion keeps its transfer.
+# bt601 names the same matrix as bt470bg and smpte170m, and is the only one of
+# the three swscale accepts before ffmpeg 8
+readonly _BENCH_COLOR='scale=out_color_matrix=bt601:out_range=tv:flags=full_chroma_int+accurate_rnd,format=yuv420p,setparams=colorspace=smpte170m:color_primaries=bt709:color_trc=iec61966-2-1:range=tv'
 
 # fix RGB reconstruction rather than silently using swscale's fast path
 readonly _BENCH_RGB='scale=flags=full_chroma_int+accurate_rnd,format=rgb24'
@@ -67,23 +74,33 @@ main() {
     # Run the measurements and stop at the first failed encode or validation.
     #
     # Parameters:
-    #   $1 - work_dir - optional directory for generated files.
+    #   $1 - --timing - optional flag limiting the run to the timing tables.
+    #   $2 - work_dir - optional directory for generated files.
     #
     # Example:
-    #   main '/tmp/s-vhs-encoding-bench'
+    #   main --timing '/tmp/s-vhs-encoding-bench'
     #
-    local work_dir="${1:-$_BENCH_DEFAULT_WORK_DIR}"
-    local repo_dir stress logo
+    local timing_only=0
+    local work_dir repo_dir stress logo
 
+    if [[ ${1-} == '--timing' ]]; then
+        timing_only=1
+        shift
+    fi
+    work_dir="${1:-$_BENCH_DEFAULT_WORK_DIR}"
     repo_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd) || exit 1
     stress="$work_dir/stress.gif"
     logo="$repo_dir/examples/logo.gif"
 
-    _bench_require_tools || exit 1
+    _bench_require_tools "$timing_only" || exit 1
     mkdir -p "$work_dir" || exit 1
     _bench_render_stress_clip "$repo_dir" "$work_dir" || exit 1
 
     ffmpeg -version || exit 1
+    if [[ $timing_only == 1 ]]; then
+        _bench_report_timing "$stress" "$logo" "$work_dir" || exit 1
+        return 0
+    fi
     _bench_report_inputs "$stress" "$logo" || exit 1
     _bench_report_codec_matrix "$stress" "$work_dir" || exit 1
     _bench_report_codec_matrix "$logo" "$work_dir" || exit 1
@@ -107,13 +124,17 @@ _bench_require_tools() {
     # Report every missing tool at once instead of failing one table in.
     #
     # Parameters:
-    #   None.
+    #   $1 - timing_only - 1 to require only what the timing tables encode.
     #
     # Example:
-    #   _bench_require_tools || exit 1
+    #   _bench_require_tools 0 || exit 1
     #
+    local timing_only="$1"
     local tool encoder encoders
     local missing=()
+    local required=(libx264 libx264rgb libx265 libsvtav1)
+
+    [[ $timing_only == 1 ]] && required=(libx264)
 
     for tool in ffmpeg ffprobe; do
         command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
@@ -124,7 +145,7 @@ _bench_require_tools() {
     fi
 
     encoders=$(ffmpeg -hide_banner -encoders 2>&1) || return 1
-    for encoder in libx264 libx264rgb libx265 libsvtav1; do
+    for encoder in "${required[@]}"; do
         if ! printf '%s\n' "$encoders" | grep -qw "$encoder"; then
             printf 'encoding-bench: ffmpeg lacks %s\n' "$encoder" >&2
             return 1

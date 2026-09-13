@@ -8,11 +8,17 @@ rendering the cast to GIF.
 ## Reproducing the numbers
 
 ```bash
-scripts/encoding-bench.sh [work-dir]      # default: /tmp/s-vhs-encoding-bench
+scripts/encoding-bench.sh [--timing] [work-dir]  # default work dir:
+                                                 # /tmp/s-vhs-encoding-bench
 ```
 
 The script records `scripts/stress.rec.sh` if the work directory has no stress
 GIF, then regenerates the encodes, timing fixtures and playback bundle.
+`--timing` runs the timing tables alone, which need no encoder but `libx264`;
+that is how another `ffmpeg` build is measured, by putting it first on `PATH`.
+Put only `ffmpeg` there: frame `duration_time` reaches `ffprobe` in 6.1, so an
+older probe reports no durations at all, and holding the probe constant keeps
+the encoder the only variable.
 
 These results use ffmpeg n8.1.2, x264 core 165 r3222 b35605a, x265 4.2 and
 SVT-AV1 v4.1.0-dirty on an Intel i7-8650U. Encoding times are single wall-clock
@@ -267,6 +273,47 @@ The selected 4:2:0 output plays in both tested browsers. The failures of
 default. RGB lossless still decodes successfully in ffmpeg/VLC and passes frame
 hashes; these browser failures do not make it universally unplayable.
 
+## 7. FFmpeg versions
+
+Every table above comes from n8.1.2. The contract was then re-measured under
+static 5.1.1, 6.0.1, 6.1.2 and 7.0.2 builds, encoding with each while probing
+with one n8.1.2 `ffprobe`. This used a re-recorded stress clip (344 frames,
+33.97 s), so its byte counts are not comparable with the tables above.
+
+| Build  | `out_color_matrix=bt470bg` | Stress last sample | Logo last sample | Timing fixtures |
+| ------ | -------------------------- | ------------------ | ---------------- | --------------- |
+| 4.4.1  | rejected                   | no `-fps_mode`     | no `-fps_mode`   | not run         |
+| 5.1.1  | rejected                   | 0.01 s             | 0.01 s           | FAIL            |
+| 6.0.1  | rejected                   | 0.01 s             | 0.01 s           | FAIL            |
+| 6.1.2  | rejected                   | 3.00 s             | 8.00 s           | PASS            |
+| 7.0.2  | rejected                   | 3.00 s             | 8.00 s           | PASS            |
+| 8.1.2  | accepted                   | 3.00 s             | 8.00 s           | PASS            |
+
+- **`-fps_mode` needs 5.1** (added 2022-06-07). It is the newest option in the
+  contract: `-enc_time_base` dates to 3.4, everything else predates 3.0. The
+  deprecated `-vsync passthrough` would reach further back but is marked for
+  removal, and the next result makes the extra reach moot.
+
+- **Preserving the final hold needs 6.1.** Under 5.1.1 and 6.0.1 every
+  timestamp is still exact, but the last sample collapses to one GIF tick:
+  stress ends at 30.98 s instead of 33.97 s and the logo at 5.73 s instead of
+  13.72 s, losing a 3 s and an 8 s hold. 6.1 is also where `ffprobe` starts
+  reporting frame durations, consistent with frame durations only being
+  carried end to end from that release. The tested build is a `n6.1.2-16`
+  snapshot, so the boundary is the 6.1 series rather than a verified `n6.1.0`.
+
+- **Name the matrix `bt601`, not `bt470bg`.** No build before 8 knows that
+  name - `out_color_matrix` takes a string list through 6.1 and an enumeration
+  in 7.0 - and 7.0.2 rejects it outright;
+  `bt601` is accepted by every tested build. All three names select the same
+  matrix, and `bt470bg`, `bt601` and `smpte170m` produce identical `framemd5`
+  hashes on 8.1.2, so the tables above keep their values unchanged.
+
+The minimum is therefore **FFmpeg 6.1**, which excludes Ubuntu 22.04 LTS (4.4)
+and Debian 12 (5.1); Ubuntu 24.04 (6.1) and current Homebrew, Arch and Fedora
+satisfy it. Only the timing acceptance checks were repeated per version: pixel
+scores, GOP sizes and player playback were not.
+
 ## The MP4 contract
 
 These are the selected settings for MP4 implementation:
@@ -293,8 +340,9 @@ These are the selected settings for MP4 implementation:
 
 - **Colour conversion:** interpret the rendered GIF as sRGB; preserve its
   transfer curve. Convert to BT.601 limited-range YUV with
-  `scale=out_color_matrix=bt470bg:out_range=tv:flags=full_chroma_int+accurate_rnd`,
-  followed by `format=yuv420p`.
+  `scale=out_color_matrix=bt601:out_range=tv:flags=full_chroma_int+accurate_rnd`,
+  followed by `format=yuv420p`. Do not spell the matrix `bt470bg`: it selects
+  the same conversion but only exists from ffmpeg 8.
 
 - **Colour tags:** matrix `smpte170m`, primaries `bt709` (shared with sRGB),
   transfer `iec61966-2-1` (sRGB), range `tv`. These are independent properties;
@@ -303,6 +351,9 @@ These are the selected settings for MP4 implementation:
 - **Container:** MP4 with `-movflags +faststart` and `-an` (no audio track).
   Leave H.264 level selection to the encoder. Looping is player-controlled,
   not a portable MP4-file setting.
+
+- **Toolchain:** FFmpeg **6.1** or newer. 5.1 is the floor for `-fps_mode`,
+  but 5.1 and 6.0 silently drop the final hold to a single GIF tick.
 
 - **No lossless MP4 mode:** tested RGB lossless costs 174 % of stress GIF and
   fails in both tested browsers; WebP already covers lossless raster output.
