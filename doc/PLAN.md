@@ -4,32 +4,41 @@
 - [ ] Add MP4:
   - Scope: `.cast` -> one shared `agg` GIF -> MP4 through `ffmpeg`.
     WebM and video-specific `SetOptimize` behavior remain separate tasks.
-  - [x] Compare encodings before choosing the output contract. Measurements,
-    inputs and rejected alternatives: `doc/ENCODING.md`, reproducible with
-    `scripts/encoding-bench.sh`. The contract to implement:
+  - [x] Compare encodings and select the output contract. Measurements, inputs
+    and rejected alternatives: `doc/ENCODING.md`, reproducible with
+    `scripts/encoding-bench.sh`. The selected contract to implement:
     - `libx264`, `yuv420p`, High profile, `-crf 18 -preset medium`.
     - `scale=out_color_matrix=bt470bg:out_range=tv:flags=full_chroma_int+accurate_rnd`,
-      tagged to match: `smpte170m`, primaries and transfer `bt709`, range `tv`.
-      BT.601 is worth 1.3-2.1 dB over BT.709 on 4:2:0 terminal text, and holds
-      up better than BT.709 even when a player ignores the tags.
-    - x264's default GOP: scenecut keyframes, B-frames on. Forcing keyframes
-      costs 1.7-26x the bytes and buys no practical seek improvement.
+      then `format=yuv420p`. Tag matrix `smpte170m`, primaries `bt709`,
+      transfer `iec61966-2-1` (sRGB), range `tv`. Interpret the rendered GIF as
+      sRGB; do not convert its transfer curve. BT.601 gains 0.96 dB with the
+      benchmark's explicit RGB reconstruction; this is pipeline-specific.
+    - Default keyint/scenecut, but `-bf 0` to preserve sample durations.
+      Use `-fps_mode passthrough -enc_time_base 1:100` for centisecond VFR.
+      Forced keyframes cost 1.2-24.1x the bytes; actual seeking is unmeasured.
     - `pad=ceil(iw/2)*2:ceil(ih/2)*2:0:0` for odd dimensions,
       `-movflags +faststart`, no audio track.
-    - No lossless mode and no new setter: only `libx264rgb -qp 0` is bit-exact,
-      it costs 176 % of the GIF and plays nowhere, and WebP already covers
-      lossless raster output.
+    - No lossless mode and no new setter: tested `libx264rgb -qp 0` is bit-exact
+      but costs 174 % of stress GIF and fails in both tested browsers;
+      WebP already covers lossless raster output.
+    - Playback checked by hand: the selected 4:2:0 output plays in Chrome and
+      Firefox; 4:4:4 fails in Firefox and RGB lossless in both. Colour-managed
+      comparison against the source GIF (sRGB versus the BT.709 transfer tag)
+      is still open, as are Safari, VLC and mobile players.
   - [ ] Establish MP4 timing, geometry and setting behavior:
     - Decode one GIF pass with `-ignore_loop 1 -min_delay 0`; preserve the
       timing already produced by `SetPlaybackSpeed`, `SetIdleTimeLimit` and
       `SetLastFrameDuration`, rather than applying those settings twice.
-    - Compare variable-frame-rate timestamp preservation with constant-frame-rate
-      output for player compatibility, size and timing accuracy. Verify the final
-      frame's duration explicitly; do not blindly reuse WebP's `fps=100` workaround.
-      Define an acceptable rounding tolerance before selecting the frame policy.
-      Measured during the comparison: plain `-fps_mode passthrough` drops the
-      final hold, turning a 30.69 s GIF into a 27.73 s MP4 whose last frame
-      lasts 0.04 s instead of ~3 s. MP4 needs its own fix for this, as WebP did.
+    - Confirm the selected no-B-frame, centisecond VFR timing on supported
+      FFmpeg versions. It preserves all timestamps, sample durations and
+      container ends within the 1 ms acceptance bound on two real clips and
+      four synthetic fixtures (including a zero GIF delay normalized by FFmpeg
+      to 100 ms). Plain passthrough with
+      B-frames shortens stress's last sample to 0.04 s instead of 3 s, with
+      a 25.89 s sample end and 26.06 s container duration instead of 28.85 s.
+      Automatic encoder time bases can also collapse timestamps and abort.
+      CFR 100 preserves the grid but costs 3.35x the VFR candidate's bytes;
+      CFR 30 rounds timing and can drop short frames.
     - If the selected pixel format requires even dimensions, pad by at most one
       pixel on the right/bottom instead of scaling or cropping terminal text;
       include that padding in reported MP4 geometry.
@@ -90,9 +99,10 @@
 - [ ] Update `SetOptimize` for video:
   - Is there any space for optimization without quality loss?
   - `High` profile?
-  - Measured for MP4 (`doc/ENCODING.md`): `-preset veryslow` is the only knob
-    that trades time for bytes with no quality loss - 5 % smaller for 2.4x the
-    encoding time. Every other lever costs quality or bytes.
+  - Measured for MP4 (`doc/ENCODING.md`): `-preset veryslow` saves 7.5 % on
+    stress and 13 % on the logo in the B-frame-on codec probe, at similar but
+    not identical quality. Recheck the no-B-frame candidate before defining
+    optimization behaviour; equal CRF is not a lossless-quality guarantee.
 
 - [ ] Add `SUPPORT-MATRIX` to the README documentation section.
 
