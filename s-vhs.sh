@@ -618,11 +618,13 @@ SetEngine() {
 
 SetOptimize() {
     #
-    # Shrink the rendered animation at the cost of a slower `Render`, without
-    # changing a pixel: a GIF through a lossless `gifsicle` pass, typically by
-    # a fifth to a quarter, a WebP through the encoder's slowest lossless
-    # effort, typically by a few per cent. Without gifsicle installed the GIF
-    # is written unoptimized.
+    # Shrink the rendered animation at the cost of a slower `Render`: a GIF
+    # through a lossless `gifsicle` pass, typically by a fifth to a quarter, a
+    # WebP through the encoder's slowest lossless effort, typically by a few
+    # per cent, an MP4 through the encoder's slowest preset, by a tenth to a
+    # fifth. A GIF and a WebP keep every pixel; an MP4 is re-encoded, so it
+    # keeps its quality target, not its bits. Without gifsicle installed the
+    # GIF is written unoptimized.
     #
     # Parameters:
     #   $1 - optimize - 'on' or 'off'.
@@ -2819,14 +2821,10 @@ _svhs_report_raster_skips() {
     [[ $_SVHS_CURSOR == 'off' ]] &&
         _svhs_report_skipped 'SetCursor' "$output" "$format"
 
-    # an MP4 has no loop flag of its own and no optimization pass yet, so a
-    # script that asked for either is told; the default loop stays silent
-    if [[ $output == *.mp4 ]]; then
-        [[ $_SVHS_LOOP_SET == 1 ]] &&
-            _svhs_report_skipped 'SetLoop' "$output" "$format"
-        [[ $_SVHS_OPTIMIZE == 'on' ]] &&
-            _svhs_report_skipped 'SetOptimize' "$output" "$format"
-    fi
+    # an MP4 has no loop flag of its own, so a script that asked for one is
+    # told; the default loop stays silent
+    [[ $output == *.mp4 && $_SVHS_LOOP_SET == 1 ]] &&
+        _svhs_report_skipped 'SetLoop' "$output" "$format"
     return 0
 }
 
@@ -3194,11 +3192,17 @@ _svhs_encode_mp4() {
     #
     local output="$1"
     local progress='/dev/null'
+    local preset='medium'
 
     # as for WebP, a live line is the only sign a long encode is still
     # working; quiet mode drops the stream at ffmpeg rather than closing the
     # pipe under it
     [[ $_SVHS_QUIET == 0 ]] && progress='pipe:1'
+
+    # unlike a GIF or a WebP, an MP4 is re-encoded rather than repacked: the
+    # slower preset buys a wider search at the same CRF, spending render time
+    # on bytes, not on quality
+    [[ $_SVHS_OPTIMIZE == 'on' ]] && preset='veryslow'
 
     # The GIF is decoded once, keeping the timing the render baked into it,
     # and only B-frames turned off and an explicit centisecond time base carry
@@ -3213,7 +3217,7 @@ _svhs_encode_mp4() {
         -map 0:v:0 -an                              \
         -vf "$_SVHS_MP4_FILTERS"                    \
         -c:v libx264 -profile:v high                \
-        -crf 18 -preset medium                      \
+        -crf 18 -preset "$preset"                   \
         -bf 0 -fps_mode passthrough                 \
         -enc_time_base 1:100                        \
         -movflags +faststart                        \

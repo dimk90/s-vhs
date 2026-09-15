@@ -98,16 +98,18 @@ least one `SetOutput`.
   slide, a page that will not take an animation. It is the one lossy format
   (H.264, 4:2:0 chroma), it is not much smaller than the GIF it comes from,
   and it loops only if the player is told to; prefer `.gif` or `.webp`
-  everywhere else. It inherits every GIF setting except `SetLoop` and
-  `SetOptimize`, which `Render` reports as skipped.
+  everywhere else. It inherits every GIF setting except `SetLoop`, which
+  `Render` reports as skipped.
 - **`Require 'cmd'…` lists what the recorded shell will run.** It fails before
   the session starts instead of leaving a `command not found` frame in the
   middle of the GIF. Skip it only for shell builtins and coreutils.
-- **`SetOptimize 'on'` for any GIF or WebP committed to a repository** — a
-  lossless `gifsicle -O3` pass for GIF, 12-25 % smaller, roughly doubling
-  render time; for WebP the encoder's slowest lossless effort, a few per cent
-  smaller for several times the encoding time. Without `gifsicle` installed
-  `Render` warns and keeps the unoptimized GIF, so it is safe to leave on.
+- **`SetOptimize 'on'` for anything committed to a repository** — a lossless
+  `gifsicle -O3` pass for GIF, 12-25 % smaller, roughly doubling render time;
+  for WebP the encoder's slowest lossless effort, a few per cent smaller for
+  several times the encoding time; for MP4 its slowest preset, 10-20 % smaller
+  for roughly twice the encoding time, at the same quality but not the same
+  pixels. Without `gifsicle` installed `Render` warns and keeps the
+  unoptimized GIF, so it is safe to leave on.
 - `SetCols`/`SetRows` size the grid in **cells, not pixels**. Fit them to the
   content: a two-line demo in a 40-row terminal is mostly empty frame.
 - `SetFontSize` is the only pixel setting; it scales the render without
@@ -327,7 +329,7 @@ it for timing and framing.
 | `no faces matching font family options` | No `SetFontFamilyExact` family is installed, or no preferred or default agg text font is available |
 | `SetFontFamily: cannot be combined with SetFontFamilyExact` | agg rejects both flags; pick one |
 | Renderer rejects the theme name | Named themes differ between agg and asg; use a custom hex palette for both |
-| `::: SetOptimize: gifsicle is not installed` | Warning only — the GIF was written unoptimized; WebP is unaffected |
+| `::: SetOptimize: gifsicle is not installed` | Warning only — the GIF was written unoptimized; WebP and MP4 are unaffected |
 | `::: Highlight: not on screen, nothing selected` | Warning only — the text had not arrived, or it wraps across two rows; `Wait` for it, or highlight a shorter part of it |
 | `::: Set…: skipped for <output>` | Warning only — that renderer has no such option |
 | Variable is empty in the recording | It was expanded by the recording script — use single quotes in `Type` |

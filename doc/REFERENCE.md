@@ -59,7 +59,7 @@ and `Render` reports the rest.
 | `SetIdleTimeLimit <seconds>`     | GIF, WebP, MP4, SVG | `5`          | Cap on idle gaps, applied at render time so the cast keeps its own timing                                                                                                                                                                                |
 | `SetLoop <on\|off>`              | GIF, WebP, SVG      | `on`         | Repeat the animation instead of stopping after one pass; an MP4 carries no portable loop flag, so its player decides and `Render` reports the setting as skipped                                                                                         |
 | `SetLastFrameDuration <seconds>` | GIF, WebP, MP4      | `3`          | How long the last frame is held before the loop restarts                                                                                                                                                                                                 |
-| `SetOptimize <on\|off>`          | GIF, WebP           | `off`        | Shrink the output losslessly at the cost of a slower render: a `gifsicle` pass for GIF, the encoder's slowest effort for WebP; without `gifsicle` installed the GIF is left unoptimized; MP4 has no optimization pass and reports the setting as skipped |
+| `SetOptimize <on\|off>`          | GIF, WebP, MP4      | `off`        | Shrink the output at the cost of a slower render: a `gifsicle` pass for GIF, the encoder's slowest effort for WebP, its slowest preset for MP4; GIF and WebP keep every pixel, an MP4 is re-encoded and keeps its quality target, not its bits; without `gifsicle` installed the GIF is left unoptimized |
 
 [^svg-fonts]: An SVG names but does not embed fonts, so its appearance depends
     on fonts installed on the viewer's system, falling back through a chain of
@@ -76,7 +76,8 @@ and `Render` reports the rest.
     a custom palette when one recording requests GIF or WebP alongside SVG.
 
 [^mp4]: MP4 is the only lossy output: H.264 (High profile, `-crf 18 -preset
-    medium`) with 4:2:0 chroma, so coloured detail is not preserved exactly.
+    medium`, or `veryslow` under `SetOptimize`) with 4:2:0 chroma, so coloured
+    detail is not preserved exactly.
     It needs `ffmpeg` 6.1 or newer, which older builds silently trade for a
     truncated final hold, and `Start` rejects them. Dimensions are padded by
     up to one pixel on the right and bottom, since 4:2:0 requires even ones.

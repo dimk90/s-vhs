@@ -113,19 +113,69 @@
       Tick these checkboxes only after implementation and verification; leave
       the following roadmap items untouched.
 
+- [x] Update `SetOptimize` for MP4 video:
+  - Scope: one lever - how much time x264 spends at the same CRF. No new
+    setter, no new dependency, and no change to the shipped contract's codec,
+    colour, timing or container options.
+  - `High` profile is already the shipped contract; the only profile above it,
+    High 4:4:4 Predictive, is rejected for compatibility (`doc/ENCODING.md`,
+    section 1). Nothing left to decide there.
+  - Optimization without quality loss: bit-lossless does not exist here - an
+    MP4 is re-encoded, not repacked. Measured on the contract pipeline
+    (`doc/ENCODING.md`, section 8), `-preset veryslow` saves 10 % on stress and
+    20 % on the logo for 1.5-1.9x the encoding time, with quality tracking
+    `medium` within about 0.1 dB in either direction. `placebo` costs 4.5-5x
+    the time for another 1-3 %, and preset order is not monotonic in size.
+    Selected: `veryslow`, every other encoder option unchanged.
+  - [x] Measure presets on the shipped contract:
+    - Add a preset ladder to `scripts/encoding-bench.sh`, shaped like the
+      quality ladder: contract filters, `-bf 0`, `-profile:v high`, `-crf 18`,
+      presets `medium slow slower veryslow placebo`, both inputs. Report
+      bytes, size against `medium`, encode time, PSNR/SSIM against the GIF and
+      PSNR against the lossless 4:2:0 round trip - the last column separates
+      codec damage from conversion damage.
+    - Record the table as a new `doc/ENCODING.md` section, before the contract.
+  - [x] Decide from the table: take the slowest preset whose codec PSNR stays
+    within 0.05 dB of `medium` and that saves at least 5 %. If `-bf 0` leaves
+    no such preset, keep MP4 reporting `SetOptimize` as skipped and tick this
+    item with the measurement as the answer.
+  - [x] Integrate into `s-vhs.sh` when a preset wins:
+    - `_svhs_encode_mp4` selects the preset from the setting, the way
+      `_svhs_encode_webp` selects its effort arguments; every other encoder
+      option stays byte-for-byte.
+    - Drop the MP4 `SetOptimize` branch in `_svhs_report_raster_skips`,
+      keeping the `SetLoop` line.
+    - Widen the `SetOptimize` docstring: GIF and WebP keep every pixel, an MP4
+      keeps the quality target, not the bits.
+  - [x] Verify: `bash -n`, `shellcheck`; render one recording with the setting
+    off and on and diff `ffprobe` output - frame count, timestamps, sample
+    durations, container duration, `has_b_frames=0`, profile and colour tags
+    must be identical, with only bytes and encode time differing. Confirm the
+    codec PSNR, replay in Chrome and Firefox, and check quiet mode and a long
+    recording's wall time.
+  - [x] Document: the `doc/REFERENCE.md` row, the `README.md` optimization
+    section - its "without a single pixel changing" claim becomes GIF/WebP
+    only - the `.mp4` and `SetOptimize` bullets in
+    `skills/s-vhs-recording/SKILL.md`, a contract bullet in
+    `doc/ENCODING.md`, and one `### Changed` changelog line.
+
+- [ ] Report encode position, not only elapsed time, for MP4:
+  - `_svhs_report_encode_progress` prints elapsed seconds alone because
+    `libwebp_anim` reports no position; `libx264` does emit `out_time`, and a
+    slower optimization preset makes a silent multi-minute encode worse.
+  - Read the position when the encoder reports one, keep the elapsed-only line
+    as the fallback for WebP, and decide whether the rendered GIF's duration
+    is known early enough to print a percentage.
+
 - [ ] WebM output:
   - GIF to WebM conversion via `ffmpeg`.
   - Full chroma (4:4:4 chroma)?
   - Choose codec and parameters which are best fit for terminal recording content.
   - Update README output format section and install instruction for webp format.
 
-- [ ] Update `SetOptimize` for video:
+- [ ] Update `SetOptimize` for WebM video:
   - Is there any space for optimization without quality loss?
   - `High` profile?
-  - Measured for MP4 (`doc/ENCODING.md`): `-preset veryslow` saves 7.5 % on
-    stress and 13 % on the logo in the B-frame-on codec probe, at similar but
-    not identical quality. Recheck the no-B-frame candidate before defining
-    optimization behaviour; equal CRF is not a lossless-quality guarantee.
 
 - [ ] Add `SUPPORT-MATRIX` to the README documentation section.
 

@@ -4,6 +4,7 @@
 
 ### New
 * Add MP4 output through `agg`+`ffmpeg` 6.1+: H.264 video, keeping the GIF's timing.
+* Add `SetOptimize` for MP4 output - the encoder's slowest preset.
 
 ### Changed
 

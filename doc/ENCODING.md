@@ -314,6 +314,55 @@ and Debian 12 (5.1); Ubuntu 24.04 (6.1) and current Homebrew, Arch and Fedora
 satisfy it. Only the timing acceptance checks were repeated per version: pixel
 scores, GOP sizes and player playback were not.
 
+## 8. Optimization presets
+
+What `SetOptimize` can buy on the contract pipeline: the same crf 18, `-bf 0`,
+`-profile:v high` and colour conversion, with x264 given more search time.
+The codec column measures each preset against a lossless 4:2:0 round trip of
+the same input, separating a preset's own coding damage from the conversion
+damage every row shares. Section 1's preset rows are superseded: they ran with
+B-frames on and implicit colour, where `veryslow`'s gain comes largely from
+B-frame adaptivity.
+
+This ladder ran on a re-recorded stress clip (222 frames, 449 781 B), so its
+byte counts are not comparable with the tables above; section 3's matching
+row was 342 271 B.
+
+| Preset       | `stress` bytes | vs medium | Time  | PSNR vs GIF | PSNR vs 4:2:0 |
+| ------------ | -------------- | --------- | ----- | ----------- | ------------- |
+| medium       | 346 425        | 100 %     | 1.0 s | 38.94       | 52.65         |
+| slow         | 348 016        | 100 %     | 1.3 s | 38.95       | 52.90         |
+| slower       | 339 996        | 98 %      | 1.5 s | 38.96       | 53.22         |
+| **veryslow** | **310 505**    | **90 %**  | 1.9 s | **38.94**   | **52.66**     |
+| placebo      | 309 805        | 89 %      | 8.6 s | 38.96       | 53.04         |
+
+| Preset       | `logo` bytes | vs medium | Time  | PSNR vs GIF | PSNR vs 4:2:0 |
+| ------------ | ------------ | --------- | ----- | ----------- | ------------- |
+| medium       | 29 305       | 100 %     | 0.4 s | 47.62       | 51.32         |
+| slow         | 28 200       | 96 %      | 0.4 s | 47.95       | 52.06         |
+| slower       | 26 853       | 92 %      | 0.5 s | 47.93       | 52.05         |
+| **veryslow** | **23 380**   | **80 %**  | 0.6 s | **48.00**   | **52.19**     |
+| placebo      | 22 583       | 77 %      | 3.0 s | 48.07       | 52.38         |
+
+- **`veryslow` saves 10 % on stress and 20 % on the logo** without spending
+  quality: its codec score is 0.01 dB above `medium` on stress and 0.87 dB
+  above it on the logo. Equal CRF still does not guarantee equal
+  reconstruction, and these are two clips, not a corpus: a third, short
+  recording came out 13 % smaller at 0.13 dB *below* its unoptimized encode.
+  The claim is the same quality target and no systematic loss, not identical
+  pixels.
+
+- **It costs 1.9x the encoding time on stress and 1.5x on the logo**, far less
+  than the 5x of the B-frame-on probe: with `-bf 0` the adaptive B-frame
+  decision that dominated `veryslow` there is not made at all.
+
+- **`placebo` is not worth it**: 1 % more on stress and 3 % more on the logo,
+  for 4.5-5x the encoding time.
+
+- **Preset order is not monotonic in size.** `slow` lands 0.5 % *above*
+  `medium` on stress while scoring higher. Rate control targets quality, not
+  bytes; a preset ladder is a per-clip result.
+
 ## The MP4 contract
 
 These are the selected settings for MP4 implementation:
@@ -354,6 +403,10 @@ These are the selected settings for MP4 implementation:
 
 - **Toolchain:** FFmpeg **6.1** or newer. 5.1 is the floor for `-fps_mode`,
   but 5.1 and 6.0 silently drop the final hold to a single GIF tick.
+
+- **Optimization:** `SetOptimize 'on'` raises the preset to `-preset veryslow`
+  and changes nothing else. The output is re-encoded, not repacked: the
+  quality target holds, the bits do not.
 
 - **No lossless MP4 mode:** tested RGB lossless costs 174 % of stress GIF and
   fails in both tested browsers; WebP already covers lossless raster output.

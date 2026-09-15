@@ -11,10 +11,11 @@
 # frame index. Timing is measured separately; a good pixel score cannot
 # establish correct playback. Lossless RGB also gets a frame-hash check.
 #
-# Usage: scripts/encoding-bench.sh [--timing] [work-dir]
+# Usage: scripts/encoding-bench.sh [--timing|--presets] [work-dir]
 #
-# --timing runs the timing tables alone, which need no encoder but libx264.
-# That is how another ffmpeg build is checked, the version floor included:
+# --timing runs the timing tables alone and --presets the preset ladders;
+# neither needs an encoder but libx264. --timing is how another ffmpeg build
+# is checked, the version floor included:
 #
 #   PATH=/opt/ffmpeg-5.1/bin:$PATH scripts/encoding-bench.sh --timing work-dir
 #
@@ -74,33 +75,43 @@ main() {
     # Run the measurements and stop at the first failed encode or validation.
     #
     # Parameters:
-    #   $1 - --timing - optional flag limiting the run to the timing tables.
+    #   $1 - --timing or --presets - optional flag limiting the run to one
+    #        group of tables.
     #   $2 - work_dir - optional directory for generated files.
     #
     # Example:
     #   main --timing '/tmp/s-vhs-encoding-bench'
     #
-    local timing_only=0
+    local only=''
     local work_dir repo_dir stress logo
 
-    if [[ ${1-} == '--timing' ]]; then
-        timing_only=1
-        shift
-    fi
+    case "${1-}" in
+        --timing|--presets)
+            only="${1#--}"
+            shift
+            ;;
+    esac
     work_dir="${1:-$_BENCH_DEFAULT_WORK_DIR}"
     repo_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd) || exit 1
     stress="$work_dir/stress.gif"
     logo="$repo_dir/examples/logo.gif"
 
-    _bench_require_tools "$timing_only" || exit 1
+    _bench_require_tools "$only" || exit 1
     mkdir -p "$work_dir" || exit 1
     _bench_render_stress_clip "$repo_dir" "$work_dir" || exit 1
 
     ffmpeg -version || exit 1
-    if [[ $timing_only == 1 ]]; then
-        _bench_report_timing "$stress" "$logo" "$work_dir" || exit 1
-        return 0
-    fi
+    case "$only" in
+        timing)
+            _bench_report_timing "$stress" "$logo" "$work_dir" || exit 1
+            return 0
+            ;;
+        presets)
+            _bench_report_preset_ladder "$stress" "$work_dir" || exit 1
+            _bench_report_preset_ladder "$logo" "$work_dir" || exit 1
+            return 0
+            ;;
+    esac
     _bench_report_inputs "$stress" "$logo" || exit 1
     _bench_report_codec_matrix "$stress" "$work_dir" || exit 1
     _bench_report_codec_matrix "$logo" "$work_dir" || exit 1
@@ -108,6 +119,8 @@ main() {
     _bench_report_frame_policy "$stress" "$work_dir" || exit 1
     _bench_report_quality_ladder "$stress" "$work_dir" || exit 1
     _bench_report_quality_ladder "$logo" "$work_dir" || exit 1
+    _bench_report_preset_ladder "$stress" "$work_dir" || exit 1
+    _bench_report_preset_ladder "$logo" "$work_dir" || exit 1
     _bench_report_timing "$stress" "$logo" "$work_dir" || exit 1
     _bench_write_sample_bundle "$stress" "$work_dir" || exit 1
 }
@@ -124,17 +137,18 @@ _bench_require_tools() {
     # Report every missing tool at once instead of failing one table in.
     #
     # Parameters:
-    #   $1 - timing_only - 1 to require only what the timing tables encode.
+    #   $1 - only - table group the run is limited to, empty for all of them.
     #
     # Example:
-    #   _bench_require_tools 0 || exit 1
+    #   _bench_require_tools '' || exit 1
     #
-    local timing_only="$1"
+    local only="$1"
     local tool encoder encoders
     local missing=()
     local required=(libx264 libx264rgb libx265 libsvtav1)
 
-    [[ $timing_only == 1 ]] && required=(libx264)
+    # the timing tables and the preset ladders encode H.264 alone
+    [[ -n $only ]] && required=(libx264)
 
     for tool in ffmpeg ffprobe; do
         command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
@@ -373,6 +387,51 @@ _bench_report_quality_ladder() {
         codec_psnr=$(_bench_psnr "$reference" "$encoded" '') || return 1
         printf '%-8s %10s %8s %13s %15s\n' "crf $crf" "$bytes" \
             "$(_bench_percent "$bytes" "$(_bench_bytes "$input")")" \
+            "$gif_psnr" "$codec_psnr"
+    done
+}
+
+
+_bench_report_preset_ladder() {
+    #
+    # Print the preset table for the shipped contract: what x264's extra
+    # search time buys at a fixed CRF once B-frames are off. The column
+    # against the lossless 4:2:0 round trip is the one that separates a
+    # preset's own coding damage from the conversion damage every row shares.
+    #
+    # Parameters:
+    #   $1 - input - source GIF.
+    #   $2 - work_dir - directory the encodes are written to.
+    #
+    # Example:
+    #   _bench_report_preset_ladder "$stress" "$work_dir"
+    #
+    local input="$1"
+    local out_dir
+    local reference
+    local encoded bytes baseline preset elapsed gif_psnr codec_psnr
+
+    out_dir="$2/presets-$(basename "$input" .gif)"
+    reference="$out_dir/lossless-420.mp4"
+    mkdir -p "$out_dir" || return 1
+    _bench_encode "$input" "$reference" -vf "$_BENCH_PAD,$_BENCH_COLOR" \
+        -c:v libx264 -qp 0 -preset medium -bf 0 >/dev/null || return 1
+
+    printf '\n=== Preset ladder: 4:2:0, BT.601 limited, bf 0, crf 18 (%s, GIF %s B) ===\n' \
+        "$(basename "$input")" "$(_bench_bytes "$input")"
+    printf '%-10s %10s %11s %8s %13s %15s\n' \
+        'preset' 'bytes' 'vs medium' 'time' 'PSNR vs GIF' 'PSNR vs 4:2:0'
+
+    for preset in medium slow slower veryslow placebo; do
+        encoded="$out_dir/$preset.mp4"
+        elapsed=$(_bench_encode "$input" "$encoded" -vf "$_BENCH_PAD,$_BENCH_COLOR" \
+            -c:v libx264 -crf 18 -preset "$preset" -profile:v high -bf 0) || return 1
+        bytes=$(_bench_bytes "$encoded") || return 1
+        [[ $preset == 'medium' ]] && baseline="$bytes"
+        gif_psnr=$(_bench_psnr "$input" "$encoded" '') || return 1
+        codec_psnr=$(_bench_psnr "$reference" "$encoded" '') || return 1
+        printf '%-10s %10s %11s %7ss %13s %15s\n' "$preset" "$bytes" \
+            "$(_bench_percent "$bytes" "$baseline")" "$elapsed" \
             "$gif_psnr" "$codec_psnr"
     done
 }

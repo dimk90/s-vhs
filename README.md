@@ -565,11 +565,18 @@ For a `.webp` output the same setting switches the encoder to its slowest
 lossless effort instead, typically a few per cent smaller for several times
 the encoding time - same frames, same timing, no extra dependency.
 
+For an `.mp4` it hands the encoder its slowest preset at the same quality
+setting: a tenth to a fifth smaller for roughly twice the encoding time. An
+MP4 is re-encoded rather than repacked, so unlike GIF and WebP its pixels are
+not identical - the [measured](doc/ENCODING.md#8-optimization-presets) quality
+stays within about a tenth of a decibel of the unoptimized encode, in either
+direction.
+
 ### Dependency
 
 GIF optimization needs `gifsicle`. Without it, `Render` leaves GIFs
-unoptimized and reports the skipped pass; WebP optimization only needs the
-`ffmpeg` it already renders with.
+unoptimized and reports the skipped pass; WebP and MP4 optimization only needs
+the `ffmpeg` they already render with.
 
 - **macOS**
   ```bash
@@ -595,7 +602,7 @@ Reduce what the renderer has to encode before optimizing it:
 > [!TIP]
 > These reductions can save more than a post-processing pass. Keep the highest
 > values the recording actually needs, then use `SetOptimize 'on'` for additional
-> lossless savings.
+> savings.
 
 ## Documentation
 
