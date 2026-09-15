@@ -1,7 +1,7 @@
 ---
 name: s-vhs-recording
-description: Write, run and verify s-vhs recording scripts (`*.rec.sh`) that record a terminal session and render it as an animated GIF, WebP or SVG, an asciinema cast or a text log. Use when asked to record a terminal demo, produce a demo GIF or animation for a README, script an asciinema cast, automate typing into a terminal for a screencast, or port a VHS `.tape` file. Covers scaffolding, the `Set*` → `Start` → `Show` → `Render` lifecycle, typing and key presses, hiding setup steps, painting typed text with color, and verifying the result without watching the GIF.
-compatibility: Requires bash, tmux and asciinema on PATH; agg for GIF and WebP output, ffmpeg with libwebp_anim for WebP, asg for SVG, gifsicle for GIF optimization. Linux or macOS.
+description: Write, run and verify s-vhs recording scripts (`*.rec.sh`) that record a terminal session and render it as an animated GIF, WebP or SVG, an MP4 video, an asciinema cast or a text log. Use when asked to record a terminal demo, produce a demo GIF or animation for a README, script an asciinema cast, automate typing into a terminal for a screencast, or port a VHS `.tape` file. Covers scaffolding, the `Set*` → `Start` → `Show` → `Render` lifecycle, typing and key presses, hiding setup steps, painting typed text with color, and verifying the result without watching the GIF.
+compatibility: Requires bash, tmux and asciinema on PATH; agg for GIF, WebP and MP4 output, ffmpeg with libwebp_anim for WebP, ffmpeg 6.1+ with libx264 for MP4, asg for SVG, gifsicle for GIF optimization. Linux or macOS.
 allowed-tools: Read Write Edit Bash(command -v:*) Bash(curl:*) Bash(chmod:*) Bash(asciinema convert:*) Bash(tmux -L s-vhs:*) Bash(ls:*)
 ---
 
@@ -23,8 +23,8 @@ Read it before using any command not shown below; the API is pre-1.0 and moves.
 | ------------ | ------------------------------------------------------ |
 | `tmux`       | always                                                 |
 | `asciinema`  | always; also writes `.cast` and `.txt` outputs         |
-| `agg`        | `.gif` and `.webp` output                              |
-| `ffmpeg`     | `.webp` output; must include `libwebp_anim`             |
+| `agg`        | `.gif`, `.webp` and `.mp4` output                      |
+| `ffmpeg`     | `.webp` output (`libwebp_anim`); `.mp4` output (`libx264`, 6.1+) |
 | `asg`        | `.svg` output                                          |
 | `gifsicle`   | `SetOptimize 'on'` for GIF; optional, a missing one only warns |
 
@@ -90,10 +90,16 @@ Every `Set*` call goes **before `Start`** and fails afterwards. `Start` needs at
 least one `SetOutput`.
 
 - `SetOutput` is repeatable and the extension picks the format: `.gif` (agg),
-  `.webp` (agg + FFmpeg), `.svg` (asg), `.cast` (replayable, re-renderable
-  later) and `.txt` (plain text log). A cast-only recording needs no renderer.
-  WebP preserves the rendered GIF's pixels and timing losslessly, usually in
-  fewer bytes, and shares GIF's settings.
+  `.webp` and `.mp4` (agg + FFmpeg), `.svg` (asg), `.cast` (replayable,
+  re-renderable later) and `.txt` (plain text log). A cast-only recording needs
+  no renderer. WebP preserves the rendered GIF's pixels and timing losslessly,
+  usually in fewer bytes, and shares GIF's settings.
+- **`.mp4` only when a video file is what the target needs** — a player, a
+  slide, a page that will not take an animation. It is the one lossy format
+  (H.264, 4:2:0 chroma), it is not much smaller than the GIF it comes from,
+  and it loops only if the player is told to; prefer `.gif` or `.webp`
+  everywhere else. It inherits every GIF setting except `SetLoop` and
+  `SetOptimize`, which `Render` reports as skipped.
 - **`Require 'cmd'…` lists what the recorded shell will run.** It fails before
   the session starts instead of leaving a `command not found` frame in the
   middle of the GIF. Skip it only for shell builtins and coreutils.
@@ -119,8 +125,8 @@ least one `SetOutput`.
   command still takes a per-call delay.
 - `Env NAME value` exports into the recorded shell; repeatable.
 - Playback is fixed at render time, not by re-recording: `SetPlaybackSpeed`,
-  `SetFramerate`, `SetIdleTimeLimit` (caps long pauses), `SetLoop` and
-  `SetLastFrameDuration` (GIF and WebP).
+  `SetFramerate`, `SetIdleTimeLimit` (caps long pauses), `SetLoop` (GIF, WebP
+  and SVG) and `SetLastFrameDuration` (GIF, WebP and MP4).
 - A setting only one renderer supports is applied where it works, and `Render`
   reports the skipped output in yellow. Nothing fails, so a recording that
   writes both a GIF and an SVG may still use `SetWindowBar 'on'` (SVG) or
@@ -284,7 +290,7 @@ timeout is the most common way one does not.
 
 ## 8. Verify
 
-A GIF, WebP or SVG cannot be reviewed by an agent — verify through the text log
+A GIF, WebP, MP4 or SVG cannot be reviewed by an agent — verify through the text log
 instead. Add a `.txt` output (keep it if the project wants one, otherwise drop
 the line after checking):
 
@@ -315,6 +321,7 @@ it for timing and framing.
 | `Set…: settings cannot change after the session starts` | A setting moved below `Start`; all `Set*` belong to the configuration phase |
 | `Start: configure at least one output with SetOutput` | No `SetOutput` call |
 | `Start: session already exists` | A pinned `SetSession` name is taken, or a `SIGKILL`ed run left its session behind; `tmux -L s-vhs kill-server` |
+| `Start: ffmpeg <version> is too old, MP4 output needs 6.1 or newer` | `.mp4` output needs ffmpeg 6.1+; older builds encode but truncate the final frame |
 | `Require: <cmd> is not installed, required for the recording` | The recording drives a command the machine lacks — install it or drop that step |
 | `Wait: timeout waiting for: <pattern>` | The pattern never appeared — check the anchor and raise the timeout |
 | `no faces matching font family options` | No `SetFontFamilyExact` family is installed, or no preferred or default agg text font is available |

@@ -16,7 +16,7 @@ recording into the requested formats.
 | **asciinema** | Terminal session recorder | Stores terminal output, control sequences, geometry, and timestamps in a `.cast` file, and can export it as plain text. |
 | **`.cast`**   | asciicast v3 file         | The recording itself - text plus timings, the hand-off point between recording and rendering.                           |
 | **agg**       | asciinema GIF generator   | Replays the cast into GIF frames using the selected font, font size, line height, and color theme.                      |
-| **ffmpeg**    | Media converter           | Converts agg's GIF to video and animated WebP formats.                                                                  |
+| **ffmpeg**    | Media converter           | Converts agg's GIF to animated WebP and to H.264 video.                                                                 |
 | **asg**       | asciinema SVG generator   | Replays the cast into a sharp, CSS-animated SVG using the selected font, font size, line height, and color theme.       |
 | **s-vhs**     | ~1k lines of bash         | Glues them together and gives you `Type`, `Key`, `Wait`, `Show`, `Render` instead of raw tmux commands.                 |
 
@@ -97,8 +97,8 @@ This separation has useful consequences:
 
 Today s-vhs can retain the cast directly, export it as plain text with
 `asciinema`, render it to GIF with `agg`, convert that GIF to animated
-WebP or video with `ffmpeg`, or render it to animated SVG with `asg`.
-GIF and WebP outputs share one temporary GIF render.
+WebP or MP4 video with `ffmpeg`, or render it to animated SVG with `asg`.
+GIF, WebP and MP4 outputs share one temporary GIF render.
 
 ## Links
 

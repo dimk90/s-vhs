@@ -3,6 +3,7 @@
 ## `[v0.7.0]`
 
 ### New
+* Add MP4 output through `agg`+`ffmpeg` 6.1+: H.264 video, keeping the GIF's timing.
 
 ### Changed
 

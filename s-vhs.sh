@@ -2,7 +2,7 @@
 #
 # S-VHS - a scriptable terminal recorder.
 # A thin wrapper around tmux + asciinema + output renderers:
-# agg for GIF, agg + ffmpeg for WebP, asg for SVG.
+# agg for GIF, agg + ffmpeg for WebP and MP4, asg for SVG.
 #
 # Source this file from a recording script (*.rec.sh), or execute it:
 #   s-vhs.sh new demo.rec.sh   scaffold a recording script
@@ -130,6 +130,7 @@ _SVHS_PLAYBACK_SPEED=1
 _SVHS_FRAMERATE=30
 _SVHS_IDLE_TIME_LIMIT=5
 _SVHS_LOOP='on'
+_SVHS_LOOP_SET=0
 _SVHS_LAST_FRAME_DURATION=3
 _SVHS_LAST_FRAME_DURATION_SET=0
 
@@ -192,6 +193,20 @@ _SVHS_SHELL_TIMEOUT=10
 _SVHS_WRITE_POLL_INTERVAL=0.01
 _SVHS_WRITE_TIMEOUT=5
 
+# MP4 encoding contract, measured in doc/ENCODING.md. The filters pad odd
+# dimensions by up to a pixel on the right and bottom, since 4:2:0 chroma
+# needs even ones, then read the rendered GIF as sRGB and convert it to
+# limited-range BT.601 YUV, keeping its transfer curve; the tags name what
+# the pixels are. Spell the matrix 'bt601': 'bt470bg' selects the same one
+# but only exists from ffmpeg 8. Older ffmpeg accepts every option of the
+# encode and then drops the recording's final hold, hence the minimum
+_SVHS_MP4_MIN_FFMPEG='6.1'
+_SVHS_MP4_FILTERS='pad=ceil(iw/2)*2:ceil(ih/2)*2:0:0,'
+_SVHS_MP4_FILTERS+='scale=out_color_matrix=bt601:out_range=tv'
+_SVHS_MP4_FILTERS+=':flags=full_chroma_int+accurate_rnd,format=yuv420p,'
+_SVHS_MP4_FILTERS+='setparams=colorspace=smpte170m:color_primaries=bt709'
+_SVHS_MP4_FILTERS+=':color_trc=iec61966-2-1:range=tv'
+
 # Recorded shell command line and environment, assembled by Start
 _SVHS_SHELL_COMMAND=()
 _SVHS_SHELL_ENV=()
@@ -251,10 +266,11 @@ TEMPLATE
 
 SetOutput() {
     #
-    # Add a cast, plain-text, GIF, animated WebP, or animated SVG output.
+    # Add a cast, plain-text, GIF, animated WebP, MP4 video, or animated SVG
+    # output.
     #
     # Parameters:
-    #   $1 - output - path ending in .cast, .txt, .gif, .webp, or .svg.
+    #   $1 - output - path ending in .cast, .txt, .gif, .webp, .mp4, or .svg.
     #
     # Example:
     #   SetOutput 'demo.gif' || exit 1
@@ -264,7 +280,7 @@ SetOutput() {
     _svhs_require_configuration_phase 'SetOutput' || return 1
 
     case "$output" in
-        *.cast|*.txt|*.gif|*.webp|*.svg) ;;
+        *.cast|*.txt|*.gif|*.webp|*.mp4|*.svg) ;;
         '')
             printf 'SetOutput: output path must not be empty\n' >&2
             return 1
@@ -836,7 +852,9 @@ SetIdleTimeLimit() {
 
 SetLoop() {
     #
-    # Repeat the rendered animation, or stop it after a single pass.
+    # Repeat the rendered animation, or stop it after a single pass. An MP4
+    # carries no portable loop flag - its player decides - so Render reports
+    # the setting as skipped for that output.
     #
     # Parameters:
     #   $1 - loop - 'on' or 'off'.
@@ -857,6 +875,7 @@ SetLoop() {
     esac
 
     _SVHS_LOOP="$loop"
+    _SVHS_LOOP_SET=1
 }
 
 
@@ -1821,7 +1840,7 @@ Render() {
                     ${quiet_args[@]+"${quiet_args[@]}"} \
                     "$_SVHS_CAST" "$output" || return 1
                 ;;
-            *.gif|*.webp)
+            *.gif|*.webp|*.mp4)
                 _svhs_render_raster "$output" || return 1
                 ;;
             *.svg)
@@ -1920,7 +1939,7 @@ _svhs_require_dependencies() {
     #
     local output
     local webp=0
-    local encoders
+    local mp4=0
 
     _svhs_require_command 'Start' 'tmux' 'the recording session' || return 1
     _svhs_require_command 'Start' 'asciinema' 'the recorder' || return 1
@@ -1933,20 +1952,99 @@ _svhs_require_dependencies() {
                 _svhs_require_command 'Start' 'ffmpeg' 'WebP output' || return 1
                 webp=1
                 ;;
+            *.mp4)
+                _svhs_require_command 'Start' 'agg' 'MP4 output' || return 1
+                _svhs_require_command 'Start' 'ffmpeg' 'MP4 output' || return 1
+                mp4=1
+                ;;
             *.svg) _svhs_require_command 'Start' 'asg' 'SVG output' || return 1 ;;
         esac
     done
 
-    [[ $webp == 0 ]] && return 0
+    if [[ $mp4 == 1 ]]; then
+        _svhs_require_ffmpeg_version || return 1
+    fi
 
-    # ffmpeg builds can omit libwebp; a listing that fails at all is a broken
-    # ffmpeg rather than a missing encoder, and worth a line of its own
+    _svhs_require_ffmpeg_encoders "$webp" "$mp4" || return 1
+}
+
+
+_svhs_require_ffmpeg_version() {
+    #
+    # Reject an ffmpeg too old for MP4 output. Older builds take every option
+    # of the encode and then silently shorten the recording's final hold to a
+    # single GIF tick, which only shows up in the finished file.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_require_ffmpeg_version || return 1
+    #
+    local version
+    local major
+    local minor
+    local min_major="${_SVHS_MP4_MIN_FFMPEG%%.*}"
+    local min_minor="${_SVHS_MP4_MIN_FFMPEG##*.}"
+
+    # 'ffmpeg version n8.1.2', with the n and a distro suffix on some builds;
+    # a git build reports a build number instead ('N-113602-g458dd0d637'),
+    # which names no release to compare. sed reads the banner to its end
+    # instead of quitting on the first line, so ffmpeg never writes into a
+    # closed pipe, and a query that fails outright leaves the version unknown
+    version=$(ffmpeg -version 2> /dev/null |
+        sed -n '1s/^ffmpeg version n\{0,1\}\([0-9][0-9]*\.[0-9][^ ]*\).*/\1/p') ||
+        version=''
+
+    if [[ -z $version ]]; then
+        _svhs_warn "Start: ffmpeg version is unknown, MP4 output needs $_SVHS_MP4_MIN_FFMPEG or newer"
+        return 0
+    fi
+
+    # the release is compared by its first two numbers, so a patch level or a
+    # distro suffix - '6.1.2-3ubuntu5' - is cut off the minor one
+    major="${version%%.*}"
+    minor="${version#*.}"
+    minor="${minor%%[!0-9]*}"
+    if ((major < min_major || (major == min_major && minor < min_minor))); then
+        printf 'Start: ffmpeg %s is too old, MP4 output needs %s or newer\n' \
+            "$version" "$_SVHS_MP4_MIN_FFMPEG" >&2
+        return 1
+    fi
+    return 0
+}
+
+
+_svhs_require_ffmpeg_encoders() {
+    #
+    # Check the encoders the requested video outputs need, querying ffmpeg's
+    # listing once for both of them.
+    #
+    # Parameters:
+    #   $1 - webp - 1 when a WebP output was requested.
+    #   $2 - mp4 - 1 when an MP4 output was requested.
+    #
+    # Example:
+    #   _svhs_require_ffmpeg_encoders 1 0 || return 1
+    #
+    local webp="$1"
+    local mp4="$2"
+    local encoders
+
+    [[ $webp == 0 && $mp4 == 0 ]] && return 0
+
+    # ffmpeg builds can omit libwebp or libx264; a listing that fails at all is
+    # a broken ffmpeg rather than a missing encoder, and worth a line of its own
     if ! encoders=$(ffmpeg -hide_banner -encoders 2> /dev/null); then
         printf 'Start: ffmpeg failed to list its encoders\n' >&2
         return 1
     fi
-    if [[ $encoders != *' libwebp_anim '* ]]; then
+    if [[ $webp == 1 && $encoders != *' libwebp_anim '* ]]; then
         printf 'Start: ffmpeg lacks the libwebp_anim encoder, required for WebP output\n' >&2
+        return 1
+    fi
+    if [[ $mp4 == 1 && $encoders != *' libx264 '* ]]; then
+        printf 'Start: ffmpeg lacks the libx264 encoder, required for MP4 output\n' >&2
         return 1
     fi
     return 0
@@ -2692,10 +2790,10 @@ _svhs_report_skipped() {
 
 _svhs_report_raster_skips() {
     #
-    # Report settings GIF and WebP output have no equivalent for.
+    # Report settings GIF, WebP and MP4 output have no equivalent for.
     #
     # Parameters:
-    #   $1 - output - GIF or WebP path that was rendered.
+    #   $1 - output - GIF, WebP or MP4 path that was rendered.
     #
     # Example:
     #   _svhs_report_raster_skips 'demo.webp'
@@ -2703,7 +2801,10 @@ _svhs_report_raster_skips() {
     local output="$1"
     local format='GIF output'
 
-    [[ $output == *.webp ]] && format='WebP output'
+    case "$output" in
+        *.webp) format='WebP output' ;;
+        *.mp4)  format='MP4 output' ;;
+    esac
 
     # agg draws no padding or window bar, and always draws the cursor, so
     # only a value that would have shown is worth a line
@@ -2717,6 +2818,15 @@ _svhs_report_raster_skips() {
         _svhs_report_skipped 'SetWindowBar' "$output" "$format"
     [[ $_SVHS_CURSOR == 'off' ]] &&
         _svhs_report_skipped 'SetCursor' "$output" "$format"
+
+    # an MP4 has no loop flag of its own and no optimization pass yet, so a
+    # script that asked for either is told; the default loop stays silent
+    if [[ $output == *.mp4 ]]; then
+        [[ $_SVHS_LOOP_SET == 1 ]] &&
+            _svhs_report_skipped 'SetLoop' "$output" "$format"
+        [[ $_SVHS_OPTIMIZE == 'on' ]] &&
+            _svhs_report_skipped 'SetOptimize' "$output" "$format"
+    fi
     return 0
 }
 
@@ -2857,42 +2967,53 @@ _svhs_report_geometry() {
     local output
     local gif=0
     local webp=0
+    local mp4=0
     local svg=0
     local padding_x="${_SVHS_PADDING_X:-$_SVHS_PADDING}"
     local padding_y="${_SVHS_PADDING_Y:-$_SVHS_PADDING}"
     local window_width=0
     local window_height=0
     local width
+    local height
     local estimated=''
 
     for output in "${_SVHS_OUTPUTS[@]}"; do
         case "$output" in
             *.gif) gif=1 ;;
             *.webp) webp=1 ;;
+            *.mp4) mp4=1 ;;
             *.svg) svg=1 ;;
         esac
     done
 
     # a cast and a text export commit to no pixels, leaving only the grid
-    if [[ $gif == 0 && $webp == 0 && $svg == 0 ]]; then
+    if [[ $gif == 0 && $webp == 0 && $mp4 == 0 && $svg == 0 ]]; then
         printf '::: %s\n' "$grid"
         return 0
     fi
 
     # agg pads a GIF by one cell left and right and by half a row above and
     # below; a failed probe leaves the nominal advance, marked as a guess
-    if [[ $gif == 1 || $webp == 1 ]]; then
+    if [[ $gif == 1 || $webp == 1 || $mp4 == 1 ]]; then
         if ! width=$(_svhs_gif_width); then
             width=$(_svhs_grid_width "$((_SVHS_COLS + 2))" 0)
             estimated='~'
         fi
+        height=$(_svhs_grid_height "$((_SVHS_ROWS + 1))" 0)
+
         if [[ $gif == 1 ]]; then
             printf '::: GIF: %s -> %s%s x %s px\n' "$grid" "$estimated" \
-                "$width" "$(_svhs_grid_height "$((_SVHS_ROWS + 1))" 0)"
+                "$width" "$height"
         fi
         if [[ $webp == 1 ]]; then
             printf '::: WebP: %s -> %s%s x %s px\n' "$grid" "$estimated" \
-                "$width" "$(_svhs_grid_height "$((_SVHS_ROWS + 1))" 0)"
+                "$width" "$height"
+        fi
+        # 4:2:0 chroma needs even dimensions, so the encoder pads an odd
+        # render by a pixel on the right or the bottom
+        if [[ $mp4 == 1 ]]; then
+            printf '::: MP4: %s -> %s%s x %s px\n' "$grid" "$estimated" \
+                "$(((width + 1) / 2 * 2))" "$(((height + 1) / 2 * 2))"
         fi
     fi
 
@@ -2911,7 +3032,7 @@ _svhs_report_geometry() {
 
 _svhs_render_shared_gif() {
     #
-    # Render one temporary GIF shared by all GIF and WebP outputs. Register
+    # Render one temporary GIF shared by all GIF, WebP and MP4 outputs. Register
     # it in cleanup state before rendering so errors cannot leak it.
     #
     # Parameters:
@@ -2950,12 +3071,13 @@ _svhs_render_shared_gif() {
 
 _svhs_render_raster() {
     #
-    # Copy the shared GIF or convert it to lossless animated WebP, then report
-    # the settings that format drops. Optimize a requested GIF in place and a
-    # WebP through the encoder, leaving the shared source unchanged.
+    # Copy the shared GIF, or encode it as a lossless animated WebP or a
+    # lossy H.264 MP4, then report the settings that format drops. Optimize a
+    # requested GIF in place and a WebP through the encoder, leaving the
+    # shared source unchanged.
     #
     # Parameters:
-    #   $1 - output - GIF or WebP path to write.
+    #   $1 - output - GIF, WebP or MP4 path to write.
     #
     # Example:
     #   _svhs_render_raster 'demo.webp' || return 1
@@ -2972,6 +3094,9 @@ _svhs_render_raster() {
             ;;
         *.webp)
             _svhs_encode_webp "$output" || return 1
+            ;;
+        *.mp4)
+            _svhs_encode_mp4 "$output" || return 1
             ;;
     esac
 
@@ -3055,13 +3180,55 @@ _svhs_encode_webp() {
 }
 
 
+_svhs_encode_mp4() {
+    #
+    # Encode the shared GIF as an H.264 MP4, keeping a live line up while the
+    # encoder runs. The settings and the measurements behind them are the
+    # contract in doc/ENCODING.md.
+    #
+    # Parameters:
+    #   $1 - output - MP4 path to write.
+    #
+    # Example:
+    #   _svhs_encode_mp4 'demo.mp4' || return 1
+    #
+    local output="$1"
+    local progress='/dev/null'
+
+    # as for WebP, a live line is the only sign a long encode is still
+    # working; quiet mode drops the stream at ffmpeg rather than closing the
+    # pipe under it
+    [[ $_SVHS_QUIET == 0 ]] && progress='pipe:1'
+
+    # The GIF is decoded once, keeping the timing the render baked into it,
+    # and only B-frames turned off and an explicit centisecond time base carry
+    # every frame duration - the final hold included - into the file. A silent
+    # video, with the header up front so a player can start on the first bytes.
+    # pipefail makes a failed encode the status of the whole pipeline; the
+    # reporter reads stdout, leaving ffmpeg's own errors on stderr
+    ffmpeg -hide_banner -loglevel error -nostdin -y \
+        -progress "$progress"                       \
+        -ignore_loop 1 -min_delay 0                 \
+        -i "$_SVHS_TEMP_GIF"                        \
+        -map 0:v:0 -an                              \
+        -vf "$_SVHS_MP4_FILTERS"                    \
+        -c:v libx264 -profile:v high                \
+        -crf 18 -preset medium                      \
+        -bf 0 -fps_mode passthrough                 \
+        -enc_time_base 1:100                        \
+        -movflags +faststart                        \
+        "file:$output" |
+        _svhs_report_encode_progress "$output" || return 1
+}
+
+
 _svhs_report_encode_progress() {
     #
     # Rewrite one line in place while an encode runs, and leave its last state
-    # on screen once it ends. libwebp_anim holds every frame until it writes
-    # the file, so ffmpeg reports no position to show - its -progress blocks
-    # on stdin serve only as a heartbeat, one every half second. An empty
-    # stream - quiet mode - prints nothing.
+    # on screen once it ends. The line carries elapsed time alone: libwebp_anim
+    # holds every frame until it writes the file, so ffmpeg reports no position
+    # for it, and its -progress blocks serve only as a heartbeat, one every
+    # half second. An empty stream - quiet mode - prints nothing.
     #
     # Parameters:
     #   $1 - output - path being encoded, named in the message.

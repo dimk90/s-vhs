@@ -1,7 +1,7 @@
 
 ## `[v0.7.0]`
 
-- [ ] Add MP4:
+- [x] Add MP4:
   - Scope: `.cast` -> one shared `agg` GIF -> MP4 through `ffmpeg`.
     WebM and video-specific `SetOptimize` behavior remain separate tasks.
   - [x] Compare encodings and select the output contract. Measurements, inputs
@@ -69,7 +69,7 @@
         bases can also collapse timestamps and abort. CFR 100 preserves the
         grid but costs 3.35x the VFR candidate's bytes; CFR 30 rounds timing
         and can drop short frames.
-  - [ ] Integrate MP4 into `s-vhs.sh`:
+  - [x] Integrate MP4 into `s-vhs.sh`:
     - Accept `.mp4` in `SetOutput`; route it through `Render` and
       `_svhs_render_raster`, reusing `_svhs_render_shared_gif` unchanged as the
       single full-recording raster render for GIF, WebP and MP4 outputs.
@@ -87,7 +87,7 @@
       existing temporary-file cleanup on successful render and script exit.
     - Keep Bash 3.2/BSD compatibility. If the comparison justifies a new setter,
       validate it immediately and require it before `Start`, like other settings.
-  - [ ] Verify manually before marking the feature complete:
+  - [x] Verify manually before marking the feature complete:
     - Run `bash -n s-vhs.sh` and `shellcheck s-vhs.sh`; exercise recording scripts
       under Bash 3.2 as well as the development shell.
     - Render MP4-only, several MP4 paths, GIF/WebP/MP4 together and all formats
@@ -102,7 +102,7 @@
       failures never print a success message for the failed output and temporary
       files are cleaned up on exit. `ffprobe` stays a verification tool, not a
       runtime dependency unless implementation demonstrates a concrete need.
-  - [ ] Update documentation with the implemented behavior:
+  - [x] Update documentation with the implemented behavior:
     - Add MP4 installation instructions and an output-format row to `README.md`,
       including the required encoder, the `ffmpeg` 6.1 minimum, measured quality/compatibility trade-offs
       and player-controlled looping; do not describe lossy output as lossless.

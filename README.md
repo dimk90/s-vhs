@@ -151,6 +151,25 @@ For animated WebP output, install [`agg`](#renderer-gif) and
   sudo pacman -S ffmpeg
   ```
 
+### Renderer: MP4
+
+For MP4 output, install [`agg`](#renderer-gif) and
+[ffmpeg](https://ffmpeg.org/download.html) **6.1 or newer**, built with the
+`libx264` encoder - as distro and Homebrew builds are:
+
+- **macOS**
+  ```bash
+  brew install agg ffmpeg
+  ```
+
+- **Linux**
+  ```bash
+  cargo install --git https://github.com/asciinema/agg --locked
+  ```
+  ```bash
+  sudo pacman -S ffmpeg
+  ```
+
 ### Renderer: SVG
 
 For animated SVG output, install
@@ -453,6 +472,7 @@ The extension of the path passed to `SetOutput` picks the format:
 | `.txt`  | Plain-text terminal log                                                     | None                               |
 | `.gif`  | Animated raster image                                                       | [`agg`](#renderer-gif)             |
 | `.webp` | Animated raster image with lossless compression, typically smaller than GIF | [`agg` + `ffmpeg`](#renderer-webp) |
+| `.mp4`  | H.264 video, for players and pages that take one rather than an animation   | [`agg` + `ffmpeg`](#renderer-mp4)  |
 | `.svg`  | Sharp, CSS-animated vector image                                            | [`asg`](#renderer-svg)             |
 
 `SetOutput` is repeatable - one recording, several outputs:
