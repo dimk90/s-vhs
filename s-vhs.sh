@@ -3193,11 +3193,17 @@ _svhs_encode_mp4() {
     local output="$1"
     local progress='/dev/null'
     local preset='medium'
+    local duration=''
 
     # as for WebP, a live line is the only sign a long encode is still
     # working; quiet mode drops the stream at ffmpeg rather than closing the
-    # pipe under it
-    [[ $_SVHS_QUIET == 0 ]] && progress='pipe:1'
+    # pipe under it. libx264, unlike libwebp_anim, also reports how far into
+    # the recording it is, which the render's length turns into a percentage;
+    # an unreadable length leaves the elapsed time alone on the line
+    if [[ $_SVHS_QUIET == 0 ]]; then
+        progress='pipe:1'
+        duration=$(_svhs_gif_duration) || duration=''
+    fi
 
     # unlike a GIF or a WebP, an MP4 is re-encoded rather than repacked: the
     # slower preset buys a wider search at the same CRF, spending render time
@@ -3222,35 +3228,120 @@ _svhs_encode_mp4() {
         -enc_time_base 1:100                        \
         -movflags +faststart                        \
         "file:$output" |
-        _svhs_report_encode_progress "$output" || return 1
+        _svhs_report_encode_progress "$output" "$duration" || return 1
+}
+
+
+_svhs_gif_duration() {
+    #
+    # Print how long the shared GIF plays, in centiseconds. ffmpeg reads the
+    # length from the GIF's own delays - tens of milliseconds even for a
+    # render of tens of megabytes - with the decoder options the encode uses,
+    # so the total matches the positions that encode will report. Fails when
+    # the length cannot be read.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   duration=$(_svhs_gif_duration) || duration=''
+    #
+    local report
+    local duration
+
+    # ffmpeg describes the input and then fails for the missing output file,
+    # so its status says nothing here; the parsed line is what decides
+    report=$(ffmpeg -hide_banner -ignore_loop 1 -min_delay 0 \
+        -i "$_SVHS_TEMP_GIF" 2>&1) || true
+
+    #   Duration: 00:00:13.72, start: 0.000000, bitrate: 19 kb/s
+    duration=$(printf '%s\n' "$report" |
+        sed -n 's/^ *Duration: \([0-9][0-9:.]*\),.*/\1/p')
+
+    _svhs_centiseconds "$duration"
+}
+
+
+_svhs_centiseconds() {
+    #
+    # Convert an ffmpeg timestamp - the reported duration of an input, a
+    # position in the progress stream - to centiseconds, the unit a GIF stores
+    # its delays in. Fails on anything else, the stream's 'N/A' included.
+    #
+    # Parameters:
+    #   $1 - timestamp - HH:MM:SS.ff, with any number of fraction digits.
+    #
+    # Example:
+    #   position=$(_svhs_centiseconds '00:00:13.720000') || return 1
+    #
+    local timestamp="${1-}"
+    local pattern='^([0-9]+):([0-9][0-9]):([0-9][0-9])\.([0-9]+)$'
+    local hours
+    local minutes
+    local seconds
+    local fraction
+    local total
+
+    # bash 3.2 matches an unquoted pattern variable, never a quoted literal
+    [[ $timestamp =~ $pattern ]] || return 1
+
+    hours="${BASH_REMATCH[1]}"
+    minutes="${BASH_REMATCH[2]}"
+    seconds="${BASH_REMATCH[3]}"
+
+    # the hundredth, truncated, whether ffmpeg wrote two digits or six
+    fraction="${BASH_REMATCH[4]}0"
+    fraction="${fraction:0:2}"
+
+    # 10# keeps a zero-padded field decimal instead of octal
+    total=$((10#$hours * 3600 + 10#$minutes * 60 + 10#$seconds))
+    printf '%d\n' "$((total * 100 + 10#$fraction))"
 }
 
 
 _svhs_report_encode_progress() {
     #
     # Rewrite one line in place while an encode runs, and leave its last state
-    # on screen once it ends. The line carries elapsed time alone: libwebp_anim
-    # holds every frame until it writes the file, so ffmpeg reports no position
-    # for it, and its -progress blocks serve only as a heartbeat, one every
-    # half second. An empty stream - quiet mode - prints nothing.
+    # on screen once it ends. The line carries the elapsed time, and how far
+    # through the recording the encoder is once it reports a position and a
+    # length to measure it against: libwebp_anim holds every frame until it
+    # writes the file and reports no position, leaving its -progress blocks a
+    # heartbeat, one every half second. An empty stream - quiet mode - prints
+    # nothing.
     #
     # Parameters:
     #   $1 - output - path being encoded, named in the message.
+    #   $2 - duration - (optional) - length of the encoded recording in
+    #        centiseconds; empty or zero drops the percentage.
     #
     # Example:
-    #   ffmpeg -progress pipe:1 … | _svhs_report_encode_progress 'demo.webp'
+    #   ffmpeg -progress pipe:1 … | _svhs_report_encode_progress 'demo.mp4' 1372
     #
     local output="$1"
+    local duration="${2-}"
     local key
     local value
+    local position
+    local percent=''
+
+    # a recording that plays for no time at all has no percentage to report
+    [[ ${duration:-0} == 0 ]] && duration=''
 
     # SECONDS counts from the assignment, in the subshell the pipe puts this
     # reporter in; ffmpeg closes every block with progress=continue - or, for
     # the last one, progress=end
     SECONDS=0
     while IFS='=' read -r key value; do
+        # the stream reports 'N/A' until the first frame leaves the encoder,
+        # and the last position read stands until a new one arrives
+        if [[ $key == 'out_time' && -n $duration ]]; then
+            position=$(_svhs_centiseconds "$value") &&
+                percent=", $((position * 100 / duration))%"
+            continue
+        fi
         [[ $key == 'progress' ]] || continue
-        printf '%s::: Encoding %s: %ss' "$_SVHS_ERASE_LINE" "$output" "$SECONDS"
+        printf '%s::: Encoding %s: %ss%s' "$_SVHS_ERASE_LINE" "$output" \
+            "$SECONDS" "$percent"
         [[ $value == 'end' ]] && printf '\n'
     done
 

@@ -159,13 +159,18 @@
     `skills/s-vhs-recording/SKILL.md`, a contract bullet in
     `doc/ENCODING.md`, and one `### Changed` changelog line.
 
-- [ ] Report encode position, not only elapsed time, for MP4:
-  - `_svhs_report_encode_progress` prints elapsed seconds alone because
+- [x] Report encode position, not only elapsed time, for MP4:
+  - `_svhs_report_encode_progress` printed elapsed seconds alone because
     `libwebp_anim` reports no position; `libx264` does emit `out_time`, and a
     slower optimization preset makes a silent multi-minute encode worse.
-  - Read the position when the encoder reports one, keep the elapsed-only line
-    as the fallback for WebP, and decide whether the rendered GIF's duration
-    is known early enough to print a percentage.
+  - Implemented: the reporter turns `out_time` into a percentage of the
+    rendered GIF's length (`::: Encoding demo.mp4: 12s, 45%`) and falls back
+    to the elapsed-only line for WebP, for `N/A` positions and for an
+    unreadable length.
+  - The length is read from the shared GIF before the encode, by parsing the
+    `Duration:` line `ffmpeg -i` reports with the decoder options the encode
+    uses - no `ffprobe` runtime dependency, and tens of milliseconds even on a
+    47 MB GIF.
 
 - [ ] WebM output:
   - GIF to WebM conversion via `ffmpeg`.
@@ -178,6 +183,12 @@
   - `High` profile?
 
 - [ ] Add `SUPPORT-MATRIX` to the README documentation section.
+  - Add email to support matrix
+  - Add PowerPoint to support section.
+
+- [ ] Move `SetOptimize` out of README to separate file
+  - Improve structure - per format description of the trade-off.
+  - Add link to README documentation section.
 
 - [ ] Add note about compression efficiency:
   - use `logo` as example example.
