@@ -457,7 +457,7 @@ animated by CSS, sharp at any zoom:
 
 
 📌 [pi-context-view](https://github.com/dimk90/pi-context-view) - demo GIFs,
-such as [palettes.rec.sh](https://github.com/dimk90/pi-context-view/tree/develop/scripts/recordings).  
+such as [palettes.rec.sh](https://github.com/dimk90/pi-context-view/tree/develop/doc/images).  
 📌 [S-VHS logo](examples/logo.rec.sh) recording.
 
 
