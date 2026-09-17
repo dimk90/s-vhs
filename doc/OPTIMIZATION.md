@@ -47,7 +47,7 @@ which typically saves a few per cent for several times the encoding time.
 The visible frames and timing stay the same.
 
 No extra dependency is needed beyond the `agg` and `ffmpeg` used to render
-WebP. See [WebP installation](../README.md#renderer-webp).
+WebP. See [WebP installation](../README.md#renderer-webp-and-mp4).
 
 ## MP4
 
@@ -62,7 +62,7 @@ makes different choices at the same quality target, and measured quality can
 move slightly in either direction.
 
 No extra dependency is needed beyond the `agg` and `ffmpeg` used to render
-MP4. See [MP4 installation](../README.md#renderer-mp4).
+MP4. See [MP4 installation](../README.md#renderer-webp-and-mp4).
 
 ## SVG
 
