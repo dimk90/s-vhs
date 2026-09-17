@@ -20,6 +20,7 @@ and used only to render the other outputs (GIF, SVG).
 | `doc/PLAN.md`               | Roadmap / checklist. Tick boxes when a task lands.           |
 | `doc/INTRO.md`              | How the pipeline works, for users.                           |
 | `doc/SVG.md`                | Animated SVG pitfalls and workarounds, for users.            |
+| `doc/OPTIMIZATION.md`       | Output size optimization and per-format trade-offs.          |
 | `doc/ENCODING.md`           | Measurements behind the video encoding contracts.            |
 | `doc/DEBUG.md`              | Debugging recording scripts (`watch`, live pane).            |
 | `doc/DEPLOY.md`             | GitHub Pages deployment (remote imports, skill).             |

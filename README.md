@@ -131,7 +131,7 @@ For GIF output, install [`agg`](https://github.com/asciinema/agg#installation):
 
 > [!TIP]
 > GIF size can be reduced by [`gifsicle`](https://github.com/kohler/gifsicle)
-> without quality loss, see [`Output Size Optimization`](#output-size-optimization).
+> without quality loss, see [Output Size Optimization](doc/OPTIMIZATION.md#gif).
 
 ### Renderer: WebP
 
@@ -541,74 +541,14 @@ Render
 ```
 
 
-## Output Size Optimization
-
-
-GIFs come out of the renderer generously encoded. `SetOptimize 'on'` runs the
-rendered file through a lossless [`gifsicle`](https://github.com/kohler/gifsicle)
-pass, so it shrinks without a single pixel changing:
-
-```bash
-SetOutput 'optimize.gif'
-SetOptimize 'on' # <---
-```
-
-| `SetOptimize 'off'` - the default                                            | `SetOptimize 'on'`                                                     |
-| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| <img src="examples/optimize-off.gif" width="330px" alt="Unoptimized render"> | <img src="examples/optimize.gif" width="330px" alt="Optimized render"> |
-| 193,964 bytes                                                                | 164,541 bytes, identical frames                                        |
-
-How much it saves depends on the recording - long, scrolling ones gain the
-most.
-
-For a `.webp` output the same setting switches the encoder to its slowest
-lossless effort instead, typically a few per cent smaller for several times
-the encoding time - same frames, same timing, no extra dependency.
-
-For an `.mp4` it hands the encoder its slowest preset at the same quality
-setting: a tenth to a fifth smaller for roughly twice the encoding time. An
-MP4 is re-encoded rather than repacked, so unlike GIF and WebP its pixels are
-not identical - the [measured](doc/ENCODING.md#8-optimization-presets) quality
-stays within about a tenth of a decibel of the unoptimized encode, in either
-direction.
-
-### Dependency
-
-GIF optimization needs `gifsicle`. Without it, `Render` leaves GIFs
-unoptimized and reports the skipped pass; WebP and MP4 optimization only needs
-the `ffmpeg` they already render with.
-
-- **macOS**
-  ```bash
-  brew install gifsicle
-  ```
-
-- **Linux**
-  ```bash
-  sudo pacman -S gifsicle
-  ```
-
-### Other Ways
-
-Reduce what the renderer has to encode before optimizing it:
-
-| Approach              | Setting                                                                                    | Trade-off                                                                                            |
-| --------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| Render fewer pixels   | Choose the smallest useful `SetCols`, `SetRows` and `SetFontSize`                          | Less terminal space or smaller text; a large GIF scaled down in HTML is sharper but costs more bytes |
-| Render fewer frames   | Lower `SetFramerate`, for example from `30` to `15` or `10`                                | Fast typing and motion look less smooth                                                              |
-| Shorten inactive gaps | Lower `SetIdleTimeLimit`, for example from `5` to `1`                                      | Long pauses play back faster; the retained `.cast` keeps its original timing                         |
-| Record less activity  | Put setup and noisy intermediate commands between `Hide` and `Show`, or use `RunOffRecord` | Hidden activity does not appear in the recording                                                     |
-
-> [!TIP]
-> These reductions can save more than a post-processing pass. Keep the highest
-> values the recording actually needs, then use `SetOptimize 'on'` for additional
-> savings.
-
 ## Documentation
 
 - For the full list of commands and settings, see [REFERENCE.md](doc/REFERENCE.md).
 
 - For debugging a recording script, see [DEBUG.md](doc/DEBUG.md).
+
+- For smaller output files and per-format optimization trade-offs, see
+  [OPTIMIZATION.md](doc/OPTIMIZATION.md).
 
 - For the agent skill with recording best practices, see
   [SKILL.md](skills/s-vhs-recording/SKILL.md). Install it with

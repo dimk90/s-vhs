@@ -175,7 +175,7 @@
 - [ ] WebM output:
   - GIF to WebM conversion via `ffmpeg`.
   - Full chroma (4:4:4 chroma)?
-  - Choose codec and parameters which are best fit for terminal recording content.
+  - Choose codec and parameters (contract) which are best fit for terminal recording content.
   - Update README output format section and install instruction for webp format.
 
 - [ ] Update `SetOptimize` for WebM video:
@@ -186,7 +186,7 @@
   - Add email to support matrix
   - Add PowerPoint to support section.
 
-- [ ] Move `SetOptimize` out of README to separate file
+- [x] Move `SetOptimize` out of README to separate file
   - Improve structure - per format description of the trade-off.
   - Add link to README documentation section.
 
@@ -194,3 +194,7 @@
   - use `logo` as example example.
   - SetOptimize on/off
   - Quality drop for video.
+
+- [ ] Show time or some spinner during recording.
+
+- [ ] Merge installation instructions for `WebM / WebP / MP4`
