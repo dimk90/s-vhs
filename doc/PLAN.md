@@ -173,10 +173,41 @@
     47 MB GIF.
 
 - [ ] WebM output:
-  - GIF to WebM conversion via `ffmpeg`.
-  - Full chroma (4:4:4 chroma)?
-  - Choose codec and parameters (contract) which are best fit for terminal recording content.
-  - Update README output format section and install instruction for webp format.
+  - Scope: `.cast` -> the shared `agg` GIF -> WebM via `ffmpeg`; research
+    does not add runtime support. `SetOptimize` remains the separate item below.
+  - [x] Measure codec, chroma, quality, effort, screen-content tuning, GOP,
+    seeking, geometry and timing:
+    - `doc/ENCODING.md`, sections 9–14; reproduce with
+      `scripts/encoding-bench.sh --webm [work-dir]`. Timing/version checks
+      alone use `--webm-timing`; keep the modern probe on PATH.
+    - libaom-AV1 is the leading measured encoder; SVT-AV1 loses final holds
+      and VP9's size changes sharply across builds (sections 9 and 13).
+    - `tune-content=screen` is a small, consistent saving at equal PSNR and
+      keeps sizes steady across efforts (section 11).
+    - Proposed floor: FFmpeg 6.1, from the timing checks (section 13).
+    - Odd dimensions need no padding; keep the explicit BT.601 limited /
+      sRGB tags and the one-pass GIF timeline (sections 12 and 13).
+    - Keyframe policy is open: the default gives one keyframe per recording,
+      `-g 250` bounds seeking for more bytes. `-cues_to_front` costs no bytes
+      but its startup effect is unmeasured (section 12).
+    - No lossless mode: matching files cost more than GIF, and libaom at
+      cpu-used 5 needs its alt-ref filter off to be bit-exact (section 10).
+  - [ ] Complete the playback gate and select the final contract:
+    - `<work-dir>/playback-webm/index.html` has the samples listed in
+      section 14. Chrome/Firefox results are pending; do not infer AV1
+      High-profile support from WebM support alone.
+    - Proposed encoder/effort: `libaom-av1 -b:v 0 -row-mt 1 -cpu-used 5
+      -aom-params tune-content=screen`. Decide 4:4:4 High versus 4:2:0 Main
+      from playback/decoding cost, CRF 32 versus the more conservative CRF 24
+      from native-sized text, and the keyframe policy from browser seeking.
+      Revalidate the exact approved pipeline before calling the contract settled.
+  - [ ] Integrate the approved contract into output routing, dependency/version
+    checks, geometry, skipped-setting reports and cleanup; preserve the single
+    shared full-recording GIF for mixed outputs.
+  - [ ] Verify real recordings, mixed formats, failure paths and Bash 3.2;
+    inspect and replay every requested output.
+  - [ ] Update README WebM output/install instructions, reference, pipeline docs
+    and the changelog when runtime support lands.
 
 - [ ] Update `SetOptimize` for WebM video:
   - Is there any space for optimization without quality loss?

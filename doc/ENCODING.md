@@ -1,15 +1,15 @@
 # Encoding Measurements
 
-Measurements behind the selected MP4 encoding contract. Raster transcodes
-receive one shared `agg` GIF, so decoded GIF pixels are the reference for
-encoder damage. This does not measure colour or detail already lost when
-rendering the cast to GIF.
+Measurements behind the selected MP4 contract and the proposed WebM contract
+(section 9 onward). Raster transcodes receive one shared `agg` GIF, so decoded
+GIF pixels are the reference for encoder damage. This does not measure colour
+or detail already lost when rendering the cast to GIF.
 
 ## Reproducing the numbers
 
 ```bash
-scripts/encoding-bench.sh [--timing] [work-dir]  # default work dir:
-                                                 # /tmp/s-vhs-encoding-bench
+scripts/encoding-bench.sh [--timing|--presets|--webm|--webm-timing] [work-dir]
+# default work dir: /tmp/s-vhs-encoding-bench
 ```
 
 The script records `scripts/stress.rec.sh` if the work directory has no stress
@@ -20,7 +20,22 @@ Put only `ffmpeg` there: frame `duration_time` reaches `ffprobe` in 6.1, so an
 older probe reports no durations at all, and holding the probe constant keeps
 the encoder the only variable.
 
-These results use ffmpeg n8.1.2, x264 core 165 r3222 b35605a, x265 4.2 and
+`--webm` runs the WebM matrix, the quality, speed, chroma and screen-content
+ladders, the GOP, seeking, geometry and timing checks, then writes
+`playback-webm/index.html`. It needs `libx264` for the reference, plus
+`libvpx-vp9`, `libaom-av1` and `libsvtav1`.
+`--webm-timing` needs only VP9 and libaom; it skips SVT rows when unavailable.
+Its libaom candidates must meet the timing bound; a failing older build stops
+at the first rejected input. The full run includes both containers.
+Use a persistent work directory to retain the exact GIF and reports across
+reboots; re-recordings are not byte-comparable. Encoder logs are saved beside
+each output. Capture the table output separately, for example:
+
+```bash
+scripts/encoding-bench.sh --webm "$HOME/s-vhs-bench" >"$HOME/webm.log" 2>&1
+```
+
+The MP4 tables use ffmpeg n8.1.2, x264 core 165 r3222 b35605a, x265 4.2 and
 SVT-AV1 v4.1.0-dirty on an Intel i7-8650U. Encoding times are single wall-clock
 observations, not repeated medians or portable speed guarantees.
 
@@ -410,3 +425,348 @@ These are the selected settings for MP4 implementation:
 
 - **No lossless MP4 mode:** tested RGB lossless costs 174 % of stress GIF and
   fails in both tested browsers; WebP already covers lossless raster output.
+
+## 9. WebM: codec and chroma candidates
+
+This round uses a **new stress GIF**: 1224x696, 220 frames, 28.70 s,
+451 846 B (`cksum` CRC 3175447635). The unchanged logo is 899x480,
+118 frames, 13.72 s, 33 196 B (CRC 126015574). The MP4 reference is re-encoded
+from these same GIFs; do not compare stress byte counts with sections 1–8.
+The machine is still an i7-8650U. Builds: FFmpeg n8.1.2, libvpx 1.16.0,
+libaom 3.14.1, SVT-AV1 v4.1.0-dirty.
+
+All candidates use one GIF pass, centisecond passthrough VFR and no audio.
+YUV uses the explicit BT.601 limited/sRGB pipeline from the MP4 contract;
+4:2:0 rows pad to even dimensions for comparison, 4:4:4/RGB do not.
+VP9 uses `-b:v 0 -row-mt 1` and its default good deadline/cpu-used 1.
+libaom uses `-b:v 0 -row-mt 1 -cpu-used 5`, SVT preset 6. These are
+single-pass quality probes, **not matched-quality codec rankings**. In
+particular, equal CRF numbers do not mean equal quality across encoders.
+
+| Configuration                       | Stress bytes | RGB PSNR | Logo bytes | RGB PSNR |
+| ----------------------------------- | -----------: | -------: | ---------: | -------: |
+| Shipped H.264 contract              |      346 780 |    38.93 |     29 305 |    47.62 |
+| VP9 4:2:0 CRF 28                    |      837 001 |    38.50 |     36 257 |    47.79 |
+| VP9 4:2:0 CRF 32                    |      755 367 |    38.16 |     33 583 |    46.76 |
+| VP9 4:4:4 CRF 32                    |      960 838 |    45.50 |     36 966 |    48.78 |
+| SVT-AV1 4:2:0 CRF 32 (timing fails) |      332 316 |    38.93 |     24 086 |    49.29 |
+| libaom AV1 4:2:0 CRF 24             |      136 334 |    38.96 |     17 917 |    49.68 |
+| libaom AV1 4:2:0 CRF 32             |      113 661 |    38.77 |     17 099 |    49.15 |
+| libaom AV1 4:4:4 CRF 32             |      131 872 |    48.80 |     17 386 |    52.93 |
+
+libaom is the leading encoder in this build: its CRF 24 4:2:0 output costs
+**39 % of the MP4 bytes** on stress and 61 % on the logo, with slightly higher
+RGB PSNR on stress and 2.06 dB higher on the logo. CRF 32 cuts stress to 33 %
+of MP4 bytes at 0.16 dB lower PSNR. These are percentages of MP4, not GIF.
+SVT-AV1's attractive pixel scores do not qualify its shortened files for use
+(section 13).
+
+**Do not generalize the poor VP9 result to all versions.** The version probes
+produced 217 026 B for stress and 18 080 B for the logo under the 7.0.2 static
+build, versus 755 367/33 583 B here, with correct timing in both. Those builds
+change the codec libraries as well as FFmpeg; quality was not remeasured, so
+neither a regression diagnosis nor a cross-version codec ranking is established.
+VP9's `-tune-content screen` produced the same sizes and scores as its default
+in this round; two-pass VP9 and broader VP9 tuning remain unmeasured. libaom's
+screen-content tuning does change its output (section 11).
+
+## 10. WebM: quality and full chroma
+
+libaom, cpu-used 5, same explicit colour pipeline. The codec PSNR column
+compares against a **hash-verified codec-lossless 4:2:0 reference**, not RGB
+lossless. That conversion reference scores 39.12 dB on stress and 50.12 dB
+on the logo. Whole-frame scores still conceal local glyph damage.
+
+| CRF | Stress bytes | vs GIF PSNR | vs 4:2:0 PSNR | Logo bytes | vs GIF PSNR | vs 4:2:0 PSNR |
+| --- | -----------: | ----------: | ------------: | ---------: | ----------: | ------------: |
+| 24  |      136 334 |       38.96 |         52.78 |     17 917 |       49.68 |         59.23 |
+| 28  |      120 717 |       38.88 |         51.11 |     17 299 |       49.37 |         57.17 |
+| 32  |      113 661 |       38.77 |         49.42 |     17 099 |       49.15 |         55.81 |
+| 36  |      100 816 |       38.63 |         47.93 |     16 346 |       48.97 |         54.54 |
+| 40  |       92 867 |       38.38 |         46.19 |     16 423 |       48.48 |         53.12 |
+
+Full chroma removes the dominant subsampling damage without removing RGB/YUV
+conversion or codec damage. AV1 calls this **High profile** (profile 1), not
+H.264's High profile. This build of SVT-AV1 exposes only 4:2:0 pixel formats;
+the AV1 4:4:4 measurements use libaom, which actually decodes as `yuv444p`.
+
+| CRF | Stress 4:2:0 bytes / PSNR | Stress 4:4:4 bytes / PSNR | Logo 4:2:0 bytes / PSNR | Logo 4:4:4 bytes / PSNR |
+| --- | ------------------------- | ------------------------- | ----------------------- | ----------------------- |
+| 24  | 136 334 / 38.96           | 160 574 / 50.70           | 17 917 / 49.68          | 18 756 / 53.32          |
+| 28  | 120 717 / 38.88           | 140 772 / 49.77           | 17 299 / 49.37          | 17 776 / 53.17          |
+| 32  | 113 661 / 38.77           | 131 872 / 48.80           | 17 099 / 49.15          | 17 386 / 52.93          |
+| 36  | 100 816 / 38.63           | 115 484 / 47.53           | 16 346 / 48.97          | 17 048 / 52.57          |
+
+At CRF 32, 4:4:4 costs **16 % more** on stress and 2 % on the logo, gaining
+10.03/3.78 dB. Its worst-frame stress PSNR is 43.19 dB, not the 48.80 dB
+average. At CRF 24 those figures improve to 46.15/50.70 dB for 22 % more
+bytes than CRF 32 4:4:4. CRF 32 is the size-oriented candidate and CRF 24 the
+more conservative quality candidate; neither is proved visually transparent.
+**Playback, software-decoding cost and native-resolution text inspection must
+settle the profile/CRF decision**, not these scores alone.
+
+### Requested lossless modes
+
+| Configuration                                    | Stress bytes | Logo bytes | RGB frame hashes                  |
+| ------------------------------------------------ | -----------: | ---------: | --------------------------------- |
+| VP9 YUV 4:4:4 lossless                           |    2 147 114 |     58 946 | Not RGB-exact; conversion remains |
+| VP9 RGB lossless                                 |    3 401 803 |     92 404 | Match both GIFs                   |
+| libaom YUV 4:4:4, `lossless=1`, cpu-used 5       |      673 262 |     38 535 | Not RGB-exact                     |
+| libaom RGB, `lossless=1`, cpu-used 5             |    1 066 701 |     63 814 | **Differ on both GIFs**           |
+| libaom RGB, `lossless=1`, cpu-used 5, no filter  |    1 077 883 |     62 364 | Match both GIFs                   |
+| libaom RGB, `lossless=1`, cpu-used 6             |    1 058 802 |     65 242 | Match both GIFs                   |
+
+The cpu-used 5 RGB probe scores 86.94/93.29 dB and rounds to SSIM 1.000000,
+but fails per-frame RGB hashes. On stress, 16 of 220 frames differ, nearly all
+at multiples of 8. libdav1d and libaom's own decoder return the same pixels,
+so the stream itself is not lossless. Turning off the alt-ref temporal filter
+(`-arnr-strength 0`, the "no filter" row), with nothing else changed, makes
+cpu-used 5 bit-exact on both GIFs: in this build, the requested lossless mode
+still shows filtered alt-ref frames. The benchmark reports the default
+mismatch without accepting it as lossless; hashing/decoding errors still fail
+the run. The matching libaom files cost 188–239 % of GIF and VP9's 278–753 %,
+so lossless WebM is not the size winner here.
+RGB probes carry `gbr`/full-range tags but unknown primaries/transfer; they
+are pixel-exact experiments, not colour-managed playback validation.
+
+## 11. WebM: encoding effort
+
+libaom, CRF 32, 4:2:0. One speed sweep; seconds are single observations.
+Later reruns varied substantially (for example, stress cpu-used 5 took
+9–25 s), so these are not reliable throughput guarantees or repeated medians.
+
+| cpu-used | Stress bytes |  PSNR |    Time | Logo bytes |  PSNR |   Time |
+| -------- | -----------: | ----: | ------: | ---------: | ----: | -----: |
+| 6        |      148 378 | 38.67 |   7.5 s |     22 145 | 48.75 |  3.0 s |
+| 5        |      113 661 | 38.77 |  11.1 s |     17 099 | 49.15 |  4.0 s |
+| 4        |      167 327 | 38.89 |  22.2 s |     17 199 | 49.38 |  7.8 s |
+| 3        |      162 059 | 38.90 |  43.9 s |     16 646 | 49.35 |  9.3 s |
+| 2        |      142 616 | 38.92 |  96.8 s |     12 313 | 49.51 | 14.2 s |
+| 1        |      143 189 | 38.95 | 143.1 s |     15 432 | 49.30 | 30.8 s |
+
+CPU-used 5 saves about 23 % against 6 on both inputs while scoring higher,
+for roughly 1.3–1.5x the time in this sweep. It is the proposed base effort.
+Lower numbers do **not** guarantee smaller files: cpu-used 2 improves the
+logo substantially but makes stress 25 % larger than 5. Equal CRF does not
+hold reconstruction fixed. There is no selected `SetOptimize` mapping from
+this table; that remains a separate task, especially if 4:4:4 becomes the
+default. Good-quality usage accepts cpu-used 0..6 only: an earlier cpu-used 8
+row was byte-identical to 6. CPU-used 0 was not measured.
+
+### Screen-content tuning
+
+libaom decides on its own whether a frame is screen content, which enables
+its palette and intra block copy tools. `-aom-params tune-content=screen`
+forces that decision. CRF 32, same pipeline; bytes / RGB PSNR:
+
+| Configuration      | Stress default   | Stress screen    | Logo default    | Logo screen     |
+| ------------------ | ---------------- | ---------------- | --------------- | --------------- |
+| 4:2:0, cpu-used 6  | 148 378 / 38.67  | 111 483 / 38.75  | 22 145 / 48.75  | 16 514 / 49.09  |
+| 4:2:0, cpu-used 5  | 113 661 / 38.77  | 110 450 / 38.77  | 17 099 / 49.15  | 16 136 / 49.12  |
+| 4:2:0, cpu-used 4  | 167 327 / 38.89  | 115 881 / 38.84  | 17 199 / 49.38  | 17 157 / 49.34  |
+| 4:4:4, cpu-used 5  | 131 872 / 48.80  | 124 073 / 48.76  | 17 386 / 52.93  | 17 375 / 52.93  |
+
+- **Forcing it removes most of the effort-dependent swings.** Default stress
+  sizes range from 113 661 to 167 327 B across cpu-used 4–6; tuned, from
+  110 450 to 115 881 B. This fits the encoder reaching a different
+  screen-content decision at different efforts; the decision itself was not
+  observed.
+
+- **At cpu-used 5 it is a small, consistent saving:** 2.8 % on stress and
+  5.6 % on the logo in 4:2:0, 5.9 % and 0.1 % in 4:4:4, with average PSNR
+  within 0.04 dB. The 4:4:4 stress worst frame improves from 43.19 to
+  44.24 dB. These are two clips at one CRF, not a general guarantee.
+
+- **Time:** four reruns at cpu-used 5 took 10.1–13.9 s on stress, against
+  9.0–11.6 s untuned. A first observation of 80.9 s did not reproduce.
+
+- `screen-detection-mode=2`, the detector meant for anti-aliased text, left
+  cpu-used 5 and 6 byte-identical to the default and saved 4 % on stress at
+  cpu-used 4. It is not proposed.
+
+## 12. WebM: GOP, seeking and geometry
+
+libaom, cpu-used 5, CRF 32, 4:2:0, stress. The counts are key-marked packets.
+They equal the decoded keyframes in every file here, and in the H.264 files of
+section 3, where they also match `ffprobe -skip_frame nokey`; that option did
+not filter VP9.
+
+| Policy            |     Bytes | vs default | Keyframes |
+| ----------------- | --------: | ---------: | --------: |
+| Encoder defaults  |   113 661 |      100 % |         1 |
+| `-g 120`          |   209 245 |      184 % |         3 |
+| `-g 60`           |   287 324 |      253 % |         5 |
+| Force every 10 s  |   298 180 |      262 % |         6 |
+| `-g 30`           |   448 315 |      394 % |         9 |
+| Force every 5 s   |   522 530 |      460 % |        13 |
+| `-g 15`           |   690 234 |      607 % |        16 |
+| `-usage allintra` | 2 692 572 |     2369 % |       220 |
+
+The force expressions do not produce one keyframe per requested interval:
+every 10 s gives keyframes at 0.00/0.19, 12.96/13.01 and 20.07/20.12 s, in
+pairs on consecutive frames. These are measured counts, not a guaranteed seek
+cadence. The local libaom/FFmpeg pipeline crashed with `-g 1` and `-g 2`; the
+all-intra row uses the successful `-usage allintra` probe instead, which also
+changes encoding mode.
+
+### Seeking on a longer recording
+
+libaom's default maximum keyframe interval is 9999 frames, against x264's 250,
+so no clip of 250 frames or fewer can tell them apart. This probe loops stress
+three times into one GIF: 660 frames, 86.10 s. It is quantized to one shared
+256-colour palette, so its pixels and bytes are not comparable with stress.
+The seek time is ffmpeg (libdav1d) seeking to and decoding the last frame,
+single observations from two runs:
+
+| Policy           |   Bytes | vs default | Keyframes | Longest interval    | Seek to last frame |
+| ---------------- | ------: | ---------: | --------: | ------------------- | -----------------: |
+| Encoder defaults | 318 903 |      100 % |         1 | 660 frames, 86.10 s |        1.37–1.43 s |
+| `-g 250`         | 409 578 |      128 % |         4 | 250 frames, 33.17 s |        0.18–0.20 s |
+
+With the default, a recording usually has a single keyframe, and every seek
+decodes from the start: the cost grows with the recording's length. `-g 250`
+bounds it the way the MP4 contract does, for 28 % more bytes here and no
+extra keyframe on a clip of 250 frames or fewer. Browser seeking was not
+measured, so the keyframe policy stays open for the playback gate.
+
+Remuxing the default file with and without `-cues_to_front 1` gives 318 428 B
+both ways: moving the seek index (Cues) to the front costs no bytes here. A
+WebM player needs the Cues only to seek, while an MP4 player needs `moov`
+before the first frame, so this is not an equivalent of faststart by default.
+Its effect on startup over a network was not measured; muxer defaults stay.
+
+Unlike the shipped H.264 path, **both tested WebM codecs accept odd 4:2:0
+dimensions**. The unpadded logo remains 899x480: VP9 CRF 32 is 33 733 B at
+46.83 dB; libaom cpu-used 5 CRF 32 is 17 259 B at 49.07 dB. Padding changes
+boundary filtering and rate control, so the padded logo tables do not describe
+the exact unpadded candidate. AV1 High/4:4:4 already keeps the source geometry.
+The timing checks also cover unpadded 65x33 fixtures; no resizing or cropping
+is needed for the proposed WebM path.
+
+## 13. WebM: timing and version floor
+
+The same 1 ms bound applies to every PTS, decoded sample duration and container
+end, with no duplicated or dropped frames. Current-build libaom cpu-used 5
+passes for padded 4:2:0, native-sized 4:2:0 and native-sized 4:4:4, all at
+CRF 32, and for both native-sized formats with `tune-content=screen`. VP9 also
+passes. SVT-AV1 preset 6 keeps PTS but substitutes nominal sample durations
+and loses the final hold:
+
+| Input          | Frames | Reference end | Final hold | libaom / VP9 max PTS & duration error | SVT final sample | SVT file end |
+| -------------- | -----: | ------------: | ---------: | ------------------------------------: | ---------------: | -----------: |
+| stress         |    220 |       28.70 s |     3.00 s |                                  0 ms |          0.050 s |     25.750 s |
+| logo           |    118 |       13.72 s |     8.00 s |                                  0 ms |          0.010 s |      5.730 s |
+| delays         |      5 |        9.07 s |     3.00 s |                                  0 ms |          0.018 s |      6.089 s |
+| single         |      1 |        3.21 s |     3.21 s |                                  0 ms |          0.010 s |      0.010 s |
+| slowed         |      5 |       18.14 s |     6.00 s |                                  0 ms |          0.010 s |     12.150 s |
+| zero-delay GIF |      1 |        0.10 s |     0.10 s |                                  0 ms |          0.010 s |      0.010 s |
+
+libaom/VP9 container ends also match exactly. The zero-delay row compares
+against FFmpeg's normalized GIF decode, not a hypothetical zero-length video.
+SVT's `pred-struct=1:lookahead=0` does not fix its timing in this build.
+libaom `-lag-in-frames 0` passes timing but changes pixels: the earlier
+cpu-used 6 logo probe fell from 48.75 to 46.10 dB, and stress from 38.67 to
+37.21 dB. Do not disable lookahead just because it saves bytes. No H.264
+`-bf 0` option is carried into this WebM candidate.
+
+Version runs used **only the encoder executable** from each older build on
+PATH, keeping n8.1.2 `ffprobe`. Initial libaom probes used cpu-used 6, CRF 32
+and padded 4:2:0:
+
+| FFmpeg build    | Stress final sample | Stress file end | Coverage / verdict      |
+| --------------- | ------------------: | --------------: | ----------------------- |
+| 5.1.1 static    |             0.012 s |        25.713 s | FAIL; stopped at stress |
+| 6.0.1 static    |             0.012 s |        25.710 s | FAIL; stopped at stress |
+| n6.1.3-20250831 |             3.000 s |        28.700 s | PASS, all six inputs    |
+| 7.0.2 static    |             3.000 s |        28.700 s | PASS, all six inputs    |
+| n8.1.2          |             3.000 s |        28.700 s | PASS, all six inputs    |
+
+The proposed floor is **FFmpeg 6.1**, as for MP4; 6.1.0 itself was not tested.
+The 6.1.3 and 7.0.2 builds were additionally checked at cpu-used 5 for all six
+inputs in padded 4:2:0, native-sized 4:2:0 and 4:4:4, and in both native-sized
+formats with `tune-content=screen`: all pass. Their libaom versions are 3.12.1
+and 3.2.0; both accept the screen tuning, which saved 3.1 % and 0.1 % on native
+4:2:0 stress there. Pixel quality, compression and browser decoding were not
+version-qualified. The static 5.1.1, 6.0.1 and 7.0.2 builds came from
+[John Van Sickle](https://johnvansickle.com/ffmpeg/old-releases/);
+[6.1.3 came from BtbN](https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2025-08-31-13-00).
+They contain different codec-library versions, not an isolated FFmpeg-only
+experiment.
+
+## 14. WebM: playback gate
+
+`<work-dir>/playback-webm/index.html` contains the actual measured encodes: the
+stress clip for samples a–l, the 899x480 logo for m and n. **No WebM
+browser/player results have been reported yet.** Successful FFmpeg decoding is
+not a browser compatibility result, and WebM support alone does not establish
+AV1 support or support for its High profile.
+
+| Sample | Encoding                                                     | Playback status |
+| ------ | ------------------------------------------------------------ | --------------- |
+| a      | VP9 4:2:0 CRF 32                                             | Pending         |
+| b      | VP9 4:4:4 CRF 32                                             | Pending         |
+| c      | VP9 YUV 4:4:4 lossless                                       | Pending         |
+| d      | VP9 RGB lossless, hash-verified                              | Pending         |
+| e      | libaom AV1 4:2:0 CRF 32, cpu-used 5                          | Pending         |
+| f      | libaom AV1 4:4:4 CRF 32, cpu-used 5                          | Pending         |
+| g      | libaom AV1 RGB lossless, cpu-used 6, hash-verified           | Pending         |
+| h      | Shipped H.264 contract, same GIF                             | Reference       |
+| i      | libaom AV1 4:2:0 CRF 24, cpu-used 5                          | Pending         |
+| j      | libaom AV1 4:4:4 CRF 24, cpu-used 5                          | Pending         |
+| k      | libaom AV1 4:2:0 CRF 32, cpu-used 5, `tune-content=screen`   | Pending         |
+| l      | libaom AV1 4:4:4 CRF 32, cpu-used 5, `tune-content=screen`   | Pending         |
+| m      | libaom AV1 4:2:0 CRF 32, cpu-used 5, logo at odd 899x480     | Pending         |
+| n      | libaom AV1 4:4:4 CRF 32, cpu-used 5, logo at odd 899x480     | Pending         |
+
+Record browser/player version, OS, hardware decoding setting, whether each
+sample plays, small coloured glyphs/neutral greys, seek response and final hold.
+Compare e/i and f/j for CRF, k/l for chroma with the proposed tuning (e/f
+without it), and m/n for the odd size.
+Check Chrome and Firefox first; Safari/mobile and other target players remain
+separate checks. Profile support, display colour and decoding cost must be
+observed, not inferred from the pixel scores.
+
+## The proposed WebM contract
+
+**Research proposal, not an implemented or finally selected output contract.**
+
+- **Encoder:** prefer `libaom-av1`, single-pass unconstrained quality
+  (`-b:v 0`), `-row-mt 1 -cpu-used 5 -aom-params tune-content=screen`, default
+  good-quality usage. At cpu-used 5, screen tuning saved 0.1–5.9 % at equal
+  PSNR, and it keeps sizes steady across efforts (section 11). SVT-AV1 is rejected for timeline
+  loss in the tested build; VP9 remains a compatibility alternative, not a
+  universally inferior codec.
+- **Profile/quality:** compare native-sized 8-bit `yuv444p` (AV1 High) with
+  `yuv420p` (Main). CRF 32 is the measured size-oriented candidate; CRF 24
+  retains more detail. The CRF and chroma tables were measured without screen
+  tuning; revalidate at the chosen CRF. Prefer full chroma for terminal text
+  **if the selected players and decoding-cost checks permit it**. Final
+  profile/CRF needs approval after playback; no new public setter is selected
+  by this research.
+- **Input/timing:** `-ignore_loop 1 -min_delay 0`,
+  `-fps_mode passthrough -enc_time_base 1:100`, no second application of
+  recording speed/holds, no CFR conversion. Keep default lookahead. Require
+  frame count, PTS, sample durations and container end within 1 ms.
+- **Keyframes:** open. The encoder default gives one keyframe per recording
+  and the smallest files; `-g 250` bounds seeking like the MP4 contract, for
+  28 % more bytes on an 86 s clip (section 12). Decide after browser seeking.
+- **Geometry/colour:** keep original dimensions, including odd sizes. Convert
+  with `scale=out_color_matrix=bt601:out_range=tv:flags=full_chroma_int+accurate_rnd`,
+  then the approved YUV format. Preserve the sRGB transfer curve; tag matrix
+  `smpte170m`, primaries `bt709`, transfer `iec61966-2-1`, range `tv`.
+  Those YUV tags survive WebM probing; display interpretation remains
+  unverified.
+- **Container:** seekable WebM file, `-an`, no MP4 `-movflags +faststart`.
+  `-cues_to_front 1` costs no bytes but its startup effect is unmeasured, so
+  leave it, AV1 level selection and the other muxer defaults alone. Looping
+  belongs to the player.
+- **Encoding time:** much slower than the MP4 contract. On the 28.7 s stress
+  clip, libaom took 9–25 s for 4:2:0 and 11–57 s for 4:4:4 across runs,
+  the H.264 contract 1–6 s. An encode can take longer than the recording.
+- **Toolchain:** proposed FFmpeg 6.1+ with the approved encoder. Revalidate the
+  exact final profile/CRF pipeline before implementation, including geometry
+  reporting and early missing-encoder/version errors.
+- **Lossless/optimization:** no lossless output mode or `SetOptimize` mapping
+  selected. The measured lossless files are large, and libaom at cpu-used 5
+  needs `-arnr-strength 0` to be bit-exact. Keep the separate optimization
+  task open.
