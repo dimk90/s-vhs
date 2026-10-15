@@ -205,13 +205,69 @@
     - Revalidated with the FFmpeg 6.1.3, 7.0.2 and 8.1.2 encoders: timing,
       odd geometry and faint text on holds. Safari, mobile and browser
       seeking on long recordings remain unchecked.
-  - [ ] Integrate the approved contract into output routing, dependency/version
-    checks, geometry, skipped-setting reports and cleanup; preserve the single
-    shared full-recording GIF for mixed outputs.
-  - [ ] Verify real recordings, mixed formats, failure paths and Bash 3.2;
-    inspect and replay every requested output.
-  - [ ] Update README WebM output/install instructions, reference, pipeline docs
-    and the changelog when runtime support lands.
+  - [ ] Integrate the approved contract into `s-vhs.sh`. Settled behavior, to
+    implement as written; everything not listed matches MP4:
+    - Accept `.webm` in `SetOutput`; route it through `Render` and
+      `_svhs_render_raster` to a new `_svhs_encode_webm`, reusing
+      `_svhs_render_shared_gif` unchanged - one full-recording GIF for GIF,
+      WebP, MP4 and WebM outputs in any order.
+    - Encode with exactly the contract's options. Split `_SVHS_MP4_FILTERS`
+      into the `pad` step and a colour chain shared by both video formats;
+      WebM uses the colour chain alone, and the MP4 filter string stays
+      byte-for-byte the same.
+    - `_svhs_require_dependencies`: `agg` and `ffmpeg` for WebM, and
+      `libaom-av1` checked in the same single encoder listing as
+      `libwebp_anim` and `libx264`. The 6.1 floor covers both video formats:
+      rename `_SVHS_MP4_MIN_FFMPEG` to a shared constant, check the version
+      once, and name the first requested video format in the error and the
+      unknown-version warning.
+    - Geometry: `::: WebM: ... -> W x H px` at the probed GIF size, no
+      rounding to even; a failed probe stays a `~` estimate.
+    - Skips under a `WebM output` label: the existing raster lines, `SetLoop`
+      only when called explicitly (the player decides, as for MP4), and
+      `SetOptimize on` until the WebM optimization item below lands.
+      `SetLastFrameDuration` and every other setting reaching the shared GIF
+      apply unchanged.
+    - Progress: `_svhs_report_encode_progress` with the percentage, as for
+      MP4 - checked: libaom reports `out_time`, `N/A` before the first frame.
+      No extra message for the slow encode; the live line covers it.
+    - Update the docstrings that list formats: file header, `SetOutput`,
+      `SetLoop`, `SetOptimize`, `SetLastFrameDuration` (it omits MP4 today),
+      `_svhs_render_raster`, `_svhs_report_raster_skips`,
+      `_svhs_render_shared_gif`. Keep Bash 3.2/BSD compatibility; no new
+      setter.
+  - [ ] Verify manually before ticking:
+    - `bash -n s-vhs.sh`, `shellcheck s-vhs.sh`; run a recording under Bash 3.2
+      and the development shell.
+    - Render WebM-only, two WebM paths, and all formats together in mixed
+      order: one shared GIF render, cast/text-only recordings need no
+      renderer. An MP4 from the same GIF is byte-identical before and after
+      the filter split.
+    - `ffprobe`: AV1 Main, `yuv420p`, the four colour tags, native odd size,
+      frame count, timestamps, sample durations and container end against the
+      GIF - single frame, long holds, custom final hold, playback speed.
+    - Failure paths: missing `ffmpeg`, missing `libaom-av1`, ffmpeg older
+      than 6.1 (a static 6.0.1 build on `PATH`), encoder-list and encode/write
+      failures, paths with spaces, quiet mode, skip lines, temporary-file
+      cleanup, no success line for a failed output.
+    - Replay in Chrome and Firefox.
+  - [ ] Document the implemented behavior:
+    - `README.md`: a `.webm` row in Output Formats; rename the install
+      section to `Renderer: WebP, MP4 and WebM` with the `libaom-av1`
+      requirement, and update its `#renderer-webp-and-mp4` links (README,
+      `doc/OPTIMIZATION.md`).
+    - `doc/REFERENCE.md`: `SetOutput` with a `[^webm]` footnote (lossy AV1
+      4:2:0, native size, 6.1 floor, slow encode, link to the contract), the
+      renderer list, WebM in every inherited setting's `Applies to`,
+      `SetLoop`, `SetOptimize` and `Render`; `[^mp4]` no longer calls MP4
+      the only lossy output.
+    - `doc/INTRO.md` pipeline sentence; a WebM note in `doc/OPTIMIZATION.md`;
+      drop "not yet implemented" from the WebM contract in `doc/ENCODING.md`.
+    - `skills/s-vhs-recording/SKILL.md`: compatibility, dependency table, the
+      version error row, and one line on `.webm` versus `.mp4` - about half
+      the bytes for browsers, against MP4's wider reach (Safari) and much
+      faster encode.
+    - One `### New` changelog line.
 
 - [ ] Update `SetOptimize` for WebM video:
   - Is there any space for optimization without quality loss?
@@ -226,7 +282,8 @@
   - Add link to README documentation section.
 
 - [ ] Add note about compression efficiency:
-  - use `logo` as example example.
+  - use `logo` as short example.
+  - use `stress.rec.sh` as long example.
   - SetOptimize on/off
   - Quality drop for video.
 
