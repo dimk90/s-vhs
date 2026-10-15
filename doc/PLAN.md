@@ -192,15 +192,19 @@
       but its startup effect is unmeasured (section 12).
     - No lossless mode: matching files cost more than GIF, and libaom at
       cpu-used 5 needs its alt-ref filter off to be bit-exact (section 10).
-  - [ ] Complete the playback gate and select the final contract:
-    - `<work-dir>/playback-webm/index.html` has the samples listed in
-      section 14. Chrome/Firefox results are pending; do not infer AV1
-      High-profile support from WebM support alone.
-    - Proposed encoder/effort: `libaom-av1 -b:v 0 -row-mt 1 -cpu-used 5
-      -aom-params tune-content=screen`. Decide 4:4:4 High versus 4:2:0 Main
-      from playback/decoding cost, CRF 32 versus the more conservative CRF 24
-      from native-sized text, and the keyframe policy from browser seeking.
-      Revalidate the exact approved pipeline before calling the contract settled.
+  - [x] Complete the playback gate and select the final contract
+    (`doc/ENCODING.md`, sections 14 and 15 and "The WebM contract"):
+    - Chrome and Firefox on Windows play, seek and hold every sample, 4:4:4
+      and the odd size included. Every lossy sample lost faint dark text on a
+      4 s hold: libaom's alt-ref temporal filter, invisible to frame-averaged
+      PSNR. `scripts/encoding-bench.sh --webm-holds` now measures it.
+    - Selected: `libaom-av1 -b:v 0 -row-mt 1 -cpu-used 5 -crf 20 -g 250
+      -arnr-strength 0 -aom-params tune-content=screen` in `yuv420p` (AV1
+      Main), for hardware decoding and Safari reach, although 4:4:4 looked
+      clearly better. 40 % of the MP4's bytes on stress, 62 % on the logo.
+    - Revalidated with the FFmpeg 6.1.3, 7.0.2 and 8.1.2 encoders: timing,
+      odd geometry and faint text on holds. Safari, mobile and browser
+      seeking on long recordings remain unchecked.
   - [ ] Integrate the approved contract into output routing, dependency/version
     checks, geometry, skipped-setting reports and cleanup; preserve the single
     shared full-recording GIF for mixed outputs.
@@ -228,4 +232,4 @@
 
 - [ ] Show time or some spinner during recording.
 
-- [ ] Merge installation instructions for `WebM / WebP / MP4`
+- [x] Merge installation instructions for `WebM / WebP / MP4`

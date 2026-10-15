@@ -1,14 +1,14 @@
 # Encoding Measurements
 
-Measurements behind the selected MP4 contract and the proposed WebM contract
-(section 9 onward). Raster transcodes receive one shared `agg` GIF, so decoded
+Measurements behind the selected MP4 and WebM contracts (WebM from section 9
+on). Raster transcodes receive one shared `agg` GIF, so decoded
 GIF pixels are the reference for encoder damage. This does not measure colour
 or detail already lost when rendering the cast to GIF.
 
 ## Reproducing the numbers
 
 ```bash
-scripts/encoding-bench.sh [--timing|--presets|--webm|--webm-timing] [work-dir]
+scripts/encoding-bench.sh [--timing|--presets|--webm|--webm-timing|--webm-holds] [work-dir]
 # default work dir: /tmp/s-vhs-encoding-bench
 ```
 
@@ -21,9 +21,11 @@ older probe reports no durations at all, and holding the probe constant keeps
 the encoder the only variable.
 
 `--webm` runs the WebM matrix, the quality, speed, chroma and screen-content
-ladders, the GOP, seeking, geometry and timing checks, then writes
-`playback-webm/index.html`. It needs `libx264` for the reference, plus
-`libvpx-vp9`, `libaom-av1` and `libsvtav1`.
+ladders, the GOP, seeking, geometry, timing and held-frame checks, then
+writes `playback-webm/index.html` and `playback-webm-holds/index.html`. It
+needs `libx264` for the reference, plus `libvpx-vp9`, `libaom-av1` and
+`libsvtav1`. `--webm-holds` runs the held-frame table and its bundle alone,
+with `libx264` and `libaom-av1`.
 `--webm-timing` needs only VP9 and libaom; it skips SVT rows when unavailable.
 Its libaom candidates must meet the timing bound; a failing older build stops
 at the first rejected input. The full run includes both containers.
@@ -61,7 +63,8 @@ observations, not repeated medians or portable speed guarantees.
   frame-index PSNR against the unduplicated GIF.
 
 - **Limits:** these are whole-frame, equally frame-weighted scores, not
-  duration-weighted scores or measurements confined to glyphs. Large flat
+  duration-weighted scores or measurements confined to glyphs. Section 15
+  shows the damage this missed and adds one held-frame check. Large flat
   backgrounds can conceal local text damage. RGB comparison does not apply a
   display transfer function or validate colour-managed browser appearance.
 
@@ -626,8 +629,8 @@ single observations from two runs:
 With the default, a recording usually has a single keyframe, and every seek
 decodes from the start: the cost grows with the recording's length. `-g 250`
 bounds it the way the MP4 contract does, for 28 % more bytes here and no
-extra keyframe on a clip of 250 frames or fewer. Browser seeking was not
-measured, so the keyframe policy stays open for the playback gate.
+extra keyframe on a clip of 250 frames or fewer. The selected contract takes
+`-g 250`, at 8 % with its own settings (section 15).
 
 Remuxing the default file with and without `-cues_to_front 1` gives 318 428 B
 both ways: moving the seek index (Cues) to the front costs no bytes here. A
@@ -641,7 +644,7 @@ dimensions**. The unpadded logo remains 899x480: VP9 CRF 32 is 33 733 B at
 boundary filtering and rate control, so the padded logo tables do not describe
 the exact unpadded candidate. AV1 High/4:4:4 already keeps the source geometry.
 The timing checks also cover unpadded 65x33 fixtures; no resizing or cropping
-is needed for the proposed WebM path.
+is needed for the selected WebM path.
 
 ## 13. WebM: timing and version floor
 
@@ -696,63 +699,158 @@ experiment.
 ## 14. WebM: playback gate
 
 `<work-dir>/playback-webm/index.html` contains the actual measured encodes: the
-stress clip for samples a–l, the 899x480 logo for m and n. **No WebM
-browser/player results have been reported yet.** Successful FFmpeg decoding is
-not a browser compatibility result, and WebM support alone does not establish
-AV1 support or support for its High profile.
+stress clip for samples a–l, the 899x480 logo for m and n. The checked bundle
+was rebuilt from a re-recorded stress GIF (450 120 B, 220 frames, 28.83 s,
+CRC 1147481604), so its stress sizes differ slightly from sections 9–13; the
+logo samples are unchanged.
 
-| Sample | Encoding                                                     | Playback status |
-| ------ | ------------------------------------------------------------ | --------------- |
-| a      | VP9 4:2:0 CRF 32                                             | Pending         |
-| b      | VP9 4:4:4 CRF 32                                             | Pending         |
-| c      | VP9 YUV 4:4:4 lossless                                       | Pending         |
-| d      | VP9 RGB lossless, hash-verified                              | Pending         |
-| e      | libaom AV1 4:2:0 CRF 32, cpu-used 5                          | Pending         |
-| f      | libaom AV1 4:4:4 CRF 32, cpu-used 5                          | Pending         |
-| g      | libaom AV1 RGB lossless, cpu-used 6, hash-verified           | Pending         |
-| h      | Shipped H.264 contract, same GIF                             | Reference       |
-| i      | libaom AV1 4:2:0 CRF 24, cpu-used 5                          | Pending         |
-| j      | libaom AV1 4:4:4 CRF 24, cpu-used 5                          | Pending         |
-| k      | libaom AV1 4:2:0 CRF 32, cpu-used 5, `tune-content=screen`   | Pending         |
-| l      | libaom AV1 4:4:4 CRF 32, cpu-used 5, `tune-content=screen`   | Pending         |
-| m      | libaom AV1 4:2:0 CRF 32, cpu-used 5, logo at odd 899x480     | Pending         |
-| n      | libaom AV1 4:4:4 CRF 32, cpu-used 5, logo at odd 899x480     | Pending         |
+Checked on 2026-10-15 in current stable Chrome and Firefox on Windows, with
+default hardware-decoding settings; exact versions were not recorded. Both
+browsers gave the same result for every sample. "Dark lines lost" means the
+faint text of section 15 is missing from the 4 s hold at 16.16 s.
 
-Record browser/player version, OS, hardware decoding setting, whether each
-sample plays, small coloured glyphs/neutral greys, seek response and final hold.
-Compare e/i and f/j for CRF, k/l for chroma with the proposed tuning (e/f
-without it), and m/n for the odd size.
-Check Chrome and Firefox first; Safari/mobile and other target players remain
-separate checks. Profile support, display colour and decoding cost must be
-observed, not inferred from the pixel scores.
+| Sample | Encoding                                                   | Playback status                                |
+| ------ | ---------------------------------------------------------- | ---------------------------------------------- |
+| a      | VP9 4:2:0 CRF 32                                           | Plays, seeks, full final hold; dark lines lost |
+| b      | VP9 4:4:4 CRF 32                                           | Plays, seeks, full final hold; dark lines lost |
+| c      | VP9 YUV 4:4:4 lossless                                     | Plays, seeks, full final hold                  |
+| d      | VP9 RGB lossless, hash-verified                            | Plays, seeks, full final hold                  |
+| e      | libaom AV1 4:2:0 CRF 32, cpu-used 5                        | Plays, seeks, full final hold; dark lines lost |
+| f      | libaom AV1 4:4:4 CRF 32, cpu-used 5                        | Plays, seeks, full final hold; dark lines lost |
+| g      | libaom AV1 RGB lossless, cpu-used 6, hash-verified         | Plays, seeks, full final hold                  |
+| h      | Shipped H.264 contract, same GIF                           | Reference; plays, seeks, full final hold       |
+| i      | libaom AV1 4:2:0 CRF 24, cpu-used 5                        | Plays, seeks, full final hold; dark lines lost |
+| j      | libaom AV1 4:4:4 CRF 24, cpu-used 5                        | Plays, seeks, full final hold; dark lines lost |
+| k      | libaom AV1 4:2:0 CRF 32, cpu-used 5, `tune-content=screen` | Plays, seeks, full final hold; dark lines lost |
+| l      | libaom AV1 4:4:4 CRF 32, cpu-used 5, `tune-content=screen` | Plays, seeks, full final hold; dark lines lost |
+| m      | libaom AV1 4:2:0 CRF 32, cpu-used 5, logo at odd 899x480   | Plays, seeks, full final hold                  |
+| n      | libaom AV1 4:4:4 CRF 32, cpu-used 5, logo at odd 899x480   | Plays, seeks, full final hold                  |
 
-## The proposed WebM contract
+Both browsers decode VP9 profile 1, AV1 High profile (4:4:4) and the odd-sized
+logo. The stress clip is too short to tell the keyframe policies apart, so
+these seeks do not decide it. Every lossy stress sample fails one visual check
+that no score had caught; section 15 measures and fixes it. Safari, mobile and
+other players remain unchecked.
 
-**Research proposal, not an implemented or finally selected output contract.**
+## 15. WebM: faint text on held frames
 
-- **Encoder:** prefer `libaom-av1`, single-pass unconstrained quality
-  (`-b:v 0`), `-row-mt 1 -cpu-used 5 -aom-params tune-content=screen`, default
-  good-quality usage. At cpu-used 5, screen tuning saved 0.1–5.9 % at equal
-  PSNR, and it keeps sizes steady across efforts (section 11). SVT-AV1 is rejected for timeline
-  loss in the tested build; VP9 remains a compatibility alternative, not a
-  universally inferior codec.
-- **Profile/quality:** compare native-sized 8-bit `yuv444p` (AV1 High) with
-  `yuv420p` (Main). CRF 32 is the measured size-oriented candidate; CRF 24
-  retains more detail. The CRF and chroma tables were measured without screen
-  tuning; revalidate at the chosen CRF. Prefer full chroma for terminal text
-  **if the selected players and decoding-cost checks permit it**. Final
-  profile/CRF needs approval after playback; no new public setter is selected
-  by this research.
+After its 400-line scroll, the stress clip holds one frame for 4 s, from 16.16
+to 20.16 s. Every eighth line on it is ANSI black, which the theme draws as
+dark grey on a dark background: faint in the GIF, but readable. Every lossy
+WebM in section 14 shows that frame without those lines; the next frame, at
+20.21 s, brings them back. The GIF, the MP4 and the lossless samples keep them.
+
+The frame-averaged scores could not show this: one 4 s frame weighs as much as
+any 30 ms one. CRF 32 averages 38.77 dB with and without the fix below, and
+the held frame's own PSNR in 4:2:0 is only 0.6 dB below the next frame's. The
+table therefore adds **dark kept**. For the pixels the GIF draws darker than
+its background (its bottom-right pixel), it takes how far they stay below that
+background in luma, averaged per frame, as a share of the GIF's own value. The
+column is the smallest share on any frame shown for at least 1 s; 1.00 keeps
+all the contrast. That frame is the 16.16 s hold in every row except the MP4,
+whose lowest is 0.97 at 2.08 s.
+
+n8.1.2 with libaom 3.14.1, cpu-used 5, `tune-content=screen`, native size, on
+the re-recorded stress clip. Sizes are against the MP4 contract encoded from
+the same GIF; letters name the round-2 samples:
+
+| Configuration                          |   Bytes | vs MP4 |  PSNR | Dark kept |
+| -------------------------------------- | ------: | -----: | ----: | --------: |
+| MP4 contract (h)                       | 351 053 |  100 % | 38.94 |      0.97 |
+| 4:2:0 CRF 32 (k)                       | 111 547 |   32 % | 38.77 |      0.18 |
+| 4:2:0 CRF 32, `-arnr-strength 0`       | 108 835 |   31 % | 38.77 |      0.62 |
+| 4:2:0 CRF 24, `-arnr-strength 0` (o)   | 132 781 |   38 % | 38.94 |      0.77 |
+| 4:2:0 CRF 20, `-arnr-strength 0` (p)   | 140 906 |   40 % | 39.00 |      0.89 |
+| 4:2:0 CRF 16, `-arnr-strength 0`       | 153 019 |   44 % | 39.04 |      0.83 |
+| 4:4:4 CRF 32                           | 132 122 |   38 % | 48.79 |      0.16 |
+| 4:4:4 CRF 32, `-arnr-strength 0`       | 130 925 |   37 % | 48.69 |      0.65 |
+| 4:4:4 CRF 24, `-arnr-strength 0` (q)   | 154 951 |   44 % | 50.56 |      0.86 |
+| 4:4:4 CRF 20, `-arnr-strength 0` (r)   | 175 094 |   50 % | 51.13 |      0.89 |
+
+- **The alt-ref temporal filter is the main cause.** It averages frames across
+  the scroll, and the faint lines do not survive the average. Turning it off
+  costs no bytes at CRF 32 and more than triples the contrast kept; a lower
+  CRF does the rest. Exploratory probes outside the script found no other
+  fix: with the filter on, even CRF 12 kept only about two thirds, and turning
+  off alt-ref frames (`-auto-alt-ref 0`), lookahead (`-lag-in-frames 0`) or the
+  TPL model kept 0.2–0.35.
+
+- **CRF is not monotonic here:** CRF 16 keeps less than CRF 20 on this frame.
+  This is one frame of one clip, a threshold check rather than a smooth
+  quality control.
+
+- **Older builds agree.** With only the 6.1.3 (libaom 3.12.1) or 7.0.2
+  (libaom 3.2.0) encoder on `PATH`, `--webm-holds` keeps 0.19 / 0.31 at
+  CRF 32 with the filter on, and 0.90 / 0.94 with the selected contract.
+
+### Playback round 2
+
+`<work-dir>/playback-webm-holds/index.html` holds h and k for reference, and
+samples o–r. Checked in the same browsers on the same day:
+
+- o, p, q and r keep the dark lines visible for the whole hold in both
+  browsers: 0.77 kept was enough here.
+- 4:4:4 (q, r) is clearly better than 4:2:0 (o, p) on small coloured glyphs.
+- r is visibly better than q. The 4:2:0 pair was not compared on its own; the
+  CRF 20 choice is carried over to it.
+- 4:2:0 is selected nevertheless. 4:4:4 is AV1 High profile, which hardware
+  decoders generally do not support; Safari plays AV1 only through a hardware
+  decoder (Apple M3 / A17 Pro and newer), so it very likely cannot play 4:4:4.
+  Safari was not tested.
+
+### Revalidating the selected contract
+
+The exact options of the contract below, as `_BENCH_WEBM_CONTRACT`:
+
+- **Stress:** 140 906 B, the same as p; `-g 250` adds no keyframe to 220
+  frames. Main profile, `yuv420p`, colour tags unchanged.
+- **Timing:** PASS with 0 ms error on all six inputs of section 13, with
+  n8.1.2 and with only the n6.1.3 or 7.0.2 encoder on `PATH`.
+- **Geometry:** the logo stays 899x480: 18 137 B at 49.84 dB, against the MP4
+  contract's 29 305 B at 47.62 dB (62 %).
+- **Keyframes** on the stress clip looped three times (660 frames, 86.49 s).
+  Seek times are single ffmpeg (libdav1d) observations, not browser seeks:
+
+| Policy                    |   Bytes | vs aom keyint | Keyframes | Longest interval    | Seek to last frame |
+| ------------------------- | ------: | ------------: | --------: | ------------------- | -----------------: |
+| Contract, libaom's keyint | 408 892 |         100 % |         1 | 660 frames, 86.49 s |             1.02 s |
+| Contract, `-g 250`        | 443 486 |         108 % |         3 | 250 frames, 33.32 s |             0.30 s |
+
+## The WebM contract
+
+**Selected after the playback gate (sections 14 and 15); not yet implemented
+in `s-vhs.sh`.**
+
+- **Encoder:** `libaom-av1`, single-pass unconstrained quality:
+  `-b:v 0 -row-mt 1 -cpu-used 5 -crf 20 -g 250 -arnr-strength 0
+  -aom-params tune-content=screen`, default good-quality usage. At cpu-used 5,
+  screen tuning saved 0.1–5.9 % at equal PSNR,
+  and it keeps sizes steady across efforts (section 11). SVT-AV1 is rejected
+  for timeline loss in the tested build. VP9 lost the same faint text at
+  CRF 32 and was not measured with the held-frame check.
+- **Profile:** native-sized 8-bit `yuv420p`, AV1 Main. 4:4:4 (High) was
+  clearly better on small coloured glyphs in Chrome and Firefox, but hardware
+  decoders generally lack it and Safari very likely cannot play it; Main keeps
+  hardware decoding and the widest AV1 reach. The MP4 stays the most
+  compatible output either way.
+- **Quality:** CRF 20 with the alt-ref temporal filter off
+  (`-arnr-strength 0`). It keeps 0.89 of the faint text's contrast on the
+  held frame, against the MP4's 0.97 and 0.18 for the earlier CRF 32
+  candidate, at 40 % of the MP4's bytes on stress and 62 % on the logo
+  (section 15). CRF 20 was chosen by eye on the 4:4:4 pair and carried over
+  to 4:2:0. No new public setter.
 - **Input/timing:** `-ignore_loop 1 -min_delay 0`,
   `-fps_mode passthrough -enc_time_base 1:100`, no second application of
-  recording speed/holds, no CFR conversion. Keep default lookahead. Require
-  frame count, PTS, sample durations and container end within 1 ms.
-- **Keyframes:** open. The encoder default gives one keyframe per recording
-  and the smallest files; `-g 250` bounds seeking like the MP4 contract, for
-  28 % more bytes on an 86 s clip (section 12). Decide after browser seeking.
+  recording speed/holds, no CFR conversion. Keep default lookahead. Frame
+  count, PTS, sample durations and container end stay within 1 ms on all six
+  timing inputs.
+- **Keyframes:** `-g 250`, like the MP4 contract. It adds nothing up to 250
+  frames; on an 86 s clip it costs 8 % and cuts an ffmpeg seek to the end
+  from 1.02 to 0.30 s (section 15). Browser seeking on long recordings was
+  not checked.
 - **Geometry/colour:** keep original dimensions, including odd sizes. Convert
   with `scale=out_color_matrix=bt601:out_range=tv:flags=full_chroma_int+accurate_rnd`,
-  then the approved YUV format. Preserve the sRGB transfer curve; tag matrix
+  then `format=yuv420p`. Preserve the sRGB transfer curve; tag matrix
   `smpte170m`, primaries `bt709`, transfer `iec61966-2-1`, range `tv`.
   Those YUV tags survive WebM probing; display interpretation remains
   unverified.
@@ -760,12 +858,15 @@ observed, not inferred from the pixel scores.
   `-cues_to_front 1` costs no bytes but its startup effect is unmeasured, so
   leave it, AV1 level selection and the other muxer defaults alone. Looping
   belongs to the player.
-- **Encoding time:** much slower than the MP4 contract. On the 28.7 s stress
-  clip, libaom took 9–25 s for 4:2:0 and 11–57 s for 4:4:4 across runs,
+- **Encoding time:** much slower than the MP4 contract. The contract encoded
+  the 28.8 s stress clip in 12.5 s, the MP4 in 1.3 s. Earlier candidates on
+  the 28.7 s clip took 9–25 s for 4:2:0 and 11–57 s for 4:4:4 across runs,
   the H.264 contract 1–6 s. An encode can take longer than the recording.
-- **Toolchain:** proposed FFmpeg 6.1+ with the approved encoder. Revalidate the
-  exact final profile/CRF pipeline before implementation, including geometry
-  reporting and early missing-encoder/version errors.
+- **Toolchain:** FFmpeg 6.1+ with `libaom-av1`. The exact contract passes
+  timing and the held-frame check with the 6.1.3 (libaom 3.12.1) and 7.0.2
+  (libaom 3.2.0) encoders; sizes follow the libaom version, 155 145 and
+  167 359 B on stress (44 and 48 % of MP4). Implementation still needs
+  geometry reporting and early missing-encoder/version errors, as for MP4.
 - **Lossless/optimization:** no lossless output mode or `SetOptimize` mapping
   selected. The measured lossless files are large, and libaom at cpu-used 5
   needs `-arnr-strength 0` to be bit-exact. Keep the separate optimization

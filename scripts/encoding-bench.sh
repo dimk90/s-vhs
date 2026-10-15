@@ -11,13 +11,14 @@
 # frame index. Timing is measured separately; a good pixel score cannot
 # establish correct playback. Lossless RGB also gets a frame-hash check.
 #
-# Usage: scripts/encoding-bench.sh [--timing|--presets|--webm|--webm-timing]
-#                                  [work-dir]
+# Usage: scripts/encoding-bench.sh [--timing|--presets|--webm|--webm-timing|
+#                                   --webm-holds] [work-dir]
 #
 # --timing runs the MP4 timing tables alone and --presets the preset ladders;
 # neither needs an encoder but libx264. --webm runs the WebM tables, which
-# need libvpx-vp9, libaom-av1 and libsvtav1, and --webm-timing its timing
-# tables alone. --timing and --webm-timing are how another ffmpeg build is
+# need libvpx-vp9, libaom-av1 and libsvtav1, --webm-timing its timing
+# tables alone and --webm-holds its held-frame table and second playback
+# bundle alone. --timing and --webm-timing are how another ffmpeg build is
 # checked, the version floor included:
 #
 #   PATH=/opt/ffmpeg-5.1/bin:$PATH scripts/encoding-bench.sh --timing work-dir
@@ -49,6 +50,20 @@ _BENCH_AOM=(-c:v libaom-av1 -b:v 0 -row-mt 1 -cpu-used 5)
 # the proposed WebM contract adds this to _BENCH_AOM: the encoder's own
 # screen-content decision varies with cpu-used, forcing it does not
 _BENCH_AOM_SCREEN=(-aom-params tune-content=screen)
+
+# libaom's alt-ref temporal filter averages frames across a scroll; the frame
+# a recording then holds for seconds loses its faint text
+_BENCH_AOM_NO_ARNR=(-arnr-strength 0)
+
+# the selected WebM contract: _BENCH_AOM with screen tuning, the alt-ref filter
+# off, the CRF that keeps faint text on held frames, and the MP4 contract's
+# longest keyframe interval
+_BENCH_WEBM_CONTRACT=(-c:v libaom-av1 -b:v 0 -row-mt 1 -cpu-used 5 -crf 20 -g 250
+                      -arnr-strength 0 -aom-params tune-content=screen)
+
+# a frame shown this long is read, not glimpsed: its damage is what a viewer
+# sees, however little it weighs in a frame-averaged score
+readonly _BENCH_HOLD_SECONDS='1'
 
 # treat the rendered GIF as sRGB; matrix/range conversion keeps its transfer.
 # bt601 names the same matrix as bt470bg and smpte170m, and is the only one of
@@ -107,6 +122,22 @@ readonly _BENCH_KEYFRAME_INTERVAL='
     }
 '
 
+# Reads the GIF's pts,duration CSV, then the dark-text contrast of the GIF and
+# of an encode, one value per frame each. Prints the smallest share of the
+# GIF's contrast the encode keeps on a frame held at least `hold` seconds, and
+# when that frame starts. Exits nonzero when no held frame has dark text.
+# Literal awk: field references belong to awk, not the shell
+# shellcheck disable=SC2016
+readonly _BENCH_HELD_DARK_TEXT='
+    FILENAME == ARGV[1] { start[FNR] = $1; duration[FNR] = $2; next }
+    FILENAME == ARGV[2] { reference[FNR] = $1; next }
+    duration[FNR] >= hold && reference[FNR] > 0 {
+        kept = $1 / reference[FNR]
+        if (!found || kept < lowest) { lowest = kept; at = start[FNR]; found = 1 }
+    }
+    END { if (!found) exit 1; printf "%.2f %.2f", lowest, at }
+'
+
 
 ## Main
 
@@ -116,8 +147,8 @@ main() {
     # Run the measurements and stop at the first failed encode or validation.
     #
     # Parameters:
-    #   $1 - --timing, --presets, --webm or --webm-timing - optional flag
-    #        limiting the run to one group of tables.
+    #   $1 - --timing, --presets, --webm, --webm-timing or --webm-holds -
+    #        optional flag limiting the run to one group of tables.
     #   $2 - work_dir - optional directory for generated files.
     #
     # Example:
@@ -127,7 +158,7 @@ main() {
     local work_dir repo_dir stress logo
 
     case "${1-}" in
-        --timing|--presets|--webm|--webm-timing)
+        --timing|--presets|--webm|--webm-timing|--webm-holds)
             only="${1#--}"
             shift
             ;;
@@ -159,6 +190,11 @@ main() {
             ;;
         webm-timing)
             _bench_report_webm_timing "$stress" "$logo" "$work_dir" || exit 1
+            return 0
+            ;;
+        webm-holds)
+            _bench_report_webm_holds "$stress" "$work_dir" || exit 1
+            _bench_write_webm_holds_bundle "$stress" "$work_dir" || exit 1
             return 0
             ;;
     esac
@@ -205,6 +241,7 @@ _bench_require_tools() {
         # the WebM timing tables are how another ffmpeg build is checked, and
         # the rejected SVT-AV1 rows are skipped where it is missing
         webm-timing) required=(libvpx-vp9 libaom-av1) ;;
+        webm-holds) required=(libx264 libaom-av1) ;;
     esac
 
     for tool in ffmpeg ffprobe; do
@@ -497,8 +534,9 @@ _bench_report_webm() {
     #
     # Run every WebM table: what VP9, libaom and SVT-AV1 cost against the
     # shipped MP4 contract, what their chroma, lossless and screen-content
-    # modes buy, what their speed knobs cost, what keyframes cost a seek, and
-    # whether they keep the recording's timeline and its odd dimensions.
+    # modes buy, what their speed knobs cost, what keyframes cost a seek,
+    # whether they keep the recording's timeline and its odd dimensions, and
+    # what keeps faint text on a held frame.
     #
     # Parameters:
     #   $1 - stress - stress GIF.
@@ -526,7 +564,9 @@ _bench_report_webm() {
     _bench_report_webm_seek "$stress" "$work_dir" || return 1
     _bench_report_webm_geometry "$logo" "$work_dir" || return 1
     _bench_report_webm_timing "$stress" "$logo" "$work_dir" || return 1
+    _bench_report_webm_holds "$stress" "$work_dir" || return 1
     _bench_write_webm_bundle "$stress" "$logo" "$work_dir" || return 1
+    _bench_write_webm_holds_bundle "$stress" "$work_dir" || return 1
 }
 
 
@@ -903,7 +943,7 @@ _bench_report_webm_seek() {
 
     duration=$(ffprobe -v error "${_BENCH_DECODE[@]}" -show_entries format=duration \
         -of csv=p=0 "$long") || return 1
-    printf '\n=== WebM seeking: AV1, crf 32, 4:2:0 (%s looped 3x: %s frames, %s s) ===\n' \
+    printf '\n=== WebM seeking: AV1, 4:2:0, crf 32 unless contract (%s looped 3x: %s frames, %s s) ===\n' \
         "$(basename "$input")" "$(_bench_frame_count "$long")" \
         "$(awk -v seconds="$duration" 'BEGIN { printf "%.2f", seconds }')"
     printf '%-22s %10s %11s %10s %15s %13s\n' \
@@ -919,6 +959,15 @@ _bench_report_webm_seek() {
     _bench_encode "$long" "$encoded" -vf "$_BENCH_PAD,$_BENCH_COLOR" \
         "${_BENCH_AOM[@]}" -crf 32 -g 250 >/dev/null || return 1
     _bench_seek_row '-g 250' "$encoded" "$baseline" || return 1
+
+    # the selected contract against itself without its keyframe interval
+    _bench_encode "$long" "$out_dir/contract-aom-keyint.webm" -vf "$_BENCH_COLOR" \
+        "${_BENCH_AOM[@]}" -crf 20 "${_BENCH_AOM_NO_ARNR[@]}" "${_BENCH_AOM_SCREEN[@]}" >/dev/null || return 1
+    baseline=$(_bench_bytes "$out_dir/contract-aom-keyint.webm") || return 1
+    _bench_seek_row 'contract, aom keyint' "$out_dir/contract-aom-keyint.webm" "$baseline" || return 1
+    _bench_encode "$long" "$out_dir/contract.webm" -vf "$_BENCH_COLOR" \
+        "${_BENCH_WEBM_CONTRACT[@]}" >/dev/null || return 1
+    _bench_seek_row 'contract (-g 250)' "$out_dir/contract.webm" "$baseline" || return 1
 
     # WebM's counterpart of MP4 faststart moves only the index; remuxing
     # both ways keeps the packets identical, so the bytes are the container's
@@ -992,15 +1041,16 @@ _bench_report_webm_geometry() {
         "$(basename "$input")" "$source_size"
     printf '%-14s %10s %10s %13s\n' 'config' 'bytes' 'size' 'PSNR vs GIF'
 
-    for codec in vp9 aom; do
+    for codec in vp9 aom contract; do
         case "$codec" in
-            vp9) options=("${_BENCH_VP9[@]}") ;;
-            aom) options=("${_BENCH_AOM[@]}") ;;
+            vp9)      options=("${_BENCH_VP9[@]}" -crf 32) ;;
+            aom)      options=("${_BENCH_AOM[@]}" -crf 32) ;;
+            contract) options=("${_BENCH_WEBM_CONTRACT[@]}") ;;
         esac
         name="$codec-unpadded"
         encoded="$out_dir/$name.webm"
         if ! _bench_encode "$input" "$encoded" -vf "$_BENCH_COLOR" \
-            "${options[@]}" -crf 32 >/dev/null; then
+            "${options[@]}" >/dev/null; then
             printf '%-14s %10s\n' "$name" 'FAILED'
             continue
         fi
@@ -1047,7 +1097,7 @@ _bench_report_webm_timing() {
             "$(basename "$input")" "$_BENCH_TIMING_TOLERANCE"
         printf '%-18s %10s %7s %5s %9s %9s %8s %8s %8s %s\n' \
             'policy' 'bytes' 'frames' 'level' 'PTSerr/ms' 'delay/ms' 'last/s' 'end/s' 'file/s' 'indexed'
-        for policy in vp9 aom aom-444 aom-native aom-native-screen aom-444-screen aom-lag0 svt svt-lowdelay; do
+        for policy in contract vp9 aom aom-444 aom-native aom-native-screen aom-444-screen aom-lag0 svt svt-lowdelay; do
             require_match=0
             filters="$_BENCH_PAD,$_BENCH_COLOR"
             if [[ $policy == svt* && $has_svtav1 -eq 0 ]]; then
@@ -1055,6 +1105,7 @@ _bench_report_webm_timing() {
                 continue
             fi
             case "$policy" in
+                contract)          options=("${_BENCH_WEBM_CONTRACT[@]}"); filters="$_BENCH_COLOR"; require_match=1 ;;
                 vp9)               options=("${_BENCH_VP9[@]}" -crf 32) ;;
                 aom)               options=("${_BENCH_AOM[@]}" -crf 32); require_match=1 ;;
                 aom-444)           options=("${_BENCH_AOM[@]}" -crf 32); filters="$_BENCH_COLOR_444"; require_match=1 ;;
@@ -1071,6 +1122,58 @@ _bench_report_webm_timing() {
             _bench_timing_row "$input" "$output" "$policy" "$require_match" || return 1
         done
     done
+}
+
+
+_bench_report_webm_holds() {
+    #
+    # Print what libaom keeps of faint text on held frames. Its alt-ref
+    # temporal filter washes out dark text after a scroll, on a frame the
+    # recording then shows for seconds; a frame-averaged score hides that,
+    # so the share of dark-text contrast kept on held frames is measured.
+    #
+    # Parameters:
+    #   $1 - input - source GIF.
+    #   $2 - work_dir - directory the encodes are written to.
+    #
+    # Example:
+    #   _bench_report_webm_holds "$stress" "$work_dir" || return 1
+    #
+    local input="$1"
+    local out_dir
+    local mp4 mp4_bytes crf
+
+    out_dir="$2/webm-holds-$(basename "$input" .gif)"
+    mp4="$out_dir/x264-contract.mp4"
+    mkdir -p "$out_dir" || return 1
+    _bench_frame_times "$input" | tr ',' ' ' >"$out_dir/source.times" || return 1
+    _bench_dark_text "$input" "$input" >"$out_dir/source.dark" || return 1
+
+    printf '\n=== WebM held frames: AV1, screen tuning, frames held >= %s s (%s, GIF %s B) ===\n' \
+        "$_BENCH_HOLD_SECONDS" "$(basename "$input")" "$(_bench_bytes "$input")"
+    printf '%-26s %9s %7s %8s %9s %10s %8s\n' \
+        'config' 'bytes' 'vs MP4' 'time' 'PSNRavg' 'dark kept' 'at/s'
+
+    _bench_hold_row "$input" "$mp4" '' "$out_dir" \
+        -vf "$_BENCH_PAD,$_BENCH_COLOR" "${_BENCH_MP4_CONTRACT[@]}" || return 1
+    mp4_bytes=$(_bench_bytes "$mp4") || return 1
+
+    _bench_hold_row "$input" "$out_dir/aom-420-crf32.webm" "$mp4_bytes" "$out_dir" \
+        -vf "$_BENCH_COLOR" "${_BENCH_AOM[@]}" -crf 32 "${_BENCH_AOM_SCREEN[@]}" || return 1
+    for crf in 32 24 20 16; do
+        _bench_hold_row "$input" "$out_dir/aom-420-crf$crf-no-arnr.webm" "$mp4_bytes" "$out_dir" \
+            -vf "$_BENCH_COLOR" "${_BENCH_AOM[@]}" -crf "$crf" \
+            "${_BENCH_AOM_NO_ARNR[@]}" "${_BENCH_AOM_SCREEN[@]}" || return 1
+    done
+    _bench_hold_row "$input" "$out_dir/aom-444-crf32.webm" "$mp4_bytes" "$out_dir" \
+        -vf "$_BENCH_COLOR_444" "${_BENCH_AOM[@]}" -crf 32 "${_BENCH_AOM_SCREEN[@]}" || return 1
+    for crf in 32 24 20; do
+        _bench_hold_row "$input" "$out_dir/aom-444-crf$crf-no-arnr.webm" "$mp4_bytes" "$out_dir" \
+            -vf "$_BENCH_COLOR_444" "${_BENCH_AOM[@]}" -crf "$crf" \
+            "${_BENCH_AOM_NO_ARNR[@]}" "${_BENCH_AOM_SCREEN[@]}" || return 1
+    done
+    _bench_hold_row "$input" "$out_dir/contract.webm" "$mp4_bytes" "$out_dir" \
+        -vf "$_BENCH_COLOR" "${_BENCH_WEBM_CONTRACT[@]}" || return 1
 }
 
 
@@ -1147,6 +1250,57 @@ The shipped H.264 contract is included as the same-source reference.</p>
 HTML
 
     printf '\n::: WebM playback bundle: %s/index.html\n' "$out_dir"
+}
+
+
+_bench_write_webm_holds_bundle() {
+    #
+    # Write the second WebM playback bundle: the held-frame candidates next to
+    # the first proposal that lost faint text and the MP4 that kept it.
+    #
+    # Parameters:
+    #   $1 - input - source GIF.
+    #   $2 - work_dir - directory holding the encodes.
+    #
+    # Example:
+    #   _bench_write_webm_holds_bundle "$stress" "$work_dir"
+    #
+    local input="$1"
+    local work_dir="$2"
+    local out_dir="$work_dir/playback-webm-holds"
+    local holds_dir
+
+    holds_dir="$work_dir/webm-holds-$(basename "$input" .gif)"
+    mkdir -p "$out_dir" || return 1
+    cp "$input" "$out_dir/source.gif" || return 1
+    cp "$holds_dir/x264-contract.mp4" "$out_dir/h-h264-contract.mp4" || return 1
+    cp "$holds_dir/aom-420-crf32.webm" "$out_dir/k-av1-420-screen.webm" || return 1
+    cp "$holds_dir/aom-420-crf24-no-arnr.webm" "$out_dir/o-av1-420-crf24-no-arnr.webm" || return 1
+    cp "$holds_dir/aom-420-crf20-no-arnr.webm" "$out_dir/p-av1-420-crf20-no-arnr.webm" || return 1
+    cp "$holds_dir/aom-444-crf24-no-arnr.webm" "$out_dir/q-av1-444-crf24-no-arnr.webm" || return 1
+    cp "$holds_dir/aom-444-crf20-no-arnr.webm" "$out_dir/r-av1-444-crf20-no-arnr.webm" || return 1
+
+    cat >"$out_dir/index.html" <<'HTML' || return 1
+<!doctype html><meta charset=utf-8><title>s-vhs WebM held frames</title>
+<style>body{font:14px system-ui;background:#222;color:#eee;margin:2em}
+figure{margin:0 0 2em}video,img{border:1px solid #555}</style>
+<h1>s-vhs WebM held-frame samples — record what this setup does</h1>
+<p>Shown at native resolution. Watch 16–20 s: after the scroll, every eighth
+line (<code>line 376</code>, <code>384</code>, <code>392</code>,
+<code>400</code>) is dark grey on the background. Note whether it stays
+visible for the whole hold, as in the source GIF and h, or appears late, as in
+k. Also compare small coloured glyphs between 4:2:0 and 4:4:4.</p>
+<p>Record player/browser version, OS and hardware decoding on/off.</p>
+<figure><figcaption>h - shipped H.264 contract (reference)</figcaption><video src=h-h264-contract.mp4 controls loop muted></video></figure>
+<figure><figcaption>k - AV1 4:2:0, CRF 32, tune-content=screen (first proposal, loses the dark lines)</figcaption><video src=k-av1-420-screen.webm controls loop muted></video></figure>
+<figure><figcaption>o - AV1 4:2:0, CRF 24, screen, alt-ref filter off</figcaption><video src=o-av1-420-crf24-no-arnr.webm controls loop muted></video></figure>
+<figure><figcaption>p - AV1 4:2:0, CRF 20, screen, alt-ref filter off</figcaption><video src=p-av1-420-crf20-no-arnr.webm controls loop muted></video></figure>
+<figure><figcaption>q - AV1 4:4:4 (profile 1), CRF 24, screen, alt-ref filter off</figcaption><video src=q-av1-444-crf24-no-arnr.webm controls loop muted></video></figure>
+<figure><figcaption>r - AV1 4:4:4 (profile 1), CRF 20, screen, alt-ref filter off</figcaption><video src=r-av1-444-crf20-no-arnr.webm controls loop muted></video></figure>
+<figure><figcaption>source GIF</figcaption><img src=source.gif></figure>
+HTML
+
+    printf '\n::: WebM held-frame bundle: %s/index.html\n' "$out_dir"
 }
 
 
@@ -1249,6 +1403,49 @@ _bench_codec_row() {
     # shellcheck disable=SC2086
     printf '%-28s %9s %7s %7ss %9s %9s %9s\n' "$name" "$bytes" \
         "$(_bench_percent "$bytes" "$(_bench_bytes "$input")")" "$elapsed" $quality
+}
+
+
+_bench_hold_row() {
+    #
+    # Encode one configuration and print its size against the MP4, its
+    # average PSNR, and the smallest share of dark-text contrast it keeps on a
+    # held frame, with when that frame starts.
+    #
+    # Parameters:
+    #   $1 - input - source GIF.
+    #   $2 - output - encoded file; its basename labels the row.
+    #   $3 - mp4_bytes - size of the MP4 reference, or empty when this row
+    #        encodes the reference itself.
+    #   $4 - out_dir - directory holding source.times and source.dark.
+    #   $@ - options - ffmpeg options placed before the output.
+    #
+    # Example:
+    #   _bench_hold_row "$gif" "$dir/aom.webm" "$mp4_bytes" "$dir" -c:v libaom-av1
+    #
+    local input="$1"
+    local output="$2"
+    local mp4_bytes="$3"
+    local out_dir="$4"
+    shift 4
+    local name
+    local elapsed bytes psnr held
+
+    name=$(basename "$output")
+    name="${name%.*}"
+
+    elapsed=$(_bench_encode "$input" "$output" ${@+"$@"}) || return 1
+    bytes=$(_bench_bytes "$output") || return 1
+    [[ -n $mp4_bytes ]] || mp4_bytes="$bytes"
+    psnr=$(_bench_psnr "$input" "$output" '') || return 1
+    _bench_dark_text "$input" "$output" >"$output.dark" || return 1
+    held=$(awk -v hold="$_BENCH_HOLD_SECONDS" "$_BENCH_HELD_DARK_TEXT" \
+        "$out_dir/source.times" "$out_dir/source.dark" "$output.dark") || return 1
+
+    # the two held-frame fields are split on purpose
+    # shellcheck disable=SC2086
+    printf '%-26s %9s %7s %7ss %9s %10s %8s\n' "$name" "$bytes" \
+        "$(_bench_percent "$bytes" "$mp4_bytes")" "$elapsed" "$psnr" $held
 }
 
 
@@ -1485,6 +1682,48 @@ _bench_compare() {
         return 1
     fi
     printf '%s\n' "$report" | grep -o "$(printf '%s' "$filter" | tr '[:lower:]' '[:upper:]') .*"
+}
+
+
+_bench_dark_text() {
+    #
+    # Print, one value per frame, how far the pixels the GIF draws darker than
+    # its background stay below that background in a decode, averaged over
+    # the frame in luma levels. The GIF against itself is the full contrast;
+    # the share an encode keeps is what faint text keeps. Frame-index
+    # alignment, as in _bench_compare.
+    #
+    # Parameters:
+    #   $1 - input - source GIF; its bottom-right pixel is the background.
+    #   $2 - encoded - the GIF itself, an MP4 or a WebM.
+    #
+    # Example:
+    #   _bench_dark_text "$gif" "$encoded" >"$encoded.dark" || return 1
+    #
+    local input="$1"
+    local encoded="$2"
+    local dimensions background report
+    local reconstruction="$_BENCH_RGB"
+    local encoded_decode=()
+
+    if [[ $encoded == *.gif ]]; then
+        encoded_decode=("${_BENCH_DECODE[@]}")
+        reconstruction='format=rgb24'
+    fi
+    dimensions=$(_bench_dimensions "$input") || return 1
+    background=$(ffmpeg -v error -nostdin "${_BENCH_DECODE[@]}" -i "$input" \
+        -vf 'crop=1:1:iw-1:ih-1,format=rgb24,format=gray' -frames:v 1 -f rawvideo - |
+        od -An -tu1 | tr -d ' ') || return 1
+    [[ $background =~ ^[0-9]+$ ]] || return 1
+
+    if ! report=$(ffmpeg -v error -xerror -nostdin \
+        "${_BENCH_DECODE[@]}" -i "$input" ${encoded_decode[@]+"${encoded_decode[@]}"} -i "$encoded" \
+        -lavfi "[0:v]format=rgb24,format=gray,settb=1/100,setpts=N[a];[1:v]$reconstruction,crop=$dimensions:0:0,format=gray,settb=1/100,setpts=N[b];[a][b]blend=all_expr='if(lt(A,$background),$background-min(B,$background),0)':shortest=1:repeatlast=0,signalstats,metadata=print:key=lavfi.signalstats.YAVG:file=-" \
+        -fps_mode passthrough -f null - 2>&1); then
+        printf 'encoding-bench: dark-text comparison failed: %s\n%s\n' "$encoded" "$report" >&2
+        return 1
+    fi
+    printf '%s\n' "$report" | awk -F= '/YAVG/ { print $2; count++ } END { if (!count) exit 1 }'
 }
 
 
