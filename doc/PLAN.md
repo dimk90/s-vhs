@@ -172,7 +172,7 @@
     uses - no `ffprobe` runtime dependency, and tens of milliseconds even on a
     47 MB GIF.
 
-- [ ] WebM output:
+- [x] WebM output:
   - Scope: `.cast` -> the shared `agg` GIF -> WebM via `ffmpeg`; research
     does not add runtime support. `SetOptimize` remains the separate item below.
   - [x] Measure codec, chroma, quality, effort, screen-content tuning, GOP,
@@ -236,7 +236,7 @@
       `_svhs_render_raster`, `_svhs_report_raster_skips`,
       `_svhs_render_shared_gif`. Keep Bash 3.2/BSD compatibility; no new
       setter.
-  - [ ] Verify manually before ticking:
+  - [x] Verify manually before ticking:
     - `bash -n s-vhs.sh`, `shellcheck s-vhs.sh`; run a recording under Bash 3.2
       and the development shell.
     - Render WebM-only, two WebM paths, and all formats together in mixed
@@ -270,16 +270,78 @@
     - One `### New` changelog line.
 
 - [ ] Update `SetOptimize` for WebM video:
-  - Is there any space for optimization without quality loss?
-  - `High` profile?
+  - Scope: one lever - how much time libaom spends at the same quality
+    target, like the MP4 item. No new setter, no new dependency, and no
+    change to the WebM contract's codec, profile, CRF, filters, keyframes,
+    colour, timing or container options.
+  - `High` profile: not an optimization, answered by the existing data.
+    AV1 High (4:4:4) costs 16-22 % more bytes than Main at the same CRF
+    (`doc/ENCODING.md`, section 10) and buys quality, not size; the contract
+    already rejected it for hardware decoding and Safari (sections 14, 15).
+  - Optimization without quality loss: as for MP4, an AV1 WebM is
+    re-encoded, so only the quality target can hold, not the bits. The open
+    lever is `-cpu-used` below the contract's 5. Old data is not enough:
+    section 11 swept it at CRF 32 with the alt-ref filter on, where cpu-used 4
+    with screen tuning came out 5 % *larger* than 5, and cpu-used 2 was
+    25 % larger on stress but 28 % smaller on the logo. Effort is
+    non-monotonic in size and must be measured on the contract itself.
+  - [ ] Measure effort on the shipped contract:
+    - Add `--webm-effort` to `scripts/encoding-bench.sh`, shaped like the MP4
+      preset ladder: `_BENCH_WEBM_CONTRACT` with only `-cpu-used` changed,
+      values `5 4 3 2 1`, both inputs. Report bytes, size against cpu-used
+      5, encode time, PSNR/SSIM against the GIF, PSNR against the
+      hash-verified lossless 4:2:0 round trip, and dark kept on stress (the
+      held-frame check of section 15, through `_bench_hold_row`).
+    - cpu-used 0 is left out: cpu-used 1 already took 13x the time of 5 in
+      section 11, far beyond the time limit below.
+    - Record the table as section 16 of `doc/ENCODING.md`, before "The WebM
+      contract".
+  - [ ] Decide from the table: take the cpu-used value with the smallest
+    total bytes that, against cpu-used 5,
+    - saves at least 5 % on both inputs;
+    - keeps codec PSNR within 0.05 dB or above on both inputs;
+    - keeps dark kept at 0.85 or more on stress (the contract keeps 0.89;
+      0.77 was still readable in section 14);
+    - takes at most 3x the encode time on stress - WebM already encodes about
+      10x slower than MP4, and an encode can outlast the recording.
+    If none qualifies, keep WebM reporting `SetOptimize` as skipped and tick
+    this item with the measurement as the answer.
+  - [ ] Qualify the winner before integrating: the six timing inputs of
+    section 13 within 1 ms, and `--webm-holds` dark kept, with n8.1.2 and with
+    only the 6.1.3 (libaom 3.12.1) and 7.0.2 (libaom 3.2.0) encoders on
+    `PATH`. A build where the winner fails timing or the held-frame check
+    rejects it.
+  - [ ] Integrate into `s-vhs.sh` when a value wins:
+    - `_svhs_encode_webm` selects `-cpu-used` from the setting, the way
+      `_svhs_encode_mp4` selects its preset; every other encoder option stays
+      byte-for-byte.
+    - Drop the WebM `SetOptimize` branch in `_svhs_report_raster_skips`,
+      keeping the `SetLoop` line.
+    - Widen the `SetOptimize` docstring: WebM, like MP4, keeps the quality
+      target, not the bits.
+  - [ ] Verify: `bash -n`, `shellcheck`; render one recording with the
+    setting off and on and diff `ffprobe` output - frame count, timestamps,
+    sample durations, container end, AV1 Main, `yuv420p`, the four colour tags
+    and the native size must be identical, with only bytes and encode time
+    differing. Check dark kept on the held frame, replay in Chrome and
+    Firefox, and check quiet mode and the live percentage on a long
+    recording's wall time.
+  - [ ] Document: the `SetOptimize` row in `doc/REFERENCE.md`, the WebM
+    section of `doc/OPTIMIZATION.md`, the `.webm` and `SetOptimize` bullets
+    in `skills/s-vhs-recording/SKILL.md`, the "Lossless/optimization" bullet
+    of the WebM contract in `doc/ENCODING.md`, and one `### Changed`
+    changelog line. When no value wins, only `doc/ENCODING.md` and
+    `doc/OPTIMIZATION.md` record the answer.
 
-- [ ] Add `SUPPORT-MATRIX` to the README documentation section.
-  - Add email to support matrix
-  - Add PowerPoint to support section.
 
 - [x] Move `SetOptimize` out of README to separate file
   - Improve structure - per format description of the trade-off.
   - Add link to README documentation section.
+
+- [x] Merge installation instructions for `WebM / WebP / MP4`
+
+
+##  Backlog
 
 - [ ] Add note about compression efficiency:
   - use `logo` as short example.
@@ -289,4 +351,9 @@
 
 - [ ] Show time or some spinner during recording.
 
-- [x] Merge installation instructions for `WebM / WebP / MP4`
+- [ ] Add `SUPPORT-MATRIX` to the README documentation section.
+  - Add email to support matrix
+  - Add PowerPoint to support section.
+
+- [ ] Update for the recent ASG release.
+  - Update Animated SVG issues.
