@@ -1,19 +1,17 @@
 
-## `[v0.7.0]`
-
-- [ ] Add MP4 & WebM output:
-  - GIF to MP4/WebM conversion via `ffmpeg`? Any better way?
-  - Choose coder parameter which are best fit for terminal recording content.
-  - Lossless option? No P/B-frames?
-  - Which codec for MP4?
-  - Update README output format section and install instruction for webp format.
-
-- [ ] Update `SetOptimize` for video:
-  - What is should do for video?
-
-- [ ] Add `SUPPORT-MATRIX` to the README documentation section.
+##  Backlog
 
 - [ ] Add note about compression efficiency:
-  - use `logo` as example example.
+  - use `logo` as short example.
+  - use `stress.rec.sh` as long example.
   - SetOptimize on/off
   - Quality drop for video.
+
+- [ ] Show time or some spinner during recording.
+
+- [ ] Add `SUPPORT-MATRIX` to the README documentation section.
+  - Add email to support matrix
+  - Add PowerPoint to support section.
+
+- [ ] Update for the recent ASG release.
+  - Update Animated SVG issues.

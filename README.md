@@ -45,7 +45,7 @@ A recording is a plain shell script that sources `s-vhs.sh`:
 
 # Import s-vhs straight from GitHub - no local copy needed.
 # A local copy works too - use "source ./s-vhs.sh"
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.6.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.7.0) && wait "$!" || exit 1
 
 # Where should we write the GIF?
 SetOutput 'demo.gif'
@@ -131,12 +131,14 @@ For GIF output, install [`agg`](https://github.com/asciinema/agg#installation):
 
 > [!TIP]
 > GIF size can be reduced by [`gifsicle`](https://github.com/kohler/gifsicle)
-> without quality loss, see [`Output Size Optimization`](#output-size-optimization).
+> without quality loss, see [Output Size Optimization](doc/OPTIMIZATION.md#gif).
 
-### Renderer: WebP
+### Renderer: WebP, MP4 and WebM
 
-For animated WebP output, install [`agg`](#renderer-gif) and
-[ffmpeg](https://ffmpeg.org/download.html):
+For animated WebP, MP4 or WebM output, install [`agg`](https://github.com/asciinema/agg#installation) and
+[ffmpeg](https://ffmpeg.org/download.html). MP4 and WebM require ffmpeg **6.1 or newer**,
+built with the `libx264` encoder for MP4 and `libaom-av1` for WebM - as distro
+and Homebrew builds are:
 
 - **macOS**
   ```bash
@@ -395,7 +397,7 @@ of keeping a local `s-vhs.sh` next to the recording script:
 
 ```bash
 # Remote import instead of "source ./s-vhs.sh"
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.6.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.7.0) && wait "$!" || exit 1
 
 SetOutput "remote-import.gif"
 
@@ -438,7 +440,7 @@ animated by CSS, sharp at any zoom:
 
 
 📌 [pi-context-view](https://github.com/dimk90/pi-context-view) - demo GIFs,
-such as [palettes.rec.sh](https://github.com/dimk90/pi-context-view/tree/develop/scripts/recordings).  
+such as [palettes.rec.sh](https://github.com/dimk90/pi-context-view/tree/develop/doc/images).  
 📌 [S-VHS logo](examples/logo.rec.sh) recording.
 
 
@@ -447,13 +449,15 @@ such as [palettes.rec.sh](https://github.com/dimk90/pi-context-view/tree/develop
 
 The extension of the path passed to `SetOutput` picks the format:
 
-| Format  | Description                                                                 | Render dependency                  |
-| ------- | --------------------------------------------------------------------------- | ---------------------------------- |
-| `.cast` | Editable, replayable asciicast recording                                    | None                               |
-| `.txt`  | Plain-text terminal log                                                     | None                               |
-| `.gif`  | Animated raster image                                                       | [`agg`](#renderer-gif)             |
-| `.webp` | Animated raster image with lossless compression, typically smaller than GIF | [`agg` + `ffmpeg`](#renderer-webp) |
-| `.svg`  | Sharp, CSS-animated vector image                                            | [`asg`](#renderer-svg)             |
+| Format  | Description                                                                 | Render dependency                               |
+| ------- | --------------------------------------------------------------------------- | ----------------------------------------------- |
+| `.cast` | Editable, replayable asciicast recording                                    | None                                            |
+| `.txt`  | Plain-text terminal log                                                     | None                                            |
+| `.gif`  | Animated raster image                                                       | [`agg`](#renderer-gif)                          |
+| `.webp` | Animated raster image with lossless compression, typically smaller than GIF | [`agg` + `ffmpeg`](#renderer-webp-mp4-and-webm) |
+| `.mp4`  | H.264 video, for players and pages that take one rather than an animation   | [`agg` + `ffmpeg`](#renderer-webp-mp4-and-webm) |
+| `.webm` | AV1 video, about half the bytes of MP4; much slower to encode               | [`agg` + `ffmpeg`](#renderer-webp-mp4-and-webm) |
+| `.svg`  | Sharp, CSS-animated vector image                                            | [`asg`](#renderer-svg)                          |
 
 `SetOutput` is repeatable - one recording, several outputs:
 
@@ -489,7 +493,7 @@ It writes:
 ```bash
 #!/usr/bin/env bash
 
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.6.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.7.0) && wait "$!" || exit 1
 
 SetOutput 'demo.gif'
 
@@ -521,67 +525,14 @@ Render
 ```
 
 
-## Output Size Optimization
-
-
-GIFs come out of the renderer generously encoded. `SetOptimize 'on'` runs the
-rendered file through a lossless [`gifsicle`](https://github.com/kohler/gifsicle)
-pass, so it shrinks without a single pixel changing:
-
-```bash
-SetOutput 'optimize.gif'
-SetOptimize 'on' # <---
-```
-
-| `SetOptimize 'off'` - the default                                            | `SetOptimize 'on'`                                                     |
-| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| <img src="examples/optimize-off.gif" width="330px" alt="Unoptimized render"> | <img src="examples/optimize.gif" width="330px" alt="Optimized render"> |
-| 193,964 bytes                                                                | 164,541 bytes, identical frames                                        |
-
-How much it saves depends on the recording - long, scrolling ones gain the
-most.
-
-For a `.webp` output the same setting switches the encoder to its slowest
-lossless effort instead, typically a few per cent smaller for several times
-the encoding time - same frames, same timing, no extra dependency.
-
-### Dependency
-
-GIF optimization needs `gifsicle`. Without it, `Render` leaves GIFs
-unoptimized and reports the skipped pass; WebP optimization only needs the
-`ffmpeg` it already renders with.
-
-- **macOS**
-  ```bash
-  brew install gifsicle
-  ```
-
-- **Linux**
-  ```bash
-  sudo pacman -S gifsicle
-  ```
-
-### Other Ways
-
-Reduce what the renderer has to encode before optimizing it:
-
-| Approach              | Setting                                                                                    | Trade-off                                                                                            |
-| --------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| Render fewer pixels   | Choose the smallest useful `SetCols`, `SetRows` and `SetFontSize`                          | Less terminal space or smaller text; a large GIF scaled down in HTML is sharper but costs more bytes |
-| Render fewer frames   | Lower `SetFramerate`, for example from `30` to `15` or `10`                                | Fast typing and motion look less smooth                                                              |
-| Shorten inactive gaps | Lower `SetIdleTimeLimit`, for example from `5` to `1`                                      | Long pauses play back faster; the retained `.cast` keeps its original timing                         |
-| Record less activity  | Put setup and noisy intermediate commands between `Hide` and `Show`, or use `RunOffRecord` | Hidden activity does not appear in the recording                                                     |
-
-> [!TIP]
-> These reductions can save more than a post-processing pass. Keep the highest
-> values the recording actually needs, then use `SetOptimize 'on'` for additional
-> lossless savings.
-
 ## Documentation
 
 - For the full list of commands and settings, see [REFERENCE.md](doc/REFERENCE.md).
 
 - For debugging a recording script, see [DEBUG.md](doc/DEBUG.md).
+
+- For smaller output files and per-format optimization trade-offs, see
+  [OPTIMIZATION.md](doc/OPTIMIZATION.md).
 
 - For the agent skill with recording best practices, see
   [SKILL.md](skills/s-vhs-recording/SKILL.md). Install it with
