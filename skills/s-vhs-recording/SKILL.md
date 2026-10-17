@@ -103,7 +103,7 @@ least one `SetOutput`.
 - `.webm` is the same kind of lossy video in AV1: about half the MP4's bytes
   for a browser page, but Safari and older players may not play it and the
   encode is several times slower; pick `.mp4` when reach or render time
-  matters. It shares the MP4's settings, and `SetOptimize` is skipped.
+  matters. It shares the MP4's settings.
 - **`Require 'cmd'…` lists what the recorded shell will run.** It fails before
   the session starts instead of leaving a `command not found` frame in the
   middle of the GIF. Skip it only for shell builtins and coreutils.
@@ -111,8 +111,9 @@ least one `SetOutput`.
   `gifsicle -O3` pass for GIF, 12-25 % smaller, roughly doubling render time;
   for WebP the encoder's slowest lossless effort, a few per cent smaller for
   several times the encoding time; for MP4 its slowest preset, 10-20 % smaller
-  for roughly twice the encoding time, at the same quality but not the same
-  pixels. Without `gifsicle` installed `Render` warns and keeps the
+  for roughly twice the encoding time; for WebM a slower encoder speed,
+  25-40 % smaller for 4-9 times an already slow encode - weigh that on long
+  recordings. MP4 and WebM keep the same quality, not the same pixels. Without `gifsicle` installed `Render` warns and keeps the
   unoptimized GIF, so it is safe to leave on.
 - `SetCols`/`SetRows` size the grid in **cells, not pixels**. Fit them to the
   content: a two-line demo in a 40-row terminal is mostly empty frame.
