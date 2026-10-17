@@ -8,7 +8,7 @@ or detail already lost when rendering the cast to GIF.
 ## Reproducing the numbers
 
 ```bash
-scripts/encoding-bench.sh [--timing|--presets|--webm|--webm-timing|--webm-holds] [work-dir]
+scripts/encoding-bench.sh [--timing|--presets|--webm|--webm-timing|--webm-holds|--webm-effort] [work-dir]
 # default work dir: /tmp/s-vhs-encoding-bench
 ```
 
@@ -25,7 +25,8 @@ ladders, the GOP, seeking, geometry, timing and held-frame checks, then
 writes `playback-webm/index.html` and `playback-webm-holds/index.html`. It
 needs `libx264` for the reference, plus `libvpx-vp9`, `libaom-av1` and
 `libsvtav1`. `--webm-holds` runs the held-frame table and its bundle alone,
-with `libx264` and `libaom-av1`.
+with `libx264` and `libaom-av1`. `--webm-effort` runs the contract's effort
+ladders alone, with `libvpx-vp9` for the lossless reference and `libaom-av1`.
 `--webm-timing` needs only VP9 and libaom; it skips SVT rows when unavailable.
 Its libaom candidates must meet the timing bound; a failing older build stops
 at the first rejected input. The full run includes both containers.
@@ -552,8 +553,8 @@ for roughly 1.3–1.5x the time in this sweep. It is the proposed base effort.
 Lower numbers do **not** guarantee smaller files: cpu-used 2 improves the
 logo substantially but makes stress 25 % larger than 5. Equal CRF does not
 hold reconstruction fixed. There is no selected `SetOptimize` mapping from
-this table; that remains a separate task, especially if 4:4:4 becomes the
-default. Good-quality usage accepts cpu-used 0..6 only: an earlier cpu-used 8
+this table; section 16 measures effort on the selected contract instead.
+Good-quality usage accepts cpu-used 0..6 only: an earlier cpu-used 8
 row was byte-identical to 6. CPU-used 0 was not measured.
 
 ### Screen-content tuning
@@ -816,6 +817,70 @@ The exact options of the contract below, as `_BENCH_WEBM_CONTRACT`:
 | Contract, libaom's keyint | 408 892 |         100 % |         1 | 660 frames, 86.49 s |             1.02 s |
 | Contract, `-g 250`        | 443 486 |         108 % |         3 | 250 frames, 33.32 s |             0.30 s |
 
+## 16. WebM: optimization effort
+
+What `SetOptimize` can buy on the selected contract: the exact options of
+`_BENCH_WEBM_CONTRACT`, with only `-cpu-used` lowered from 5. Section 11's
+sweep is not enough: it ran at CRF 32 with the alt-ref filter on, where
+effort was non-monotonic in size. The codec column compares against a
+hash-verified codec-lossless 4:2:0 round trip at the native size, as in
+section 10; dark kept is section 15's held-frame check, on stress only.
+n8.1.2 with libaom 3.14.1, the section 14 stress GIF (CRC 1147481604) and
+the logo. cpu-used 0 is left out: 1 already takes 16x the time of 5.
+
+| cpu-used | `stress` bytes | vs 5  |    Time | PSNR vs GIF |   SSIM | PSNR vs 4:2:0 | Dark kept |
+| -------- | -------------: | ----: | ------: | ----------: | -----: | ------------: | --------: |
+| 5        |        140 906 | 100 % |  10.8 s |       39.00 | 0.9910 |         53.81 |      0.89 |
+| 4        |        145 993 | 104 % |  29.9 s |       39.05 | 0.9910 |         55.80 |      0.97 |
+| 3        |        146 368 | 104 % |  71.0 s |       39.04 | 0.9910 |         55.69 |      0.97 |
+| **2**    |     **81 290** |  58 % |  80.7 s |       39.06 | 0.9910 |         56.28 |      0.96 |
+| 1        |         81 077 |  58 % | 170.5 s |       39.06 | 0.9910 |         56.65 |      0.97 |
+
+| cpu-used | `logo` bytes | vs 5  |   Time | PSNR vs GIF |   SSIM | PSNR vs 4:2:0 |
+| -------- | -----------: | ----: | -----: | ----------: | -----: | ------------: |
+| 5        |       18 137 | 100 % |  4.3 s |       49.84 | 0.9995 |         59.80 |
+| 4        |       19 191 | 106 % |  8.0 s |       49.87 | 0.9996 |         60.45 |
+| 3        |       18 733 | 103 % | 12.3 s |       49.93 | 0.9996 |         61.38 |
+| **2**    |   **13 557** |  75 % | 17.3 s |       49.92 | 0.9996 |         61.04 |
+| 1        |       13 140 |  72 % | 31.6 s |       49.98 | 0.9996 |         62.11 |
+
+- **cpu-used 2 is where the size drops**: 42 % smaller on stress and 25 %
+  on the logo, while 4 and 3 come out 3-6 % *larger* than 5. Effort is not
+  monotonic in size here either, so `SetOptimize` jumps straight to 2.
+  1 adds 0.3 % and 3 % for twice the time again.
+
+- **Quality does not drop.** Codec PSNR rises by 2.47 dB on stress and
+  1.24 dB on the logo, PSNR against the GIF by 0.06 and 0.08 dB. Lower
+  effort also restores section 15's faint text: the 16.16 s hold keeps about
+  1.00 at cpu-used 4 to 1, and the lowest held frame becomes the 2.08 s one,
+  where the MP4 keeps 0.97 too. Two clips, not a corpus, so the claim is the same quality
+  target, not identical or better pixels.
+
+- **It costs 7.5x the encoding time on stress** and 4x on the logo; two
+  reruns took 10.3/14.9 s at cpu-used 5 and 82.6/91.8 s at 2, so 5.5-9x.
+  This fails the plan's 3x limit, which was relaxed for it: `SetOptimize` is
+  opt-in, a render already shows the live percentage, and no other effort
+  saves bytes at all. A long recording's optimized encode takes minutes.
+
+- **Very short clips do not shrink**: the five-frame timing fixtures grow by
+  about 1 % (2 105 to 2 124 B), single-frame ones shrink by 1 %.
+
+### Qualifying cpu-used 2
+
+`--webm-timing` and `--webm-holds` include the optimized contract
+(`_BENCH_WEBM_OPTIMIZE`), checked with n8.1.2 and with only the 6.1.3
+(libaom 3.12.1) or 7.0.2 (libaom 3.2.0) encoder on `PATH`:
+
+| Encoder build | Timing, six inputs | `stress` bytes, contract / optimized | `logo` bytes, contract / optimized | Dark kept, contract / optimized |
+| ------------- | ------------------ | ------------------------------------ | ---------------------------------- | ------------------------------- |
+| n8.1.2        | PASS, 0 ms         | 140 906 / 81 290 (58 %)              | 18 137 / 13 557 (75 %)             | 0.89 / 0.96                     |
+| n6.1.3        | PASS, 0 ms         | 155 145 / 85 065 (55 %)              | 19 174 / 13 307 (69 %)             | 0.90 / 0.96                     |
+| 7.0.2         | PASS, 0 ms         | 167 359 / 90 879 (54 %)              | 21 451 / 13 532 (63 %)             | 0.94 / 0.96                     |
+
+Every build keeps frame count, PTS, sample durations and container end
+exactly, and the optimized encode keeps more faint text than the contract in
+each. The saving grows with the older libaom versions.
+
 ## The WebM contract
 
 **Selected after the playback gate (sections 14 and 15).**
@@ -866,7 +931,9 @@ The exact options of the contract below, as `_BENCH_WEBM_CONTRACT`:
   (libaom 3.2.0) encoders; sizes follow the libaom version, 155 145 and
   167 359 B on stress (44 and 48 % of MP4). `Start` reports the geometry and
   rejects a missing encoder or an older `ffmpeg` before recording, as for MP4.
-- **Lossless/optimization:** no lossless output mode or `SetOptimize` mapping
-  selected. The measured lossless files are large, and libaom at cpu-used 5
-  needs `-arnr-strength 0` to be bit-exact. Keep the separate optimization
-  task open.
+- **Optimization:** `SetOptimize 'on'` lowers `-cpu-used 5` to
+  `-cpu-used 2` and changes nothing else: 25-42 % smaller at the same
+  quality target, for 4-9x the encoding time (section 16). The output is
+  re-encoded, not repacked: the quality target holds, the bits do not.
+- **No lossless WebM mode:** the measured lossless files are large, and
+  libaom at cpu-used 5 needs `-arnr-strength 0` to be bit-exact.

@@ -12,14 +12,15 @@
 # establish correct playback. Lossless RGB also gets a frame-hash check.
 #
 # Usage: scripts/encoding-bench.sh [--timing|--presets|--webm|--webm-timing|
-#                                   --webm-holds] [work-dir]
+#                                   --webm-holds|--webm-effort] [work-dir]
 #
 # --timing runs the MP4 timing tables alone and --presets the preset ladders;
 # neither needs an encoder but libx264. --webm runs the WebM tables, which
 # need libvpx-vp9, libaom-av1 and libsvtav1, --webm-timing its timing
-# tables alone and --webm-holds its held-frame table and second playback
-# bundle alone. --timing and --webm-timing are how another ffmpeg build is
-# checked, the version floor included:
+# tables alone, --webm-holds its held-frame table and second playback
+# bundle alone, and --webm-effort the contract's effort ladders alone.
+# --timing and --webm-timing are how another ffmpeg build is checked, the
+# version floor included:
 #
 #   PATH=/opt/ffmpeg-5.1/bin:$PATH scripts/encoding-bench.sh --timing work-dir
 #
@@ -60,6 +61,10 @@ _BENCH_AOM_NO_ARNR=(-arnr-strength 0)
 # longest keyframe interval
 _BENCH_WEBM_CONTRACT=(-c:v libaom-av1 -b:v 0 -row-mt 1 -cpu-used 5 -crf 20 -g 250
                       -arnr-strength 0 -aom-params tune-content=screen)
+
+# SetOptimize on: appended to the contract, the one lower effort that saved
+# bytes on both inputs of the effort ladder
+_BENCH_WEBM_OPTIMIZE=(-cpu-used 2)
 
 # a frame shown this long is read, not glimpsed: its damage is what a viewer
 # sees, however little it weighs in a frame-averaged score
@@ -147,8 +152,9 @@ main() {
     # Run the measurements and stop at the first failed encode or validation.
     #
     # Parameters:
-    #   $1 - --timing, --presets, --webm, --webm-timing or --webm-holds -
-    #        optional flag limiting the run to one group of tables.
+    #   $1 - --timing, --presets, --webm, --webm-timing, --webm-holds or
+    #        --webm-effort - optional flag limiting the run to one group of
+    #        tables.
     #   $2 - work_dir - optional directory for generated files.
     #
     # Example:
@@ -158,7 +164,7 @@ main() {
     local work_dir repo_dir stress logo
 
     case "${1-}" in
-        --timing|--presets|--webm|--webm-timing|--webm-holds)
+        --timing|--presets|--webm|--webm-timing|--webm-holds|--webm-effort)
             only="${1#--}"
             shift
             ;;
@@ -195,6 +201,11 @@ main() {
         webm-holds)
             _bench_report_webm_holds "$stress" "$work_dir" || exit 1
             _bench_write_webm_holds_bundle "$stress" "$work_dir" || exit 1
+            return 0
+            ;;
+        webm-effort)
+            _bench_report_webm_effort "$stress" "$work_dir" 1 || exit 1
+            _bench_report_webm_effort "$logo" "$work_dir" 0 || exit 1
             return 0
             ;;
     esac
@@ -242,6 +253,8 @@ _bench_require_tools() {
         # the rejected SVT-AV1 rows are skipped where it is missing
         webm-timing) required=(libvpx-vp9 libaom-av1) ;;
         webm-holds) required=(libx264 libaom-av1) ;;
+        # VP9's lossless mode makes the codec-lossless reference
+        webm-effort) required=(libvpx-vp9 libaom-av1) ;;
     esac
 
     for tool in ffmpeg ffprobe; do
@@ -536,7 +549,8 @@ _bench_report_webm() {
     # shipped MP4 contract, what their chroma, lossless and screen-content
     # modes buy, what their speed knobs cost, what keyframes cost a seek,
     # whether they keep the recording's timeline and its odd dimensions, and
-    # what keeps faint text on a held frame.
+    # what keeps faint text on a held frame, and what more effort buys the
+    # selected contract.
     #
     # Parameters:
     #   $1 - stress - stress GIF.
@@ -565,6 +579,8 @@ _bench_report_webm() {
     _bench_report_webm_geometry "$logo" "$work_dir" || return 1
     _bench_report_webm_timing "$stress" "$logo" "$work_dir" || return 1
     _bench_report_webm_holds "$stress" "$work_dir" || return 1
+    _bench_report_webm_effort "$stress" "$work_dir" 1 || return 1
+    _bench_report_webm_effort "$logo" "$work_dir" 0 || return 1
     _bench_write_webm_bundle "$stress" "$logo" "$work_dir" || return 1
     _bench_write_webm_holds_bundle "$stress" "$work_dir" || return 1
 }
@@ -1097,7 +1113,7 @@ _bench_report_webm_timing() {
             "$(basename "$input")" "$_BENCH_TIMING_TOLERANCE"
         printf '%-18s %10s %7s %5s %9s %9s %8s %8s %8s %s\n' \
             'policy' 'bytes' 'frames' 'level' 'PTSerr/ms' 'delay/ms' 'last/s' 'end/s' 'file/s' 'indexed'
-        for policy in contract vp9 aom aom-444 aom-native aom-native-screen aom-444-screen aom-lag0 svt svt-lowdelay; do
+        for policy in contract optimized vp9 aom aom-444 aom-native aom-native-screen aom-444-screen aom-lag0 svt svt-lowdelay; do
             require_match=0
             filters="$_BENCH_PAD,$_BENCH_COLOR"
             if [[ $policy == svt* && $has_svtav1 -eq 0 ]]; then
@@ -1106,6 +1122,7 @@ _bench_report_webm_timing() {
             fi
             case "$policy" in
                 contract)          options=("${_BENCH_WEBM_CONTRACT[@]}"); filters="$_BENCH_COLOR"; require_match=1 ;;
+                optimized)         options=("${_BENCH_WEBM_CONTRACT[@]}" "${_BENCH_WEBM_OPTIMIZE[@]}"); filters="$_BENCH_COLOR"; require_match=1 ;;
                 vp9)               options=("${_BENCH_VP9[@]}" -crf 32) ;;
                 aom)               options=("${_BENCH_AOM[@]}" -crf 32); require_match=1 ;;
                 aom-444)           options=("${_BENCH_AOM[@]}" -crf 32); filters="$_BENCH_COLOR_444"; require_match=1 ;;
@@ -1174,6 +1191,75 @@ _bench_report_webm_holds() {
     done
     _bench_hold_row "$input" "$out_dir/contract.webm" "$mp4_bytes" "$out_dir" \
         -vf "$_BENCH_COLOR" "${_BENCH_WEBM_CONTRACT[@]}" || return 1
+    _bench_hold_row "$input" "$out_dir/contract-optimized.webm" "$mp4_bytes" "$out_dir" \
+        -vf "$_BENCH_COLOR" "${_BENCH_WEBM_CONTRACT[@]}" "${_BENCH_WEBM_OPTIMIZE[@]}" || return 1
+}
+
+
+_bench_report_webm_effort() {
+    #
+    # Print the effort ladder for the selected WebM contract: what lower
+    # libaom cpu-used values buy at the same CRF, with nothing else changed.
+    # Effort is not monotonic in size, so the ladder runs on the contract
+    # itself. The column against a codec-lossless 4:2:0 round trip separates
+    # each effort's own coding damage from the shared conversion damage, and
+    # dark kept checks the faint text a frame-averaged score cannot see.
+    #
+    # Parameters:
+    #   $1 - input - source GIF.
+    #   $2 - work_dir - directory the encodes are written to.
+    #   $3 - holds - 1 to measure dark text on held frames, 0 for an input
+    #        without any.
+    #
+    # Example:
+    #   _bench_report_webm_effort "$stress" "$work_dir" 1 || return 1
+    #
+    local input="$1"
+    local holds="$3"
+    local out_dir
+    local reference
+    local encoded bytes baseline speed elapsed quality gif_psnr ssim codec_psnr
+    local held='- -'
+
+    out_dir="$2/webm-effort-$(basename "$input" .gif)"
+    reference="$out_dir/lossless-420.webm"
+    mkdir -p "$out_dir" || return 1
+    # the contract keeps odd dimensions, so the reference does too
+    _bench_encode "$input" "$reference" -vf "$_BENCH_COLOR" \
+        "${_BENCH_VP9[@]}" -lossless 1 >/dev/null || return 1
+    _bench_verify_lossless "$input" "$reference" "$_BENCH_COLOR" null || return 1
+    if [[ $holds -eq 1 ]]; then
+        _bench_frame_times "$input" | tr ',' ' ' >"$out_dir/source.times" || return 1
+        _bench_dark_text "$input" "$input" >"$out_dir/source.dark" || return 1
+    fi
+
+    printf '\n=== WebM effort ladder: the contract at each cpu-used (%s, GIF %s B) ===\n' \
+        "$(basename "$input")" "$(_bench_bytes "$input")"
+    printf '%-10s %10s %8s %8s %9s %9s %9s %10s %8s\n' \
+        'cpu-used' 'bytes' 'vs 5' 'time' 'PSNRavg' 'SSIM' 'PSNR420' 'dark kept' 'at/s'
+
+    # 0 is left out: 1 already took 13x the time of 5 in the first speed sweep
+    for speed in 5 4 3 2 1; do
+        encoded="$out_dir/cpu-used-$speed.webm"
+        # a repeated encoder option overrides the contract's own -cpu-used
+        elapsed=$(_bench_encode "$input" "$encoded" -vf "$_BENCH_COLOR" \
+            "${_BENCH_WEBM_CONTRACT[@]}" -cpu-used "$speed") || return 1
+        bytes=$(_bench_bytes "$encoded") || return 1
+        [[ $speed -eq 5 ]] && baseline="$bytes"
+        quality=$(_bench_quality "$input" "$encoded") || return 1
+        # the worst-frame PSNR between them is not part of this table
+        read -r gif_psnr _ ssim <<<"$quality"
+        codec_psnr=$(_bench_psnr "$reference" "$encoded" '') || return 1
+        if [[ $holds -eq 1 ]]; then
+            held=$(_bench_held_dark_kept "$input" "$encoded" "$out_dir") || return 1
+        fi
+
+        # the two held-frame fields are split on purpose
+        # shellcheck disable=SC2086
+        printf '%-10s %10s %8s %7ss %9s %9s %9s %10s %8s\n' "$speed" "$bytes" \
+            "$(_bench_percent "$bytes" "$baseline")" "$elapsed" \
+            "$gif_psnr" "$ssim" "$codec_psnr" $held
+    done
 }
 
 
@@ -1438,14 +1524,36 @@ _bench_hold_row() {
     bytes=$(_bench_bytes "$output") || return 1
     [[ -n $mp4_bytes ]] || mp4_bytes="$bytes"
     psnr=$(_bench_psnr "$input" "$output" '') || return 1
-    _bench_dark_text "$input" "$output" >"$output.dark" || return 1
-    held=$(awk -v hold="$_BENCH_HOLD_SECONDS" "$_BENCH_HELD_DARK_TEXT" \
-        "$out_dir/source.times" "$out_dir/source.dark" "$output.dark") || return 1
+    held=$(_bench_held_dark_kept "$input" "$output" "$out_dir") || return 1
 
     # the two held-frame fields are split on purpose
     # shellcheck disable=SC2086
     printf '%-26s %9s %7s %7ss %9s %10s %8s\n' "$name" "$bytes" \
         "$(_bench_percent "$bytes" "$mp4_bytes")" "$elapsed" "$psnr" $held
+}
+
+
+_bench_held_dark_kept() {
+    #
+    # Print the smallest share of dark-text contrast an encode keeps on a held
+    # frame, and when that frame starts, separated by a space.
+    #
+    # Parameters:
+    #   $1 - input - source GIF.
+    #   $2 - encoded - MP4 or WebM to measure; its per-frame contrast is
+    #        written beside it.
+    #   $3 - out_dir - directory holding source.times and source.dark.
+    #
+    # Example:
+    #   held=$(_bench_held_dark_kept "$gif" "$encoded" "$dir") || return 1
+    #
+    local input="$1"
+    local encoded="$2"
+    local out_dir="$3"
+
+    _bench_dark_text "$input" "$encoded" >"$encoded.dark" || return 1
+    awk -v hold="$_BENCH_HOLD_SECONDS" "$_BENCH_HELD_DARK_TEXT" \
+        "$out_dir/source.times" "$out_dir/source.dark" "$encoded.dark"
 }
 
 

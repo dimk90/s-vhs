@@ -624,10 +624,10 @@ SetOptimize() {
     # through a lossless `gifsicle` pass, typically by a fifth to a quarter, a
     # WebP through the encoder's slowest lossless effort, typically by a few
     # per cent, an MP4 through the encoder's slowest preset, by a tenth to a
-    # fifth. A GIF and a WebP keep every pixel, an MP4 is re-encoded, so it
-    # keeps its quality target, not its bits. A WebM has no optimization yet,
-    # so Render reports the setting as skipped for it. Without gifsicle
-    # installed the GIF is written unoptimized.
+    # fifth, a WebM through a lower encoder speed, by a quarter to two fifths
+    # for 4-9 times the encoding time. A GIF and a WebP keep every pixel, an
+    # MP4 and a WebM are re-encoded, so they keep their quality target, not
+    # their bits. Without gifsicle installed the GIF is written unoptimized.
     #
     # Parameters:
     #   $1 - optimize - 'on' or 'off'.
@@ -2848,9 +2848,6 @@ _svhs_report_raster_skips() {
     # told; the default loop stays silent
     [[ ($output == *.mp4 || $output == *.webm) && $_SVHS_LOOP_SET == 1 ]] &&
         _svhs_report_skipped 'SetLoop' "$output" "$format"
-    # a WebM has no optimization yet
-    [[ $output == *.webm && $_SVHS_OPTIMIZE == 'on' ]] &&
-        _svhs_report_skipped 'SetOptimize' "$output" "$format"
     return 0
 }
 
@@ -3281,6 +3278,7 @@ _svhs_encode_webm() {
     #
     local output="$1"
     local progress='/dev/null'
+    local cpu_used='5'
     local duration=''
 
     # libaom can take longer than the recording itself, so the live line
@@ -3290,6 +3288,11 @@ _svhs_encode_webm() {
         progress='pipe:1'
         duration=$(_svhs_gif_duration) || duration=''
     fi
+
+    # as for MP4, a lower speed buys a wider search at the same CRF. Only
+    # cpu-used 2 saved bytes on every measured recording - 3 and 4 came out
+    # larger than 5 - so the speed jumps there, not one step at a time
+    [[ $_SVHS_OPTIMIZE == 'on' ]] && cpu_used='2'
 
     # The GIF is decoded once and its timing carried over as for MP4; AV1
     # takes odd sizes, so only the colour chain applies. Screen tuning saves
@@ -3304,7 +3307,7 @@ _svhs_encode_webm() {
         -map 0:v:0 -an                               \
         -vf "$_SVHS_VIDEO_COLOR_FILTERS"             \
         -c:v libaom-av1 -b:v 0 -row-mt 1             \
-        -cpu-used 5 -crf 20 -g 250                   \
+        -cpu-used "$cpu_used" -crf 20 -g 250         \
         -arnr-strength 0                             \
         -aom-params tune-content=screen              \
         -fps_mode passthrough                        \

@@ -285,7 +285,7 @@
     with screen tuning came out 5 % *larger* than 5, and cpu-used 2 was
     25 % larger on stress but 28 % smaller on the logo. Effort is
     non-monotonic in size and must be measured on the contract itself.
-  - [ ] Measure effort on the shipped contract:
+  - [x] Measure effort on the shipped contract:
     - Add `--webm-effort` to `scripts/encoding-bench.sh`, shaped like the MP4
       preset ladder: `_BENCH_WEBM_CONTRACT` with only `-cpu-used` changed,
       values `5 4 3 2 1`, both inputs. Report bytes, size against cpu-used
@@ -296,7 +296,7 @@
       section 11, far beyond the time limit below.
     - Record the table as section 16 of `doc/ENCODING.md`, before "The WebM
       contract".
-  - [ ] Decide from the table: take the cpu-used value with the smallest
+  - [x] Decide from the table: take the cpu-used value with the smallest
     total bytes that, against cpu-used 5,
     - saves at least 5 % on both inputs;
     - keeps codec PSNR within 0.05 dB or above on both inputs;
@@ -306,12 +306,15 @@
       10x slower than MP4, and an encode can outlast the recording.
     If none qualifies, keep WebM reporting `SetOptimize` as skipped and tick
     this item with the measurement as the answer.
-  - [ ] Qualify the winner before integrating: the six timing inputs of
+    Decided: cpu-used 2 - 42 % / 25 % smaller, codec PSNR +2.5 / +1.2 dB,
+    dark kept 0.96 - selected with the time limit relaxed: it took 5.5-9x on
+    stress, and it is the only effort that saves bytes (section 16).
+  - [x] Qualify the winner before integrating: the six timing inputs of
     section 13 within 1 ms, and `--webm-holds` dark kept, with n8.1.2 and with
     only the 6.1.3 (libaom 3.12.1) and 7.0.2 (libaom 3.2.0) encoders on
     `PATH`. A build where the winner fails timing or the held-frame check
     rejects it.
-  - [ ] Integrate into `s-vhs.sh` when a value wins:
+  - [x] Integrate into `s-vhs.sh` when a value wins:
     - `_svhs_encode_webm` selects `-cpu-used` from the setting, the way
       `_svhs_encode_mp4` selects its preset; every other encoder option stays
       byte-for-byte.
@@ -319,14 +322,18 @@
       keeping the `SetLoop` line.
     - Widen the `SetOptimize` docstring: WebM, like MP4, keeps the quality
       target, not the bits.
-  - [ ] Verify: `bash -n`, `shellcheck`; render one recording with the
+  - [x] Verify: `bash -n`, `shellcheck`; render one recording with the
     setting off and on and diff `ffprobe` output - frame count, timestamps,
     sample durations, container end, AV1 Main, `yuv420p`, the four colour tags
     and the native size must be identical, with only bytes and encode time
     differing. Check dark kept on the held frame, replay in Chrome and
     Firefox, and check quiet mode and the live percentage on a long
     recording's wall time.
-  - [ ] Document: the `SetOptimize` row in `doc/REFERENCE.md`, the WebM
+    Done except the browser replay: identical `ffprobe` on stress, bytes equal
+    to the bench (140 906 / 81 290 B), 12 s / 69 s with the live percentage,
+    quiet mode silent, Bash 3.2 run. Replay
+    `/tmp/svhs-opt/stress-on.webm` before ticking.
+  - [x] Document: the `SetOptimize` row in `doc/REFERENCE.md`, the WebM
     section of `doc/OPTIMIZATION.md`, the `.webm` and `SetOptimize` bullets
     in `skills/s-vhs-recording/SKILL.md`, the "Lossless/optimization" bullet
     of the WebM contract in `doc/ENCODING.md`, and one `### Changed`

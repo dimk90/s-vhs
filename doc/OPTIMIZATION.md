@@ -3,7 +3,7 @@
 `SetOptimize 'on'` trades a slower `Render` for smaller output files. It is
 `off` by default and must be called before `Start`. The setting applies to
 every requested output that supports it: GIF and WebP stay lossless, while
-MP4 keeps its quality target rather than identical pixels.
+MP4 and WebM keep their quality target rather than identical pixels.
 
 ## GIF
 
@@ -66,10 +66,23 @@ MP4. See [MP4 installation](../README.md#renderer-webp-mp4-and-webm).
 
 ## WebM
 
-`SetOptimize` does not affect WebM yet; `Render` reports it as skipped when
-enabled. WebM is lossy AV1 video and already the smallest video output: the
+WebM is lossy AV1 video and already the smallest video output: the
 [measured recordings](ENCODING.md#the-webm-contract) were 40-62 % of the
 MP4's size, for several times its encoding time.
+
+`SetOptimize 'on'` lowers the AV1 encoder's speed from `cpu-used 5` to
+`cpu-used 2`, keeping the same quality target (`CRF 20`). The
+[measured recordings](ENCODING.md#16-webm-optimization-effort) were 25-42 %
+smaller, for 4-9 times the encoding time - more than a minute for a
+30-second recording, which a long one multiplies. A very short recording may
+come out a few bytes larger instead.
+
+As with MP4, optimized and unoptimized WebMs do not have identical pixels:
+the encoder makes different choices at the same quality target, and measured
+quality can move slightly in either direction.
+
+No extra dependency is needed beyond the `agg` and `ffmpeg` used to render
+WebM. See [WebM installation](../README.md#renderer-webp-mp4-and-webm).
 
 ## SVG
 
@@ -98,4 +111,4 @@ Reduce what gets recorded or rendered before optimizing its encoding:
 > [!TIP]
 > These reductions can save more than an optimization pass. Keep the highest
 > values the recording actually needs, then use `SetOptimize 'on'` for additional
-> savings on GIF, WebP and MP4.
+> savings on GIF, WebP, MP4 and WebM.
