@@ -45,7 +45,7 @@ A recording is a plain shell script that sources `s-vhs.sh`:
 
 # Import s-vhs straight from GitHub - no local copy needed.
 # A local copy works too - use "source ./s-vhs.sh"
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.6.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.7.0) && wait "$!" || exit 1
 
 # Where should we write the GIF?
 SetOutput 'demo.gif'
@@ -397,7 +397,7 @@ of keeping a local `s-vhs.sh` next to the recording script:
 
 ```bash
 # Remote import instead of "source ./s-vhs.sh"
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.6.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.7.0) && wait "$!" || exit 1
 
 SetOutput "remote-import.gif"
 
@@ -493,7 +493,7 @@ It writes:
 ```bash
 #!/usr/bin/env bash
 
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.6.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.7.0) && wait "$!" || exit 1
 
 SetOutput 'demo.gif'
 

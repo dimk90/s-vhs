@@ -24,7 +24,7 @@ set -euo pipefail
 
 
 svhs_version() {
-    printf '%s\n' '0.6.0'
+    printf '%s\n' '0.7.0'
 }
 
 
