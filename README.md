@@ -133,11 +133,12 @@ For GIF output, install [`agg`](https://github.com/asciinema/agg#installation):
 > GIF size can be reduced by [`gifsicle`](https://github.com/kohler/gifsicle)
 > without quality loss, see [Output Size Optimization](doc/OPTIMIZATION.md#gif).
 
-### Renderer: WebP and MP4
+### Renderer: WebP, MP4 and WebM
 
-For animated WebP or MP4 output, install [`agg`](https://github.com/asciinema/agg#installation) and
-[ffmpeg](https://ffmpeg.org/download.html). MP4 requires ffmpeg **6.1 or newer**,
-built with the `libx264` encoder - as distro and Homebrew builds are:
+For animated WebP, MP4 or WebM output, install [`agg`](https://github.com/asciinema/agg#installation) and
+[ffmpeg](https://ffmpeg.org/download.html). MP4 and WebM require ffmpeg **6.1 or newer**,
+built with the `libx264` encoder for MP4 and `libaom-av1` for WebM - as distro
+and Homebrew builds are:
 
 - **macOS**
   ```bash
@@ -448,14 +449,15 @@ such as [palettes.rec.sh](https://github.com/dimk90/pi-context-view/tree/develop
 
 The extension of the path passed to `SetOutput` picks the format:
 
-| Format  | Description                                                                 | Render dependency                          |
-| ------- | --------------------------------------------------------------------------- | ------------------------------------------ |
-| `.cast` | Editable, replayable asciicast recording                                    | None                                       |
-| `.txt`  | Plain-text terminal log                                                     | None                                       |
-| `.gif`  | Animated raster image                                                       | [`agg`](#renderer-gif)                     |
-| `.webp` | Animated raster image with lossless compression, typically smaller than GIF | [`agg` + `ffmpeg`](#renderer-webp-and-mp4) |
-| `.mp4`  | H.264 video, for players and pages that take one rather than an animation   | [`agg` + `ffmpeg`](#renderer-webp-and-mp4) |
-| `.svg`  | Sharp, CSS-animated vector image                                            | [`asg`](#renderer-svg)                     |
+| Format  | Description                                                                 | Render dependency                               |
+| ------- | --------------------------------------------------------------------------- | ----------------------------------------------- |
+| `.cast` | Editable, replayable asciicast recording                                    | None                                            |
+| `.txt`  | Plain-text terminal log                                                     | None                                            |
+| `.gif`  | Animated raster image                                                       | [`agg`](#renderer-gif)                          |
+| `.webp` | Animated raster image with lossless compression, typically smaller than GIF | [`agg` + `ffmpeg`](#renderer-webp-mp4-and-webm) |
+| `.mp4`  | H.264 video, for players and pages that take one rather than an animation   | [`agg` + `ffmpeg`](#renderer-webp-mp4-and-webm) |
+| `.webm` | AV1 video, about half the bytes of MP4; much slower to encode               | [`agg` + `ffmpeg`](#renderer-webp-mp4-and-webm) |
+| `.svg`  | Sharp, CSS-animated vector image                                            | [`asg`](#renderer-svg)                          |
 
 `SetOutput` is repeatable - one recording, several outputs:
 

@@ -97,8 +97,8 @@ This separation has useful consequences:
 
 Today s-vhs can retain the cast directly, export it as plain text with
 `asciinema`, render it to GIF with `agg`, convert that GIF to animated
-WebP or MP4 video with `ffmpeg`, or render it to animated SVG with `asg`.
-GIF, WebP and MP4 outputs share one temporary GIF render.
+WebP, MP4 or WebM video with `ffmpeg`, or render it to animated SVG with
+`asg`. GIF, WebP, MP4 and WebM outputs share one temporary GIF render.
 
 ## Links
 

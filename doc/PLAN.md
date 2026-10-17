@@ -205,7 +205,7 @@
     - Revalidated with the FFmpeg 6.1.3, 7.0.2 and 8.1.2 encoders: timing,
       odd geometry and faint text on holds. Safari, mobile and browser
       seeking on long recordings remain unchecked.
-  - [ ] Integrate the approved contract into `s-vhs.sh`. Settled behavior, to
+  - [x] Integrate the approved contract into `s-vhs.sh`. Settled behavior, to
     implement as written; everything not listed matches MP4:
     - Accept `.webm` in `SetOutput`; route it through `Render` and
       `_svhs_render_raster` to a new `_svhs_encode_webm`, reusing
@@ -251,7 +251,7 @@
       failures, paths with spaces, quiet mode, skip lines, temporary-file
       cleanup, no success line for a failed output.
     - Replay in Chrome and Firefox.
-  - [ ] Document the implemented behavior:
+  - [x] Document the implemented behavior:
     - `README.md`: a `.webm` row in Output Formats; rename the install
       section to `Renderer: WebP, MP4 and WebM` with the `libaom-av1`
       requirement, and update its `#renderer-webp-and-mp4` links (README,

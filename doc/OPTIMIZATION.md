@@ -47,7 +47,7 @@ which typically saves a few per cent for several times the encoding time.
 The visible frames and timing stay the same.
 
 No extra dependency is needed beyond the `agg` and `ffmpeg` used to render
-WebP. See [WebP installation](../README.md#renderer-webp-and-mp4).
+WebP. See [WebP installation](../README.md#renderer-webp-mp4-and-webm).
 
 ## MP4
 
@@ -62,7 +62,14 @@ makes different choices at the same quality target, and measured quality can
 move slightly in either direction.
 
 No extra dependency is needed beyond the `agg` and `ffmpeg` used to render
-MP4. See [MP4 installation](../README.md#renderer-webp-and-mp4).
+MP4. See [MP4 installation](../README.md#renderer-webp-mp4-and-webm).
+
+## WebM
+
+`SetOptimize` does not affect WebM yet; `Render` reports it as skipped when
+enabled. WebM is lossy AV1 video and already the smallest video output: the
+[measured recordings](ENCODING.md#the-webm-contract) were 40-62 % of the
+MP4's size, for several times its encoding time.
 
 ## SVG
 
@@ -81,12 +88,12 @@ unchanged.
 
 Reduce what gets recorded or rendered before optimizing its encoding:
 
-| Approach                             | Setting                                                                                    | Trade-off                                                                                              |
-| ------------------------------------ | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| Render fewer pixels (GIF, WebP, MP4) | Choose the smallest useful `SetCols`, `SetRows` and `SetFontSize`                          | Less terminal space or smaller text; a large image scaled down in HTML is sharper but costs more bytes |
-| Render fewer frames                  | Lower `SetFramerate`, for example from `30` to `15` or `10`                                | Fast typing and motion look less smooth                                                                |
-| Shorten inactive gaps                | Lower `SetIdleTimeLimit`, for example from `5` to `1`                                      | Long pauses play back faster; the retained `.cast` keeps its original timing                           |
-| Record less activity                 | Put setup and noisy intermediate commands between `Hide` and `Show`, or use `RunOffRecord` | Hidden activity does not appear in the recording                                                       |
+| Approach                                   | Setting                                                                                    | Trade-off                                                                                              |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Render fewer pixels (GIF, WebP, MP4, WebM) | Choose the smallest useful `SetCols`, `SetRows` and `SetFontSize`                          | Less terminal space or smaller text; a large image scaled down in HTML is sharper but costs more bytes |
+| Render fewer frames                        | Lower `SetFramerate`, for example from `30` to `15` or `10`                                | Fast typing and motion look less smooth                                                                |
+| Shorten inactive gaps                      | Lower `SetIdleTimeLimit`, for example from `5` to `1`                                      | Long pauses play back faster; the retained `.cast` keeps its original timing                           |
+| Record less activity                       | Put setup and noisy intermediate commands between `Hide` and `Show`, or use `RunOffRecord` | Hidden activity does not appear in the recording                                                       |
 
 > [!TIP]
 > These reductions can save more than an optimization pass. Keep the highest

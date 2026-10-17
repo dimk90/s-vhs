@@ -818,8 +818,7 @@ The exact options of the contract below, as `_BENCH_WEBM_CONTRACT`:
 
 ## The WebM contract
 
-**Selected after the playback gate (sections 14 and 15); not yet implemented
-in `s-vhs.sh`.**
+**Selected after the playback gate (sections 14 and 15).**
 
 - **Encoder:** `libaom-av1`, single-pass unconstrained quality:
   `-b:v 0 -row-mt 1 -cpu-used 5 -crf 20 -g 250 -arnr-strength 0
@@ -865,8 +864,8 @@ in `s-vhs.sh`.**
 - **Toolchain:** FFmpeg 6.1+ with `libaom-av1`. The exact contract passes
   timing and the held-frame check with the 6.1.3 (libaom 3.12.1) and 7.0.2
   (libaom 3.2.0) encoders; sizes follow the libaom version, 155 145 and
-  167 359 B on stress (44 and 48 % of MP4). Implementation still needs
-  geometry reporting and early missing-encoder/version errors, as for MP4.
+  167 359 B on stress (44 and 48 % of MP4). `Start` reports the geometry and
+  rejects a missing encoder or an older `ffmpeg` before recording, as for MP4.
 - **Lossless/optimization:** no lossless output mode or `SetOptimize` mapping
   selected. The measured lossless files are large, and libaom at cpu-used 5
   needs `-arnr-strength 0` to be bit-exact. Keep the separate optimization
