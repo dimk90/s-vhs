@@ -8,11 +8,6 @@
 * Add `SetOptimize` for MP4 output - the encoder's slowest preset.
 * Add `SetOptimize` for WebM output - a slower encoder speed, 25-40 % smaller.
 
-### Changed
-
-### Fixed
-
-
 ## `[v0.6.0]` - 11.09.2026
 
 ### New
