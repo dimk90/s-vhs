@@ -1,5 +1,11 @@
 # Changelog
 
+## `[v0.7.1]` - Unreleased
+
+### Fixed
+* Keep 24-bit colors in recordings instead of reducing them to the nearest of 256.
+
+
 ## `[v0.7.0]` - 17.10.2026
 
 ### New

@@ -1249,7 +1249,9 @@ Start() {
     #
     local wait_mode="${1-}"
     local variable
-    local env_args=()
+    # tmux sets COLORTERM itself only since 3.6; without it, programs like
+    # bat and delta fall back to 256 colors
+    local env_args=(-e 'COLORTERM=truecolor')
 
     case "$wait_mode" in
         ''|no-wait) ;;
@@ -1290,14 +1292,17 @@ Start() {
         env_args+=(-e "$variable")
     done
 
-    # bash 3.2 (stock macOS) rejects an empty array under set -u, so expand
-    # env_args only when Env was called
     tmux -L "$_SVHS_TMUX_SOCKET" -f /dev/null \
         new-session -d -s "$_SVHS_SESSION"    \
                     -x "$_SVHS_COLS"          \
                     -y "$_SVHS_ROWS"          \
-                    ${env_args[@]+"${env_args[@]}"} "${_SVHS_SHELL_COMMAND[@]}"
+                    "${env_args[@]}" "${_SVHS_SHELL_COMMAND[@]}"
     _SVHS_STARTED=1
+
+    # Keep 24-bit colors instead of reducing them to the nearest of 256: the
+    # recorder's client is not known to support them. A fixed index keeps
+    # the setting single on a server shared by concurrent recordings.
+    tmux -L "$_SVHS_TMUX_SOCKET" set -g 'terminal-features[99]' '*:RGB'
 
     # Report modified keys (C-Enter, S-Enter, C-S-<key>) instead of folding
     # them into their plain form, so a recording can drive TUIs that bind them
