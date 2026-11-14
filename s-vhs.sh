@@ -1367,6 +1367,7 @@ Start() {
     tmux -L "$_SVHS_TMUX_SOCKET" set-option -t "$_SVHS_SESSION" status off
 
     _svhs_apply_highlight_style || return 1
+    _svhs_apply_theme_colors || return 1
 
     if [[ $wait_mode != 'no-wait' ]]; then
         _svhs_wait_for_shell || return 1
@@ -3545,6 +3546,31 @@ _svhs_apply_highlight_style() {
             "$_SVHS_HIGHLIGHT_STYLE" >&2
         return 1
     }
+}
+
+
+_svhs_apply_theme_colors() {
+    #
+    # Make the pane answer color queries (OSC 10 and 11) with the theme's
+    # foreground and background, so a program deriving its colors from them
+    # matches the rendered output; unanswered, such a program assumes black.
+    # tmux also writes both colors into the recorded cells. The ANSI palette
+    # (OSC 4) stays unanswered: tmux would record every ANSI color as 24-bit,
+    # which SetBoldIsBright cannot brighten. A renderer-specific theme name
+    # has no known colors and changes nothing.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_apply_theme_colors || return 1
+    #
+    local colors_regex='^([0-9A-Fa-f]{6}),([0-9A-Fa-f]{6}),'
+
+    [[ $_SVHS_THEME =~ $colors_regex ]] || return 0
+
+    tmux -L "$_SVHS_TMUX_SOCKET" set -w -t "$_SVHS_SESSION" window-style \
+        "bg=#${BASH_REMATCH[1]},fg=#${BASH_REMATCH[2]}"
 }
 
 

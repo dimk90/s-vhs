@@ -51,9 +51,21 @@ SetTheme '282a36,f8f8f2,21222c,ff5555,50fa7b,f1fa8c,bd93f9,ff79c6,8be9fd,f8f8f2,
 > Any other value passes through to the renderer unchanged; one it does not
 > support fails at `Render`.
 
-A theme changes only how the output is drawn. Programs in the session that ask
-the terminal for its colors do not see it, 24-bit colors they print stay as
-they are, and a retained `.cast` does not store it.
+## Session Colors
+
+The theme's background and foreground are not only drawn, they are also:
+
+- **Reported to programs.** A program that asks the terminal for its
+  background or foreground gets the theme's colors, so a TUI that derives its
+  own colors from them matches the output. A request for the 16 ANSI colors
+  gets no answer.
+- **Stored in a retained `.cast`.** Rendered again with another theme, the
+  cast keeps the first theme's background and foreground.
+
+A renderer-specific theme name has no known colors: programs get no answer
+and the `.cast` stays theme-neutral.
+
+24-bit colors that a program prints are never changed by a theme.
 
 ## Regenerate the Samples
 

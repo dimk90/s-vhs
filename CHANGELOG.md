@@ -4,6 +4,7 @@
 
 ### New
 * Add Catppuccin, Tokyo Night and `s-vhs` color themes.
+* Report the theme's background and foreground to programs that ask the terminal for them.
 
 ### Changed
 * Unify renderer theme palettes across renderers and add a theme gallery.

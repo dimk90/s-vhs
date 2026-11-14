@@ -20,7 +20,7 @@
   - [x] tokyo-night theme.
   - [x] catppuccin themes.
 
-- [ ] Report the theme colors to programs that ask the terminal for them.
+- [x] Report the theme colors to programs that ask the terminal for them.
   - Programs query the background with OSC 11 (and the foreground with OSC 10,
     the palette with OSC 4). Inside tmux they get black, not the `SetTheme`
     background the renderer draws, so colors derived from it are wrong
@@ -31,7 +31,10 @@
   - Side effect: tmux writes that background into every cell, so the `.cast`
     keeps it when rendered again with another theme. Document it, or add a
     setting to turn it off.
-  - Workaround today: both `tmux set` commands via `Run` before `Show`.
+  - Done for background and foreground; the `.cast` keeps them (documented)
+    and grows about 2.5 times, as every cell carries both colors.
+  - The palette (OSC 4) stays unanswered: tmux `pane-colours` would record
+    every ANSI color as 24-bit, which breaks `SetBoldIsBright`.
 
 - [ ] Show time or some spinner during recording.
 
