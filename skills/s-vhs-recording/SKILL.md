@@ -336,6 +336,7 @@ it for timing and framing.
 | `SetFontFamily: cannot be combined with SetFontFamilyExact` | agg rejects both flags; pick one |
 | Renderer rejects the theme name | The name is not bundled and that renderer does not know it; use a bundled theme or an 18-color custom palette |
 | `::: SetOptimize: gifsicle is not installed` | Warning only — the GIF was written unoptimized; WebP, MP4 and WebM are unaffected |
+| `::: SetTheme: <name> is not a bundled theme, passed to the renderer as is` | Warning only — a mistyped or renderer-specific name; `Render` fails if a requested renderer does not know it |
 | `::: Highlight: not on screen, nothing selected` | Warning only — the text had not arrived, or it wraps across two rows; `Wait` for it, or highlight a shorter part of it |
 | `::: Set…: skipped for <output>` | Warning only — that renderer has no such option |
 | Variable is empty in the recording | It was expanded by the recording script — use single quotes in `Type` |

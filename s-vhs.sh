@@ -103,7 +103,8 @@ _SVHS_CELL_ADVANCE=0.6
 _SVHS_WINDOW_BAR_WIDTH=40
 _SVHS_WINDOW_BAR_HEIGHT=60
 
-# Render theme; headless recording has no host theme to inherit
+# Render theme; headless recording has no host theme to inherit.
+# Named here, replaced by its palette once the functions are defined.
 _SVHS_THEME='dracula'
 
 # Background, foreground and ANSI 0..15, shared by both renderers.
@@ -565,12 +566,21 @@ SetTheme() {
     #   SetTheme 'kanagawa' || exit 1
     #
     local theme="${1-}"
+    local palette
 
     _svhs_require_configuration_phase 'SetTheme' || return 1
 
     if [[ -z $theme ]]; then
         printf 'SetTheme: theme must not be empty\n' >&2
         return 1
+    fi
+
+    if palette=$(_svhs_theme_palette "$theme"); then
+        theme="$palette"
+    elif [[ $theme != *,* ]]; then
+        # a mistyped name would otherwise fail only at Render, after the
+        # recording has run
+        _svhs_warn "SetTheme: $theme is not a bundled theme, passed to the renderer as is"
     fi
 
     _SVHS_THEME="$theme"
@@ -1812,7 +1822,6 @@ Render() {
     #
     local clean_lines=''
     local output
-    local theme
     local asg_font_args=()
     local asg_frame_args=()
     local quiet_args=()
@@ -1873,13 +1882,12 @@ Render() {
                 _svhs_render_raster "$output" || return 1
                 ;;
             *.svg)
-                theme=$(_svhs_resolve_theme "$_SVHS_THEME")
                 asg ${asg_font_args[@]+"${asg_font_args[@]}"}   \
                     ${asg_frame_args[@]+"${asg_frame_args[@]}"} \
                     ${loop_args[@]+"${loop_args[@]}"}           \
                     --font-size "$_SVHS_FONT_SIZE"              \
                     --line-height "$_SVHS_LINE_HEIGHT"          \
-                    --theme "$theme"                            \
+                    --theme "$_SVHS_THEME"                      \
                     --padding "$_SVHS_PADDING"                  \
                     --speed "$_SVHS_PLAYBACK_SPEED"             \
                     --fps "$_SVHS_FRAMERATE"                    \
@@ -1913,16 +1921,16 @@ Render() {
 # the recording script.
 
 
-_svhs_resolve_theme() {
+_svhs_theme_palette() {
     #
-    # Print a bundled palette, or pass through a renderer-specific value.
-    # Custom palettes and names added by newer renderers stay usable.
+    # Print the palette of a bundled theme. Returns 1 and prints nothing for
+    # any other value: a custom palette or a renderer-specific name.
     #
     # Parameters:
     #   $1 - theme - theme name or custom palette.
     #
     # Example:
-    #   palette=$(_svhs_resolve_theme 'kanagawa')
+    #   palette=$(_svhs_theme_palette 'kanagawa') || palette='kanagawa'
     #
     local theme="$1"
     local name
@@ -1935,7 +1943,7 @@ _svhs_resolve_theme() {
         fi
     done <<< "$_SVHS_THEME_PALETTES"
 
-    printf '%s\n' "$theme"
+    return 1
 }
 
 
@@ -3121,7 +3129,6 @@ _svhs_render_shared_gif() {
     local quiet_args=()
     local loop_args=()
     local bold_args=()
-    local theme
 
     [[ -n $_SVHS_TEMP_GIF ]] && return 0
     _SVHS_TEMP_GIF=$(mktemp) || return 1
@@ -3130,8 +3137,6 @@ _svhs_render_shared_gif() {
     [[ $_SVHS_LOOP == 'off' ]] && loop_args=(--no-loop)
     [[ $_SVHS_BOLD_IS_BRIGHT == 'on' ]] && bold_args=(--bold-is-bright)
 
-    theme=$(_svhs_resolve_theme "$_SVHS_THEME")
-
     # bash 3.2 rejects an empty array under set -u; expand only set arguments
     agg ${_SVHS_AGG_FONT_ARGS[@]+"${_SVHS_AGG_FONT_ARGS[@]}"} \
         ${quiet_args[@]+"${quiet_args[@]}"}                   \
@@ -3139,7 +3144,7 @@ _svhs_render_shared_gif() {
         ${bold_args[@]+"${bold_args[@]}"}                     \
         --font-size "$_SVHS_FONT_SIZE"                        \
         --line-height "$_SVHS_LINE_HEIGHT"                    \
-        --theme "$theme"                                      \
+        --theme "$_SVHS_THEME"                                \
         --speed "$_SVHS_PLAYBACK_SPEED"                       \
         --fps-cap "$_SVHS_FRAMERATE"                          \
         --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT"            \
@@ -3638,3 +3643,5 @@ fi
 # tears down the tmux session and recorder, then runs the Finally commands.
 # A no-op before Start with nothing registered
 trap svhs_cleanup EXIT
+
+_SVHS_THEME=$(_svhs_theme_palette "$_SVHS_THEME")
