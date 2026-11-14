@@ -113,12 +113,16 @@ _SVHS_THEME='dracula'
 # github-light are GitHub Dark/Light Default (@primer/primitives 7.10.0
 # dark.json/light.json, fg #e6edf3/#1f2328 as overridden by github-vscode-theme),
 # nord is nordtheme/alacritty, and solarized-light color 11 is 657b83.
+# gruvbox-dark (agg swaps its background and foreground) and gruvbox-light
+# follow the terminal colors in morhetz/gruvbox-contrib color.table.
 # Keep explicit colors so renderer updates cannot change them.
 _SVHS_THEME_PALETTES='asciinema 121314,cccccc,000000,dd3c69,4ebf22,ddaf3c,26b0d7,b954e1,54e1b9,d9d9d9,4d4d4d,dd3c69,4ebf22,ddaf3c,26b0d7,b954e1,54e1b9,ffffff
 atom-one 282d35,b9c0cb,282d35,e88388,a8cc8c,dbab79,71bef2,d290e4,66c2cd,b9bfca,6f7783,e88388,a8cc8c,dbab79,73bef3,d290e3,66c2cd,ffffff
 dracula 282a36,f8f8f2,21222c,ff5555,50fa7b,f1fa8c,bd93f9,ff79c6,8be9fd,f8f8f2,6272a4,ff6e6e,69ff94,ffffa5,d6acff,ff92df,a4ffff,ffffff
 github-dark 0d1117,e6edf3,484f58,ff7b72,3fb950,d29922,58a6ff,bc8cff,39c5cf,b1bac4,6e7681,ffa198,56d364,e3b341,79c0ff,d2a8ff,56d4dd,ffffff
 github-light ffffff,1f2328,24292f,cf222e,116329,4d2d00,0969da,8250df,1b7c83,6e7781,57606a,a40e26,1a7f37,633c01,218bff,a475f9,3192aa,8c959f
+gruvbox-dark 282828,ebdbb2,282828,cc241d,98971a,d79921,458588,b16286,689d6a,a89984,928374,fb4934,b8bb26,fabd2f,83a598,d3869b,8ec07c,ebdbb2
+gruvbox-light fbf1c7,3c3836,fbf1c7,cc241d,98971a,d79921,458588,b16286,689d6a,7c6f64,928374,9d0006,79740e,b57614,076678,8f3f71,427b58,3c3836
 kanagawa 1f1f28,dcd7ba,16161d,c34043,76946a,c0a36e,7e9cd8,957fb8,6a9589,c8c093,727169,e82424,98bb6c,e6c384,7fb4ca,938aa9,7aa89f,dcd7ba
 kanagawa-dragon 181616,c5c9c5,0d0c0c,c4746e,8a9a7b,c4b28a,8ba4b0,a292a3,8ea4a2,c8c093,a6a69c,e46876,87a987,e6c384,7fb4ca,938aa9,7aa89f,c5c9c5
 kanagawa-light f2ecbc,545464,1f1f28,c84053,6f894e,77713f,4d699b,b35b79,597b75,545464,8a8980,d7474b,6e915f,836f4a,6693bf,624c83,5e857a,43436c

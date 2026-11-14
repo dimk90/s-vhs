@@ -15,6 +15,11 @@
 
 - [x] Clean up THEMES.md from not important information for better readability. 
 
+- [ ] Add custom agg themes:
+  - [ ] Colors from my spaceship theme (current shell).
+  - [ ] tokyo-night theme.
+  - [ ] catppuccin themes.
+
 - [ ] Report the theme colors to programs that ask the terminal for them.
   - Programs query the background with OSC 11 (and the foreground with OSC 10,
     the palette with OSC 4). Inside tmux they get black, not the `SetTheme`
