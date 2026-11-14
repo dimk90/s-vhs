@@ -2,6 +2,9 @@
 
 ## `[v0.7.1]` - Unreleased
 
+### New
+* Add Catppuccin, Tokyo Night and `s-vhs` color themes.
+
 ### Changed
 * Unify renderer theme palettes across renderers and add a theme gallery.
 * Accept an 8-color custom `SetTheme` palette for SVG too.

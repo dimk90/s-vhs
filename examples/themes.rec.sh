@@ -10,9 +10,12 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
 mkdir -p "$SCRIPT_DIR/themes"
 
-for THEME in asciinema atom-one dracula github-dark github-light gruvbox-dark \
-             gruvbox-light kanagawa kanagawa-dragon kanagawa-light monokai nord \
-             solarized-dark solarized-light; do
+for THEME in asciinema atom-one catppuccin-frappe catppuccin-latte      \
+             catppuccin-macchiato catppuccin-mocha dracula github-dark  \
+             github-light gruvbox-dark gruvbox-light kanagawa           \
+             kanagawa-dragon kanagawa-light monokai nord s-vhs          \
+             solarized-dark solarized-light tokyo-night tokyo-night-day \
+             tokyo-night-moon tokyo-night-storm; do
     (
         # Each recording gets fresh settings and its own cleanup trap
         # shellcheck source=s-vhs.sh

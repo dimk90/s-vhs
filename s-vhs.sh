@@ -115,9 +115,16 @@ _SVHS_THEME='dracula'
 # nord is nordtheme/alacritty, and solarized-light color 11 is 657b83.
 # gruvbox-dark (agg swaps its background and foreground) and gruvbox-light
 # follow the terminal colors in morhetz/gruvbox-contrib color.table.
+# tokyo-night* are folke/tokyonight.nvim extras/kitty, catppuccin-* are
+# catppuccin/kitty. s-vhs is the starship 'pure' prompt palette (8..15 repeat
+# 0..7, except bright black) on the Windows Terminal Campbell background.
 # Keep explicit colors so renderer updates cannot change them.
 _SVHS_THEME_PALETTES='asciinema 121314,cccccc,000000,dd3c69,4ebf22,ddaf3c,26b0d7,b954e1,54e1b9,d9d9d9,4d4d4d,dd3c69,4ebf22,ddaf3c,26b0d7,b954e1,54e1b9,ffffff
 atom-one 282d35,b9c0cb,282d35,e88388,a8cc8c,dbab79,71bef2,d290e4,66c2cd,b9bfca,6f7783,e88388,a8cc8c,dbab79,73bef3,d290e3,66c2cd,ffffff
+catppuccin-frappe 303446,c6d0f5,51576d,e78284,a6d189,e5c890,8caaee,f4b8e4,81c8be,b5bfe2,626880,e78284,a6d189,e5c890,8caaee,f4b8e4,81c8be,a5adce
+catppuccin-latte eff1f5,4c4f69,5c5f77,d20f39,40a02b,df8e1d,1e66f5,ea76cb,179299,acb0be,6c6f85,d20f39,40a02b,df8e1d,1e66f5,ea76cb,179299,bcc0cc
+catppuccin-macchiato 24273a,cad3f5,494d64,ed8796,a6da95,eed49f,8aadf4,f5bde6,8bd5ca,b8c0e0,5b6078,ed8796,a6da95,eed49f,8aadf4,f5bde6,8bd5ca,a5adcb
+catppuccin-mocha 1e1e2e,cdd6f4,45475a,f38ba8,a6e3a1,f9e2af,89b4fa,f5c2e7,94e2d5,bac2de,585b70,f38ba8,a6e3a1,f9e2af,89b4fa,f5c2e7,94e2d5,a6adc8
 dracula 282a36,f8f8f2,21222c,ff5555,50fa7b,f1fa8c,bd93f9,ff79c6,8be9fd,f8f8f2,6272a4,ff6e6e,69ff94,ffffa5,d6acff,ff92df,a4ffff,ffffff
 github-dark 0d1117,e6edf3,484f58,ff7b72,3fb950,d29922,58a6ff,bc8cff,39c5cf,b1bac4,6e7681,ffa198,56d364,e3b341,79c0ff,d2a8ff,56d4dd,ffffff
 github-light ffffff,1f2328,24292f,cf222e,116329,4d2d00,0969da,8250df,1b7c83,6e7781,57606a,a40e26,1a7f37,633c01,218bff,a475f9,3192aa,8c959f
@@ -128,8 +135,13 @@ kanagawa-dragon 181616,c5c9c5,0d0c0c,c4746e,8a9a7b,c4b28a,8ba4b0,a292a3,8ea4a2,c
 kanagawa-light f2ecbc,545464,1f1f28,c84053,6f894e,77713f,4d699b,b35b79,597b75,545464,8a8980,d7474b,6e915f,836f4a,6693bf,624c83,5e857a,43436c
 monokai 272822,f8f8f2,272822,f92672,a6e22e,f4bf75,66d9ef,ae81ff,a1efe4,f8f8f2,75715e,f92672,a6e22e,f4bf75,66d9ef,ae81ff,a1efe4,f9f8f5
 nord 2e3440,d8dee9,3b4252,bf616a,a3be8c,ebcb8b,81a1c1,b48ead,88c0d0,e5e9f0,4c566a,bf616a,a3be8c,ebcb8b,81a1c1,b48ead,8fbcbb,eceff4
+s-vhs 0c0c0c,cccccc,000000,f95d5b,62f592,f3f8a2,5dc8fd,db61aa,94deee,f1f1f0,606060,f95d5b,62f592,f3f8a2,5dc8fd,db61aa,94deee,f1f1f0
 solarized-dark 002b36,839496,073642,dc322f,859900,b58900,268bd2,d33682,2aa198,eee8d5,002b36,cb4b16,586e75,657b83,839496,6c71c4,93a1a1,fdf6e3
-solarized-light fdf6e3,657b83,073642,dc322f,859900,b58900,268bd2,d33682,2aa198,eee8d5,002b36,cb4b16,586e75,657b83,839496,6c71c4,93a1a1,fdf6e3'
+solarized-light fdf6e3,657b83,073642,dc322f,859900,b58900,268bd2,d33682,2aa198,eee8d5,002b36,cb4b16,586e75,657b83,839496,6c71c4,93a1a1,fdf6e3
+tokyo-night 1a1b26,c0caf5,15161e,f7768e,9ece6a,e0af68,7aa2f7,bb9af7,7dcfff,a9b1d6,414868,ff899d,9fe044,faba4a,8db0ff,c7a9ff,a4daff,c0caf5
+tokyo-night-day e1e2e7,3760bf,b4b5b9,f52a65,587539,8c6c3e,2e7de9,9854f1,007197,6172b0,a1a6c5,ff4774,5c8524,a27629,358aff,a463ff,007ea8,3760bf
+tokyo-night-moon 222436,c8d3f5,1b1d2b,ff757f,c3e88d,ffc777,82aaff,c099ff,86e1fc,828bb8,444a73,ff8d94,c7fb6d,ffd8ab,9ab8ff,caabff,b2ebff,c8d3f5
+tokyo-night-storm 24283b,c0caf5,1d202f,f7768e,9ece6a,e0af68,7aa2f7,bb9af7,7dcfff,a9b1d6,414868,ff899d,9fe044,faba4a,8db0ff,c7a9ff,a4daff,c0caf5'
 
 # Custom palette with background, foreground and only ANSI 0..7
 _SVHS_EIGHT_COLOR_PALETTE_REGEX='^[0-9A-Fa-f]{6}(,[0-9A-Fa-f]{6}){9}$'
