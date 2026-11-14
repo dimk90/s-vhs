@@ -108,17 +108,6 @@ _SVHS_WINDOW_BAR_HEIGHT=60
 _SVHS_THEME='dracula'
 
 # Background, foreground and ANSI 0..15, shared by both renderers.
-# Palettes from agg 1.9.0 (src/lib.rs), except atom-one from asg 2.1.0
-# (src/theme.rs), with agg's mistakes corrected from upstream: github-dark and
-# github-light are GitHub Dark/Light Default (@primer/primitives 7.10.0
-# dark.json/light.json, fg #e6edf3/#1f2328 as overridden by github-vscode-theme),
-# nord is nordtheme/alacritty, and solarized-light color 11 is 657b83.
-# gruvbox-dark (agg swaps its background and foreground) and gruvbox-light
-# follow the terminal colors in morhetz/gruvbox-contrib color.table.
-# tokyo-night* are folke/tokyonight.nvim extras/kitty, catppuccin-* are
-# catppuccin/kitty. s-vhs is the starship 'pure' prompt palette (8..15 repeat
-# 0..7, except bright black) on the Windows Terminal Campbell background.
-# Keep explicit colors so renderer updates cannot change them.
 _SVHS_THEME_PALETTES='asciinema 121314,cccccc,000000,dd3c69,4ebf22,ddaf3c,26b0d7,b954e1,54e1b9,d9d9d9,4d4d4d,dd3c69,4ebf22,ddaf3c,26b0d7,b954e1,54e1b9,ffffff
 atom-one 282d35,b9c0cb,282d35,e88388,a8cc8c,dbab79,71bef2,d290e4,66c2cd,b9bfca,6f7783,e88388,a8cc8c,dbab79,73bef3,d290e3,66c2cd,ffffff
 catppuccin-frappe 303446,c6d0f5,51576d,e78284,a6d189,e5c890,8caaee,f4b8e4,81c8be,b5bfe2,626880,e78284,a6d189,e5c890,8caaee,f4b8e4,81c8be,a5adce
@@ -225,6 +214,19 @@ _SVHS_WATCH_CLEAR=$'\033[2J\033[H'
 _SVHS_WATCH_ENTER=$'\033[?1049h\033[?25l\033[?7l'"$_SVHS_WATCH_CLEAR"
 _SVHS_WATCH_RESTORE=$'\033[0m\033[?7h\033[?25h\033[?1049l'
 
+# Status line redraw interval, and its spinner frames as bytes to keep this
+# file ASCII: U+280B U+2819 U+2839 U+2838 U+283C U+2834 U+2826 U+2827 U+2807
+# U+280F
+_SVHS_STATUS_INTERVAL=0.1
+_SVHS_STATUS_SPINNER=($'\xe2\xa0\x8b' $'\xe2\xa0\x99' $'\xe2\xa0\xb9'
+                      $'\xe2\xa0\xb8' $'\xe2\xa0\xbc' $'\xe2\xa0\xb4'
+                      $'\xe2\xa0\xa6' $'\xe2\xa0\xa7' $'\xe2\xa0\x87'
+                      $'\xe2\xa0\x8f')
+
+# DECSC and DECRC: the status line jumps to the bottom row and back
+_SVHS_SAVE_CURSOR=$'\0337'
+_SVHS_RESTORE_CURSOR=$'\0338'
+
 # Shell readiness timeout; longer than ATTACH_TIMEOUT since a native
 # configuration may load plugins on startup
 _SVHS_SHELL_TIMEOUT=10
@@ -265,6 +267,17 @@ _SVHS_TEMP_CAST=''
 _SVHS_TEMP_GIF=''
 _SVHS_REC_PID=''
 _SVHS_RECORDED=''
+
+# SECONDS value at Start, which the elapsed time counts from
+_SVHS_STARTED_AT=0
+
+# Status line: the background process drawing it, the file it reads the state
+# and the current command from, and the terminal row it is drawn on
+_SVHS_STATUS_PID=''
+_SVHS_STATUS_FILE=''
+_SVHS_STATUS_STATE='Hidden'
+_SVHS_STATUS_COMMAND=''
+_SVHS_STATUS_ROWS=0
 
 
 ## Template
@@ -990,7 +1003,7 @@ SetTitle() {
 SetQuiet() {
     #
     # Suppress recorder, text converter, raster renderer and s-vhs informational
-    # messages while keeping errors visible.
+    # messages and the status line while keeping errors visible.
     #
     # Parameters:
     #   None.
@@ -1381,6 +1394,9 @@ Start() {
             "$_SVHS_SESSION" "$_SVHS_TMUX_SOCKET" "$_SVHS_SESSION"
         _svhs_report_geometry
     fi
+
+    _SVHS_STARTED_AT=$SECONDS
+    _svhs_start_status
 }
 
 
@@ -1401,6 +1417,8 @@ svhs_cleanup() {
     #   svhs_cleanup
     #
     local index
+
+    _svhs_stop_status
 
     # An exit before Start - a failed setter, a name collision, or merely
     # sourcing the library - must leave a session of that name alone: s-vhs
@@ -1491,6 +1509,8 @@ Run() {
     local command_line="$1"
     local settle="${2:-2}"
 
+    _svhs_set_status_command "'$command_line'"
+
     _svhs_send -l "$command_line"
     _svhs_send Enter
     sleep "$settle"
@@ -1540,6 +1560,8 @@ Key() {
     local count="${2:-1}"
     local delay="${3:-$_SVHS_KEY_DELAY}"
     local press
+
+    _svhs_set_status_command "$key_name"
 
     if ! _svhs_is_positive_integer "$count"; then
         printf 'Key: expected a positive integer count, got: %s\n' "$count" >&2
@@ -1594,6 +1616,8 @@ Type() {
     local text="$1"
     local delay="${2:-$_SVHS_TYPING_SPEED}"
     local idx
+
+    _svhs_set_status_command "'$text'"
 
     for ((idx = 0; idx < ${#text}; idx++)); do
         _svhs_send -l "${text:idx:1}"
@@ -1675,6 +1699,8 @@ Highlight() {
     local hold="${2:-1}"
     local delay="${3:-$_SVHS_HIGHLIGHT_SPEED}"
 
+    _svhs_set_status_command "'$text'"
+
     if [[ -z $text ]]; then
         printf 'Highlight: text must not be empty\n' >&2
         return 1
@@ -1716,6 +1742,8 @@ Sleep() {
     #
     local duration="${1-}"
 
+    _svhs_set_status_command "$duration"
+
     if ! _svhs_is_nonnegative_number "$duration"; then
         printf 'Sleep: expected a non-negative number, got: %s\n' "$duration" >&2
         return 1
@@ -1740,6 +1768,8 @@ Wait() {
     local pattern="$1"
     local timeout="${2:-15}"
 
+    _svhs_set_status_command "'$pattern'"
+
     _svhs_wait_for_pattern 'Wait' 'screen' "$pattern" "$timeout"
 }
 
@@ -1758,6 +1788,8 @@ WaitLine() {
     #
     local pattern="$1"
     local timeout="${2:-15}"
+
+    _svhs_set_status_command "'$pattern'"
 
     _svhs_wait_for_pattern 'WaitLine' 'line' "$pattern" "$timeout"
 }
@@ -1791,6 +1823,8 @@ Show() {
         recorder_args+=(-t "$_SVHS_TITLE")
     fi
     [[ $_SVHS_QUIET == 1 ]] && recorder_args+=(-q)
+
+    _svhs_set_status_state 'Recording'
 
     printf -v attach_command 'tmux -L %q attach -t %q' \
         "$_SVHS_TMUX_SOCKET" "$_SVHS_SESSION"
@@ -1832,6 +1866,8 @@ Hide() {
 
     _svhs_truncate "$_SVHS_CAST" "$clean_lines"
     _SVHS_REC_PID=''
+
+    _svhs_set_status_state 'Hidden'
 }
 
 
@@ -1871,6 +1907,12 @@ Render() {
         _svhs_truncate "$_SVHS_CAST" "$clean_lines"
     fi
     _SVHS_REC_PID=''
+
+    # the status line gives way to the render's own messages
+    _svhs_stop_status
+    if [[ $_SVHS_QUIET == 0 ]]; then
+        printf '::: Recorded in %s\n' "$(_svhs_elapsed)"
+    fi
 
     if [[ -n $_SVHS_FONT_FAMILY_EXACT ]]; then
         asg_font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
@@ -3517,6 +3559,223 @@ _svhs_report_encode_progress() {
     done
 
     return 0
+}
+
+
+_svhs_start_status() {
+    #
+    # Start the background process that keeps a status line at the bottom of
+    # the terminal while the recording runs: a spinner, the time since Start,
+    # whether the session is recorded or hidden, and the current command. The
+    # bottom row is cut off the scroll region, so lines printed by the
+    # script, the recorder and errors scroll above it and never mix with it.
+    # It runs only when stdout is a terminal and SetQuiet is off, so logs and
+    # pipes get no redraws. A failure to set it up only costs the status line.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_start_status
+    #
+    local size
+    local rows
+    local columns
+
+    [[ $_SVHS_QUIET == 0 && -t 1 ]] || return 0
+
+    # stty prints rows and columns; read once, so a terminal resized during
+    # the recording keeps the old layout until it ends
+    size=$(stty size 2> /dev/null < /dev/tty) || return 0
+    rows="${size% *}"
+    columns="${size#* }"
+    # a scroll region needs two rows; below that the status line has no room
+    ((rows >= 3 && columns >= 20)) || return 0
+
+    _SVHS_STATUS_FILE=$(mktemp) || {
+        _SVHS_STATUS_FILE=''
+        return 0
+    }
+
+    _SVHS_STATUS_ROWS=$rows
+    _svhs_write_status
+
+    # The newline scrolls the screen when the cursor is on the bottom row, so
+    # that row is free; setting the region moves the cursor home, so it is
+    # saved around that, then put back on the line it was on
+    printf '\n%s\033[1;%dr%s\033[1A' \
+        "$_SVHS_SAVE_CURSOR" $((rows - 1)) "$_SVHS_RESTORE_CURSOR"
+
+    _svhs_draw_status "$columns" &
+    _SVHS_STATUS_PID=$!
+}
+
+
+_svhs_elapsed() {
+    #
+    # Print the time since Start as minutes and seconds, e.g. 1:05.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   printf '::: Recorded in %s\n' "$(_svhs_elapsed)"
+    #
+    local elapsed=$((SECONDS - _SVHS_STARTED_AT))
+
+    printf '%d:%02d\n' $((elapsed / 60)) $((elapsed % 60))
+}
+
+
+_svhs_draw_status() {
+    #
+    # Redraw the status line on the bottom row until the recording script
+    # exits or this process gets TERM, then give the row back to the scroll
+    # region and clear it. Runs in the background, so it reads the state the
+    # script writes from the status file instead of from variables.
+    #
+    # Parameters:
+    #   $1 - columns - terminal width; the line is cut to fit, as a wrapped
+    #        line would spill out of its row.
+    #
+    # Example:
+    #   _svhs_draw_status 120 &
+    #
+    local columns="$1"
+    # one less than the width: a character in the last column can wrap the
+    # line on some terminals; # 3 is the spinner and a space
+    local width=$((columns - 4))
+    local frame=0
+    local status=''
+    local line=''
+    local text
+
+    # A background process does not inherit the script's EXIT trap, so this
+    # is its only one: it restores the terminal after the script was killed
+    # without a chance to stop the status line
+    trap _svhs_release_status_row EXIT
+    trap 'exit 0' TERM
+
+    # $$ stays the recording script's PID in a subshell
+    while kill -0 "$$" 2> /dev/null; do
+        # the script truncates the file before it writes, so an empty read is
+        # a write in progress and the last status stands
+        IFS= read -r line 2> /dev/null < "$_SVHS_STATUS_FILE" || true
+        [[ -n $line ]] && status="$line"
+
+        text="$(_svhs_elapsed) $status"
+
+        # one write per redraw, so a line printed meanwhile cannot land
+        # between the jump to the bottom row and the return from it
+        printf '%s\033[%d;1H\033[K%s %s%s'                      \
+            "$_SVHS_SAVE_CURSOR" "$_SVHS_STATUS_ROWS"           \
+            "${_SVHS_STATUS_SPINNER[frame]}" "${text:0:width}"  \
+            "$_SVHS_RESTORE_CURSOR"
+        frame=$(((frame + 1) % ${#_SVHS_STATUS_SPINNER[@]}))
+        sleep "$_SVHS_STATUS_INTERVAL"
+    done
+}
+
+
+_svhs_release_status_row() {
+    #
+    # Give the bottom row back to the scroll region and clear the status line
+    # left on it, keeping the cursor where the script's output stands.
+    # Releasing a row twice is harmless.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   trap _svhs_release_status_row EXIT
+    #
+    # resetting the region moves the cursor home, so it is saved around that
+    printf '%s\033[r\033[%d;1H\033[K%s' \
+        "$_SVHS_SAVE_CURSOR" "$_SVHS_STATUS_ROWS" "$_SVHS_RESTORE_CURSOR"
+}
+
+
+_svhs_stop_status() {
+    #
+    # Stop the status line, restore the scroll region and remove the status
+    # file. Safe to call when the status line never started.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_stop_status
+    #
+    if [[ -n $_SVHS_STATUS_PID ]]; then
+        kill "$_SVHS_STATUS_PID" 2> /dev/null || true
+        wait "$_SVHS_STATUS_PID" 2> /dev/null || true
+        _SVHS_STATUS_PID=''
+
+        # the stopped process restores the terminal itself, unless it was
+        # killed before it could install its trap
+        _svhs_release_status_row
+    fi
+    if [[ -n $_SVHS_STATUS_FILE ]]; then
+        rm -f -- "$_SVHS_STATUS_FILE"
+        _SVHS_STATUS_FILE=''
+    fi
+}
+
+
+_svhs_set_status_state() {
+    #
+    # Report whether the session is recorded on the status line.
+    #
+    # Parameters:
+    #   $1 - state - 'Recording' or 'Hidden'.
+    #
+    # Example:
+    #   _svhs_set_status_state 'Recording'
+    #
+    local state="$1"
+
+    _SVHS_STATUS_STATE="$state"
+    _svhs_write_status
+}
+
+
+_svhs_set_status_command() {
+    #
+    # Report the running command on the status line, named after the calling
+    # function. Control characters, such as a newline typed with Type, become
+    # spaces, so the label stays on one line.
+    #
+    # Parameters:
+    #   $1 - argument - the command's first argument as the script would
+    #        spell it, e.g. 'ls' in quotes for Type.
+    #
+    # Example:
+    #   _svhs_set_status_command "'$pattern'"
+    #
+    local label="${FUNCNAME[1]} $1"
+
+    _SVHS_STATUS_COMMAND="${label//[[:cntrl:]]/ }"
+    _svhs_write_status
+}
+
+
+_svhs_write_status() {
+    #
+    # Write the state and the current command into the status file for the
+    # status line to read. A builtin redirection starts no process, so it
+    # stays cheap for a script calling Type or Key in a loop. Does nothing
+    # while the status line is off.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_write_status
+    #
+    [[ -n $_SVHS_STATUS_FILE ]] || return 0
+
+    printf '%s  %s\n' "$_SVHS_STATUS_STATE" "$_SVHS_STATUS_COMMAND" \
+        > "$_SVHS_STATUS_FILE"
 }
 
 

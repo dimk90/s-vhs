@@ -36,7 +36,7 @@
   - The palette (OSC 4) stays unanswered: tmux `pane-colours` would record
     every ANSI color as 24-bit, which breaks `SetBoldIsBright`.
 
-- [ ] Show time or some spinner during recording.
+- [x] Show time or some spinner during recording.
 
 - [ ] Add note recording output formats:
   - Demonstrate compression efficiency (GIF without optimization = 100%).
