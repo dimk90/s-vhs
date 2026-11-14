@@ -48,7 +48,7 @@ and `Render` reports the rest.
 | `SetFontDir <dir>`               | GIF, WebP, MP4, WebM      | —            | Additional font directory searched by the renderer, which must exist; repeatable                                                                                                                                                                                                                                                                   |
 | `SetEngine <swash\|resvg>`       | GIF, WebP, MP4, WebM      | `swash`      | Frame rendering backend; `resvg` draws COLRv1 emoji in color                                                                                                                                                                                                                                                                                       |
 | `SetLineHeight <multiplier>`     | GIF, WebP, MP4, WebM, SVG | `1.2`        | Line-height multiplier passed to the renderer                                                                                                                                                                                                                                                                                                      |
-| `SetTheme <theme>`               | GIF, WebP, MP4, WebM, SVG | `dracula`    | [Bundled theme](THEMES.md) with the same palette in every renderer; other names and custom palettes pass through and may fail at `Render`; use background, foreground and 16 comma-separated six-digit hex colors without `#` for both renderers                                                                                                   |
+| `SetTheme <theme>`               | GIF, WebP, MP4, WebM, SVG | `dracula`    | [Bundled theme](THEMES.md) or a custom palette[^themes], drawn with the same colors by every renderer                                                                                                                                                                                                                                              |
 | `SetBoldIsBright <on\|off>`      | GIF, WebP, MP4, WebM      | `off`        | Draw bold text in the bright ANSI color, as most terminals do                                                                                                                                                                                                                                                                                      |
 | `SetPadding <px>`                | SVG                       | `0`          | Padding around the terminal on both axes, in output pixels                                                                                                                                                                                                                                                                                         |
 | `SetPaddingX <px>`               | SVG                       | `SetPadding` | Padding left and right of the terminal, overriding `SetPadding` on that axis                                                                                                                                                                                                                                                                       |
@@ -85,6 +85,12 @@ and `Render` reports the rest.
     builds. About half the MP4's bytes, but the encode is several times
     slower and can take longer than the recording. The measurements behind
     every encoder setting: [the WebM contract](ENCODING.md#the-webm-contract).
+
+[^themes]: A custom palette is 18 comma-separated six-digit hex colors
+    without `#`: background, foreground, then ANSI 0–15. Any other value
+    passes through to the renderer unchanged - a name outside the bundled list
+    with a warning - and fails at `Render` if the renderer does not support
+    it.
 
 [^prompts]: Bundled prompt themes: `arrow`, `plain`, `path` or `powerline`.
     A literal prompt in the shell's own syntax, or `native`. A theme and a

@@ -13,7 +13,7 @@
   - [x] theme defined in s-vhs and pass colors via custom theme option.
   - [x] Add theme list with visualizations (samples) for each theme.
 
-- [ ] Clean up THEMES.md from not important information for better readability. 
+- [x] Clean up THEMES.md from not important information for better readability. 
 
 - [ ] Report the theme colors to programs that ask the terminal for them.
   - Programs query the background with OSC 11 (and the foreground with OSC 10,
