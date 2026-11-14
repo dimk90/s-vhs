@@ -87,10 +87,10 @@ and `Render` reports the rest.
     every encoder setting: [the WebM contract](ENCODING.md#the-webm-contract).
 
 [^themes]: A custom palette is 18 comma-separated six-digit hex colors
-    without `#`: background, foreground, then ANSI 0–15. Any other value
-    passes through to the renderer unchanged - a name outside the bundled list
-    with a warning - and fails at `Render` if the renderer does not support
-    it.
+    without `#`: background, foreground, then ANSI 0–15; with only ANSI 0–7,
+    they are repeated as 8–15. Any other value passes through to the renderer
+    unchanged - a name outside the bundled list with a warning - and fails at
+    `Render` if the renderer does not support it.
 
 [^prompts]: Bundled prompt themes: `arrow`, `plain`, `path` or `powerline`.
     A literal prompt in the shell's own syntax, or `native`. A theme and a

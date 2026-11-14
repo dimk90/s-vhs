@@ -272,7 +272,7 @@ somewhere that may not (some Markdown viewers, chat previews, social cards).
 - Use a bundled `SetTheme` name, such as `dracula`, `kanagawa` or `atom-one`,
   for the same palette in GIF and SVG. Other names remain renderer-specific
   and may fail at `Render`. A custom palette for both needs background,
-  foreground and 16 comma-separated six-digit hex colors without `#`.
+  foreground and 8 or 16 comma-separated six-digit hex colors without `#`.
 - Full list of pitfalls and workarounds:
   <https://github.com/dimk90/s-vhs/blob/develop/doc/SVG.md>.
 
@@ -334,7 +334,7 @@ it for timing and framing.
 | `Wait: timeout waiting for: <pattern>` | The pattern never appeared — check the anchor and raise the timeout |
 | `no faces matching font family options` | No `SetFontFamilyExact` family is installed, or no preferred or default agg text font is available |
 | `SetFontFamily: cannot be combined with SetFontFamilyExact` | agg rejects both flags; pick one |
-| Renderer rejects the theme name | The name is not bundled and that renderer does not know it; use a bundled theme or an 18-color custom palette |
+| Renderer rejects the theme name | The name is not bundled and that renderer does not know it; use a bundled theme or a hex custom palette |
 | `::: SetOptimize: gifsicle is not installed` | Warning only — the GIF was written unoptimized; WebP, MP4 and WebM are unaffected |
 | `::: SetTheme: <name> is not a bundled theme, passed to the renderer as is` | Warning only — a mistyped or renderer-specific name; `Render` fails if a requested renderer does not know it |
 | `::: Highlight: not on screen, nothing selected` | Warning only — the text had not arrived, or it wraps across two rows; `Wait` for it, or highlight a shorter part of it |

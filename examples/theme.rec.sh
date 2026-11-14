@@ -17,7 +17,7 @@ SetFontFamily "Iosevka Term"
 SetTypingSpeed 0.04
 
 # A bundled theme shared by GIF and SVG; a comma-separated hex palette
-# (background, foreground, then 16 colors) also works
+# (background, foreground, then 8 or 16 colors) also works
 SetTheme 'kanagawa'
 
 Start

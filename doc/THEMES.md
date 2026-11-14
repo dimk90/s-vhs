@@ -30,7 +30,8 @@ Each sample shows the default foreground, ANSI colors 0–7 and bright colors
 ## Custom palettes
 
 Pass 18 comma-separated six-digit hex colors, without `#`: background,
-foreground, then ANSI 0–15.
+foreground, then ANSI 0–15. With only ANSI 0–7 (10 colors), they are repeated
+as the bright colors 8–15.
 
 ```bash
 SetTheme '282a36,f8f8f2,21222c,ff5555,50fa7b,f1fa8c,bd93f9,ff79c6,8be9fd,f8f8f2,6272a4,ff6e6e,69ff94,ffffa5,d6acff,ff92df,a4ffff,ffffff'

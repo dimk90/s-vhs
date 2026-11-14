@@ -274,7 +274,7 @@ Highlight 'VHS cannot' 1.5
 ```bash
 # A bundled theme uses the same palette in GIF and SVG.
 # A comma-separated hex palette
-# (background, foreground, then 16 colors) also works.
+# (background, foreground, then 8 or 16 colors) also works.
 SetTheme 'kanagawa'
 ```
 

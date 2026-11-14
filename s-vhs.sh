@@ -123,6 +123,9 @@ nord 2e3440,eceff4,3b4252,bf616a,a3be8c,ebcb8b,81a1c1,b48ead,88c0d0,eceff4,3b425
 solarized-dark 002b36,839496,073642,dc322f,859900,b58900,268bd2,d33682,2aa198,eee8d5,002b36,cb4b16,586e75,657b83,839496,6c71c4,93a1a1,fdf6e3
 solarized-light fdf6e3,657b83,073642,dc322f,859900,b58900,268bd2,d33682,2aa198,eee8d5,002b36,cb4b16,586e75,657c83,839496,6c71c4,93a1a1,fdf6e3'
 
+# Custom palette with background, foreground and only ANSI 0..7
+_SVHS_EIGHT_COLOR_PALETTE_REGEX='^[0-9A-Fa-f]{6}(,[0-9A-Fa-f]{6}){9}$'
+
 # Bold text in the bright ANSI color, the way most terminals show it
 _SVHS_BOLD_IS_BRIGHT='off'
 
@@ -560,7 +563,8 @@ SetTheme() {
     #
     # Parameters:
     #   $1 - theme - non-empty name or palette; bundled names resolve to the
-    #        same colors for every renderer, other values pass through.
+    #        same colors for every renderer, an 8-color palette gets its
+    #        colors repeated as the bright ones, other values pass through.
     #
     # Example:
     #   SetTheme 'kanagawa' || exit 1
@@ -577,6 +581,9 @@ SetTheme() {
 
     if palette=$(_svhs_theme_palette "$theme"); then
         theme="$palette"
+    elif [[ $theme =~ $_SVHS_EIGHT_COLOR_PALETTE_REGEX ]]; then
+        # asg requires all 16 colors; repeat 0..7 as 8..15, as agg does
+        theme="$theme,${theme#*,*,}"
     elif [[ $theme != *,* ]]; then
         # a mistyped name would otherwise fail only at Render, after the
         # recording has run
