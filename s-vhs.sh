@@ -278,6 +278,9 @@ _SVHS_STATUS_FILE=''
 _SVHS_STATUS_STATE='Hidden'
 _SVHS_STATUS_COMMAND=''
 _SVHS_STATUS_ROWS=0
+# Name a key command such as Backspace passes to Key for the length of its
+# call, shown on the status line instead of Key and the tmux key name
+_SVHS_STATUS_ALIAS=''
 
 
 ## Template
@@ -1582,21 +1585,21 @@ Key() {
 # A modified key stays with Key and tmux notation (`Key C-r`), and three of
 # the names are spelled differently there: BSpace, IC and DC.
 #
-Enter()     { Key Enter ${@+"$@"};    }
-Tab()       { Key Tab ${@+"$@"};      }
-Space()     { Key Space ${@+"$@"};    }
-Backspace() { Key BSpace ${@+"$@"};   }
-Escape()    { Key Escape ${@+"$@"};   }
-Up()        { Key Up ${@+"$@"};       }
-Down()      { Key Down ${@+"$@"};     }
-Left()      { Key Left ${@+"$@"};     }
-Right()     { Key Right ${@+"$@"};    }
-PageUp()    { Key PageUp ${@+"$@"};   }
-PageDown()  { Key PageDown ${@+"$@"}; }
-Home()      { Key Home ${@+"$@"};     }
-End()       { Key End ${@+"$@"};      }
-Insert()    { Key IC ${@+"$@"};       }
-Delete()    { Key DC ${@+"$@"};       }
+Enter()     { _SVHS_STATUS_ALIAS='Enter'     Key Enter    ${@+"$@"}; }
+Tab()       { _SVHS_STATUS_ALIAS='Tab'       Key Tab      ${@+"$@"}; }
+Space()     { _SVHS_STATUS_ALIAS='Space'     Key Space    ${@+"$@"}; }
+Backspace() { _SVHS_STATUS_ALIAS='Backspace' Key BSpace   ${@+"$@"}; }
+Escape()    { _SVHS_STATUS_ALIAS='Escape'    Key Escape   ${@+"$@"}; }
+Up()        { _SVHS_STATUS_ALIAS='Up'        Key Up       ${@+"$@"}; }
+Down()      { _SVHS_STATUS_ALIAS='Down'      Key Down     ${@+"$@"}; }
+Left()      { _SVHS_STATUS_ALIAS='Left'      Key Left     ${@+"$@"}; }
+Right()     { _SVHS_STATUS_ALIAS='Right'     Key Right    ${@+"$@"}; }
+PageUp()    { _SVHS_STATUS_ALIAS='PageUp'    Key PageUp   ${@+"$@"}; }
+PageDown()  { _SVHS_STATUS_ALIAS='PageDown'  Key PageDown ${@+"$@"}; }
+Home()      { _SVHS_STATUS_ALIAS='Home'      Key Home     ${@+"$@"}; }
+End()       { _SVHS_STATUS_ALIAS='End'       Key End      ${@+"$@"}; }
+Insert()    { _SVHS_STATUS_ALIAS='Insert'    Key IC       ${@+"$@"}; }
+Delete()    { _SVHS_STATUS_ALIAS='Delete'    Key DC       ${@+"$@"}; }
 #
 # bash 3.2 (stock macOS) reports "$@" as unbound under set -u when the caller
 # passed nothing, so the arguments are guarded the same way an array is.
@@ -3742,7 +3745,8 @@ _svhs_set_status_state() {
 _svhs_set_status_command() {
     #
     # Report the running command on the status line, named after the calling
-    # function. Control characters, such as a newline typed with Type, become
+    # function - or, for a key command such as Backspace, after that command
+    # alone, as Key would show the tmux name BSpace. Control characters, such as a newline typed with Type, become
     # spaces, so the label stays on one line.
     #
     # Parameters:
@@ -3752,7 +3756,7 @@ _svhs_set_status_command() {
     # Example:
     #   _svhs_set_status_command "'$pattern'"
     #
-    local label="${FUNCNAME[1]} $1"
+    local label="${_SVHS_STATUS_ALIAS:-${FUNCNAME[1]} $1}"
 
     _SVHS_STATUS_COMMAND="${label//[[:cntrl:]]/ }"
     _svhs_write_status
