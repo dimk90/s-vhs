@@ -19,6 +19,7 @@
 | `font-family`    | `SetFontFamily` falling back over a missing family, plus bundled Nerd icons |
 | `line-height`    | `SetLineHeight 1.8` against the 1.2 default                                 |
 | `theme`          | `SetTheme` pinning a named palette, plus `SetTypingSpeed`                   |
+| `themes`         | Every bundled palette in GIF and SVG for [THEMES.md](../doc/THEMES.md)      |
 | `playback`       | `SetPlaybackSpeed`, `SetFramerate`, `SetLastFrameDuration`, `SetLoop`       |
 | `prompt`         | `SetPrompt` themes and `SetShell` picking the recorded shell                |
 | `require-env`    | `Require` checking a tool up front, `Env` configuring it for the shell      |

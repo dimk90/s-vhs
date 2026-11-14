@@ -2,6 +2,9 @@
 
 ## `[v0.7.1]` - Unreleased
 
+### Changed
+* Unify renderer theme palettes across renderers and add a theme gallery.
+
 ### Fixed
 * Keep 24-bit colors in recordings instead of reducing them to the nearest of 256.
 

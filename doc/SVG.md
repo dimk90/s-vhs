@@ -72,9 +72,9 @@ or use the GIF.
 
 ## Other sharp edges
 
-* **Theme names are not shared with `agg`.** When a recording produces both GIF
-  and SVG, `Render` fails if only one renderer recognizes the selected theme.
-  Use a custom palette; see [REFERENCE.md](REFERENCE.md).
+* **Renderer-specific theme names may fail.** The [bundled themes](THEMES.md)
+  share the same palettes across GIF and SVG. Other names pass through unchanged
+  and fail at `Render` if a requested renderer does not recognize them.
 
 * **File size scales with screen changes, not pixel count.** A short SVG can be
   far smaller than the equivalent GIF (`examples/multi-output.svg` is 9.0 KB

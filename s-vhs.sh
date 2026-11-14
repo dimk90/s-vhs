@@ -106,6 +106,22 @@ _SVHS_WINDOW_BAR_HEIGHT=60
 # Render theme; headless recording has no host theme to inherit
 _SVHS_THEME='dracula'
 
+# Background, foreground and ANSI 0..15, shared by both renderers.
+# Palettes from agg 1.9.0 (src/lib.rs), except atom-one from asg 2.1.0
+# (src/theme.rs). Keep explicit colors so renderer updates cannot change them.
+_SVHS_THEME_PALETTES='asciinema 121314,cccccc,000000,dd3c69,4ebf22,ddaf3c,26b0d7,b954e1,54e1b9,d9d9d9,4d4d4d,dd3c69,4ebf22,ddaf3c,26b0d7,b954e1,54e1b9,ffffff
+atom-one 282d35,b9c0cb,282d35,e88388,a8cc8c,dbab79,71bef2,d290e4,66c2cd,b9bfca,6f7783,e88388,a8cc8c,dbab79,73bef3,d290e3,66c2cd,ffffff
+dracula 282a36,f8f8f2,21222c,ff5555,50fa7b,f1fa8c,bd93f9,ff79c6,8be9fd,f8f8f2,6272a4,ff6e6e,69ff94,ffffa5,d6acff,ff92df,a4ffff,ffffff
+github-dark 171b21,eceff4,0e1116,f97583,a2fca2,fabb72,7db4f9,c4a0f5,1f6feb,eceff4,6a737d,bf5a64,7abf7a,bf8f57,608bbf,997dbf,195cbf,b9bbbf
+github-light eceff4,171b21,0e1116,f97583,a2fca2,fabb72,7db4f9,c4a0f5,1f6feb,eceff4,6a737d,bf5a64,7abf7a,bf8f57,608bbf,997dbf,195cbf,b9bbbf
+kanagawa 1f1f28,dcd7ba,16161d,c34043,76946a,c0a36e,7e9cd8,957fb8,6a9589,c8c093,727169,e82424,98bb6c,e6c384,7fb4ca,938aa9,7aa89f,dcd7ba
+kanagawa-dragon 181616,c5c9c5,0d0c0c,c4746e,8a9a7b,c4b28a,8ba4b0,a292a3,8ea4a2,c8c093,a6a69c,e46876,87a987,e6c384,7fb4ca,938aa9,7aa89f,c5c9c5
+kanagawa-light f2ecbc,545464,1f1f28,c84053,6f894e,77713f,4d699b,b35b79,597b75,545464,8a8980,d7474b,6e915f,836f4a,6693bf,624c83,5e857a,43436c
+monokai 272822,f8f8f2,272822,f92672,a6e22e,f4bf75,66d9ef,ae81ff,a1efe4,f8f8f2,75715e,f92672,a6e22e,f4bf75,66d9ef,ae81ff,a1efe4,f9f8f5
+nord 2e3440,eceff4,3b4252,bf616a,a3be8c,ebcb8b,81a1c1,b48ead,88c0d0,eceff4,3b4252,bf616a,a3be8c,ebcb8b,81a1c1,b48ead,88c0d0,eceff4
+solarized-dark 002b36,839496,073642,dc322f,859900,b58900,268bd2,d33682,2aa198,eee8d5,002b36,cb4b16,586e75,657b83,839496,6c71c4,93a1a1,fdf6e3
+solarized-light fdf6e3,657b83,073642,dc322f,859900,b58900,268bd2,d33682,2aa198,eee8d5,002b36,cb4b16,586e75,657c83,839496,6c71c4,93a1a1,fdf6e3'
+
 # Bold text in the bright ANSI color, the way most terminals show it
 _SVHS_BOLD_IS_BRIGHT='off'
 
@@ -539,10 +555,11 @@ SetLineHeight() {
 
 SetTheme() {
     #
-    # Set a renderer theme name or custom palette value.
+    # Set a bundled color theme, renderer-specific name or custom palette.
     #
     # Parameters:
-    #   $1 - theme - non-empty value passed to the renderer's --theme.
+    #   $1 - theme - non-empty name or palette; bundled names resolve to the
+    #        same colors for every renderer, other values pass through.
     #
     # Example:
     #   SetTheme 'kanagawa' || exit 1
@@ -1795,6 +1812,7 @@ Render() {
     #
     local clean_lines=''
     local output
+    local theme
     local asg_font_args=()
     local asg_frame_args=()
     local quiet_args=()
@@ -1855,12 +1873,13 @@ Render() {
                 _svhs_render_raster "$output" || return 1
                 ;;
             *.svg)
+                theme=$(_svhs_resolve_theme "$_SVHS_THEME")
                 asg ${asg_font_args[@]+"${asg_font_args[@]}"}   \
                     ${asg_frame_args[@]+"${asg_frame_args[@]}"} \
                     ${loop_args[@]+"${loop_args[@]}"}           \
                     --font-size "$_SVHS_FONT_SIZE"              \
                     --line-height "$_SVHS_LINE_HEIGHT"          \
-                    --theme "$_SVHS_THEME"                      \
+                    --theme "$theme"                            \
                     --padding "$_SVHS_PADDING"                  \
                     --speed "$_SVHS_PLAYBACK_SPEED"             \
                     --fps "$_SVHS_FRAMERATE"                    \
@@ -1892,6 +1911,32 @@ Render() {
 # Bash cannot hide functions from a sourcing script, so the _svhs_ prefix
 # only marks them as implementation details and avoids name collisions with
 # the recording script.
+
+
+_svhs_resolve_theme() {
+    #
+    # Print a bundled palette, or pass through a renderer-specific value.
+    # Custom palettes and names added by newer renderers stay usable.
+    #
+    # Parameters:
+    #   $1 - theme - theme name or custom palette.
+    #
+    # Example:
+    #   palette=$(_svhs_resolve_theme 'kanagawa')
+    #
+    local theme="$1"
+    local name
+    local palette
+
+    while read -r name palette; do
+        if [[ $name == "$theme" ]]; then
+            printf '%s\n' "$palette"
+            return 0
+        fi
+    done <<< "$_SVHS_THEME_PALETTES"
+
+    printf '%s\n' "$theme"
+}
 
 
 _svhs_require_configuration_phase() {
@@ -3076,6 +3121,7 @@ _svhs_render_shared_gif() {
     local quiet_args=()
     local loop_args=()
     local bold_args=()
+    local theme
 
     [[ -n $_SVHS_TEMP_GIF ]] && return 0
     _SVHS_TEMP_GIF=$(mktemp) || return 1
@@ -3084,6 +3130,8 @@ _svhs_render_shared_gif() {
     [[ $_SVHS_LOOP == 'off' ]] && loop_args=(--no-loop)
     [[ $_SVHS_BOLD_IS_BRIGHT == 'on' ]] && bold_args=(--bold-is-bright)
 
+    theme=$(_svhs_resolve_theme "$_SVHS_THEME")
+
     # bash 3.2 rejects an empty array under set -u; expand only set arguments
     agg ${_SVHS_AGG_FONT_ARGS[@]+"${_SVHS_AGG_FONT_ARGS[@]}"} \
         ${quiet_args[@]+"${quiet_args[@]}"}                   \
@@ -3091,7 +3139,7 @@ _svhs_render_shared_gif() {
         ${bold_args[@]+"${bold_args[@]}"}                     \
         --font-size "$_SVHS_FONT_SIZE"                        \
         --line-height "$_SVHS_LINE_HEIGHT"                    \
-        --theme "$_SVHS_THEME"                                \
+        --theme "$theme"                                      \
         --speed "$_SVHS_PLAYBACK_SPEED"                       \
         --fps-cap "$_SVHS_FRAMERATE"                          \
         --idle-time-limit "$_SVHS_IDLE_TIME_LIMIT"            \

@@ -48,7 +48,7 @@ and `Render` reports the rest.
 | `SetFontDir <dir>`               | GIF, WebP, MP4, WebM      | —            | Additional font directory searched by the renderer, which must exist; repeatable                                                                                                                                                                                                                                                                   |
 | `SetEngine <swash\|resvg>`       | GIF, WebP, MP4, WebM      | `swash`      | Frame rendering backend; `resvg` draws COLRv1 emoji in color                                                                                                                                                                                                                                                                                       |
 | `SetLineHeight <multiplier>`     | GIF, WebP, MP4, WebM, SVG | `1.2`        | Line-height multiplier passed to the renderer                                                                                                                                                                                                                                                                                                      |
-| `SetTheme <theme>`               | GIF, WebP, MP4, WebM, SVG | `dracula`    | Theme name[^themes] or custom palette passed to each requested renderer                                                                                                                                                                                                                                                                            |
+| `SetTheme <theme>`               | GIF, WebP, MP4, WebM, SVG | `dracula`    | [Bundled theme](THEMES.md) with the same palette in every renderer; other names and custom palettes pass through and may fail at `Render`; use background, foreground and 16 comma-separated six-digit hex colors without `#` for both renderers                                                                                                   |
 | `SetBoldIsBright <on\|off>`      | GIF, WebP, MP4, WebM      | `off`        | Draw bold text in the bright ANSI color, as most terminals do                                                                                                                                                                                                                                                                                      |
 | `SetPadding <px>`                | SVG                       | `0`          | Padding around the terminal on both axes, in output pixels                                                                                                                                                                                                                                                                                         |
 | `SetPaddingX <px>`               | SVG                       | `SetPadding` | Padding left and right of the terminal, overriding `SetPadding` on that axis                                                                                                                                                                                                                                                                       |
@@ -69,13 +69,6 @@ and `Render` reports the rest.
     cell backgrounds on a fixed `0.6 × font-size` grid, so a face with a
     `0.6 em` advance - JetBrains Mono, Cascadia Mono, Liberation Mono - keeps
     text aligned with them; others drift further with every column.
-
-[^themes]: Named color themes are renderer-specific, and a name only one
-    renderer knows fails at `Render`, after the recording has run. `asg`
-    accepts `asciinema`, `dracula`, `github-dark`, `github-light`, `monokai`,
-    `solarized-dark` and `solarized-light`; `kanagawa`, `kanagawa-dragon`,
-    `kanagawa-light`, `nord`, `gruvbox-dark` and `custom` are `agg`-only. Use
-    a custom palette when one recording requests GIF or WebP alongside SVG.
 
 [^mp4]: MP4 is lossy: H.264 (High profile, `-crf 18 -preset
     medium`, or `veryslow` under `SetOptimize`) with 4:2:0 chroma, so coloured

@@ -272,13 +272,17 @@ Highlight 'VHS cannot' 1.5
 ### Color Theme
 
 ```bash
-# One of the renderer's named themes.
+# A bundled theme uses the same palette in GIF and SVG.
 # A comma-separated hex palette
-# (background, foreground, then 8 or 16 colors) also works.
+# (background, foreground, then 16 colors) also works.
 SetTheme 'kanagawa'
 ```
 
 <img src="examples/theme.gif" width="500px" alt="Red, green and blue text rendered in the kanagawa palette">
+
+See the [theme gallery](doc/THEMES.md) for all bundled themes, with GIF and SVG
+samples. Other names pass through to the renderer and may not work in
+both formats.
 
 ### Shell & Prompt
 
@@ -528,6 +532,8 @@ Render
 ## Documentation
 
 - For the full list of commands and settings, see [REFERENCE.md](doc/REFERENCE.md).
+
+- For color themes with GIF and SVG samples, see [THEMES.md](doc/THEMES.md).
 
 - For debugging a recording script, see [DEBUG.md](doc/DEBUG.md).
 
