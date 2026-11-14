@@ -37,8 +37,8 @@ as the bright colors 8–15.
 SetTheme '282a36,f8f8f2,21222c,ff5555,50fa7b,f1fa8c,bd93f9,ff79c6,8be9fd,f8f8f2,6272a4,ff6e6e,69ff94,ffffa5,d6acff,ff92df,a4ffff,ffffff'
 ```
 
-Any other value passes through to the renderer unchanged; one it does not
-support fails at `Render`.
+> Any other value passes through to the renderer unchanged; one it does not
+> support fails at `Render`.
 
 A theme changes only how the output is drawn. Programs in the session that ask
 the terminal for its colors do not see it, 24-bit colors they print stay as

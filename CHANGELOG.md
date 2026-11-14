@@ -5,6 +5,7 @@
 ### Changed
 * Unify renderer theme palettes across renderers and add a theme gallery.
 * Accept an 8-color custom `SetTheme` palette for SVG too.
+* Correct the `github-dark`, `github-light`, `nord` and `solarized-light` palettes to match their upstream themes.
 
 ### Fixed
 * Keep 24-bit colors in recordings instead of reducing them to the nearest of 256.
