@@ -116,13 +116,18 @@ release:
 5. Replace the `latest` and `skill` aliases with the same files.
 6. Commit every changed file to `deploy` in one commit while preserving every
    earlier version.
-7. Explicitly request a Pages build and wait for it to finish.
+7. Wait for the Pages build of that commit to finish. Request a build only
+   when nothing was committed, as in a rerun.
 8. Verify that both public version URLs serve the exact released bytes.
 9. Create the GitHub release from the matching changelog section.
 
-GitHub does not trigger a branch-based Pages build when `GITHUB_TOKEN` pushes
-the source commit. The workflow therefore declares both `contents: write` for
-the branch update and `pages: write` for the explicit build request.
+The push to `deploy` starts a Pages build by itself, even though `GITHUB_TOKEN`
+makes it. A second, explicit request for the same commit makes GitHub cancel
+one of the two builds, and the cancelled build reports `errored`. The workflow
+therefore requests a build only when it pushed nothing, and it fails only when
+no build of the commit succeeds in time, not on the first `errored` status. It
+declares both `contents: write` for the branch update and `pages: write` for
+the build request.
 
 All releases share one workflow concurrency group, so different tags cannot
 race while updating `deploy`. Rerunning an older release verifies its pinned

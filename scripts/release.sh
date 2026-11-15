@@ -1472,7 +1472,7 @@ _release_wait_for_publication() {
     #
     local release_url version_url latest_url skill_version_url skill_latest_url
     local release_observed=false
-    local status='request failed'
+    local latest_release=''
     local attempt published_version
 
     _release_begin_step 'Wait for GitHub publication and verify Pages'
@@ -1484,21 +1484,21 @@ _release_wait_for_publication() {
 
     _release_info "waiting for ${release_url}"
     for ((attempt = 1; attempt <= _RELEASE_PUBLICATION_ATTEMPTS; attempt++)); do
-        if status="$(_release_http_status "$release_url" 2>"$_RELEASE_LOG_FILE")" &&
-           [[ $status == 200 ]]; then
+        if latest_release="$(_release_latest_release_tag 2>"$_RELEASE_LOG_FILE")" &&
+           [[ $latest_release == "$_RELEASE_TARGET_TAG" ]]; then
             release_observed=true
             break
         fi
         if ((attempt < _RELEASE_PUBLICATION_ATTEMPTS)); then
             if ((attempt % 6 == 0)); then
-                _release_info "still waiting for the release workflow (HTTP ${status}, attempt ${attempt})"
+                _release_info "still waiting for the release workflow (latest release: ${latest_release:-none}, attempt ${attempt})"
             fi
             _release_wait_with_spinner 'waiting for the release workflow'
         fi
     done
 
     if [[ $release_observed != true ]]; then
-        _RELEASE_GITHUB_STATE="release not observed (last HTTP status: ${status})"
+        _RELEASE_GITHUB_STATE="release not observed (latest release: ${latest_release:-none})"
         _release_stop 'the GitHub release was not published in time' \
                       "inspect https://github.com/${_RELEASE_GITHUB_REPOSITORY}/actions/workflows/release.yml"
     fi
@@ -1845,6 +1845,28 @@ _release_http_status() {
     local url="$1"
 
     curl -L -sS -o /dev/null -w '%{http_code}' "$url"
+}
+
+
+_release_latest_release_tag() {
+    #
+    # Print the tag of the latest GitHub release, or nothing when the
+    # repository has no release.
+    #
+    # The release page of a tag cannot tell this: GitHub serves it with
+    # HTTP 200 as soon as the tag exists, with or without a release.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   latest_release="$(_release_latest_release_tag)"
+    #
+    local redirect_url
+
+    redirect_url="$(curl -sS -o /dev/null -w '%{redirect_url}' \
+        "https://github.com/${_RELEASE_GITHUB_REPOSITORY}/releases/latest")" || return 1
+    printf '%s\n' "${redirect_url##*/}"
 }
 
 

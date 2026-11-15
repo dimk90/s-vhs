@@ -296,17 +296,21 @@ jobs:
               core.info(`${releaseTag} already matches; aliases remain at ${newestDeployedTag}.`);
             }
 
-            // GITHUB_TOKEN pushes do not trigger branch-based Pages builds
-            await github.request("POST /repos/{owner}/{repo}/pages/builds", {
-              owner,
-              repo,
-            });
+            // The deploy push starts a Pages build by itself, and a second
+            // request would make GitHub cancel one of the two builds
+            if (outdatedPublications.length === 0) {
+              await github.request("POST /repos/{owner}/{repo}/pages/builds", {
+                owner,
+                repo,
+              });
+            }
 
             const wait = (milliseconds) => new Promise((resolve) => {
               setTimeout(resolve, milliseconds);
             });
 
             let completedBuild;
+            let lastBuildError;
             for (let attempt = 0; attempt < 60; attempt += 1) {
               if (attempt > 0) {
                 await wait(5000);
@@ -319,10 +323,11 @@ jobs:
               if (build.commit !== pagesCommitSha) {
                 continue;
               }
+              // A cancelled duplicate build also reports errored, so only a
+              // build that never succeeds in time fails the release
               if (build.status === "errored") {
-                throw new Error(
-                  `Pages build failed: ${build.error?.message ?? "unknown error"}`,
-                );
+                lastBuildError = build.error?.message ?? "unknown error";
+                continue;
               }
               if (build.status === "built") {
                 completedBuild = build;
@@ -330,7 +335,10 @@ jobs:
               }
             }
             if (!completedBuild) {
-              throw new Error(`Pages did not build deploy commit ${pagesCommitSha} in time.`);
+              const reason = lastBuildError ? ` Last build error: ${lastBuildError}` : "";
+              throw new Error(
+                `Pages did not build deploy commit ${pagesCommitSha} in time.${reason}`,
+              );
             }
 
             for (const publication of publications) {
