@@ -3,10 +3,9 @@
 ## `[v0.7.1]` - Unreleased
 
 ### New
-* Add Catppuccin, Tokyo Night and `s-vhs` color themes.
+* Add `Catppuccin`, `Tokyo Night` and `s-vhs` color themes.
 * Report the theme's background and foreground to programs that ask the terminal for them.
 * Show a status line while recording: elapsed time, recorded or hidden state and the current command.
-* Report how long the session took before rendering.
 
 ### Changed
 * Unify renderer theme palettes across renderers and add a theme gallery.

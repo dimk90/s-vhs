@@ -227,6 +227,16 @@ _SVHS_STATUS_SPINNER=($'\xe2\xa0\x8b' $'\xe2\xa0\x99' $'\xe2\xa0\xb9'
 _SVHS_SAVE_CURSOR=$'\0337'
 _SVHS_RESTORE_CURSOR=$'\0338'
 
+# Jump to the status line's row and clear it. A row past the last one is
+# clamped to it, so this needs no terminal height and survives a resize.
+_SVHS_STATUS_ROW=$'\033[999;1H\033[K'
+
+# Give the bottom row back to the scroll region and clear the status line
+# left on it. Resetting the region moves the cursor home, so it is saved
+# around that. Sending it twice is harmless.
+_SVHS_STATUS_RELEASE="$_SVHS_SAVE_CURSOR"$'\033[r'"$_SVHS_STATUS_ROW"
+_SVHS_STATUS_RELEASE+="$_SVHS_RESTORE_CURSOR"
+
 # Shell readiness timeout; longer than ATTACH_TIMEOUT since a native
 # configuration may load plugins on startup
 _SVHS_SHELL_TIMEOUT=10
@@ -272,12 +282,12 @@ _SVHS_RECORDED=''
 _SVHS_STARTED_AT=0
 
 # Status line: the background process drawing it, the file it reads the state
-# and the current command from, and the terminal row it is drawn on
+# and the current command from, and the terminal width it is cut to
 _SVHS_STATUS_PID=''
 _SVHS_STATUS_FILE=''
 _SVHS_STATUS_STATE='Hidden'
 _SVHS_STATUS_COMMAND=''
-_SVHS_STATUS_ROWS=0
+_SVHS_STATUS_COLUMNS=0
 # Name a key command such as Backspace passes to Key for the length of its
 # call, shown on the status line instead of Key and the tmux key name
 _SVHS_STATUS_ALIAS=''
@@ -3581,36 +3591,58 @@ _svhs_start_status() {
     # Example:
     #   _svhs_start_status
     #
-    local size
-    local rows
-    local columns
-
     [[ $_SVHS_QUIET == 0 && -t 1 ]] || return 0
-
-    # stty prints rows and columns; read once, so a terminal resized during
-    # the recording keeps the old layout until it ends
-    size=$(stty size 2> /dev/null < /dev/tty) || return 0
-    rows="${size% *}"
-    columns="${size#* }"
-    # a scroll region needs two rows; below that the status line has no room
-    ((rows >= 3 && columns >= 20)) || return 0
 
     _SVHS_STATUS_FILE=$(mktemp) || {
         _SVHS_STATUS_FILE=''
         return 0
     }
+    _svhs_reserve_status_row || {
+        _svhs_stop_status
+        return 0
+    }
 
-    _SVHS_STATUS_ROWS=$rows
     _svhs_write_status
 
-    # The newline scrolls the screen when the cursor is on the bottom row, so
-    # that row is free; setting the region moves the cursor home, so it is
-    # saved around that, then put back on the line it was on
-    printf '\n%s\033[1;%dr%s\033[1A' \
-        "$_SVHS_SAVE_CURSOR" $((rows - 1)) "$_SVHS_RESTORE_CURSOR"
-
-    _svhs_draw_status "$columns" &
+    _svhs_draw_status &
     _SVHS_STATUS_PID=$!
+}
+
+
+_svhs_reserve_status_row() {
+    #
+    # Cut the bottom row off the scroll region for the status line, and
+    # remember the terminal width the line is cut to. Called again after a
+    # resize, which leaves the region stale or reset. Fails, changing
+    # nothing, when the terminal size is unknown or leaves the line no room.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_reserve_status_row || return 0
+    #
+    local size
+    local rows
+    local columns
+
+    # stty prints the rows and columns of the terminal on its stdin; fd 3
+    # carries stdout into the substitution, where fd 1 is its pipe
+    { size=$(stty size 2> /dev/null <&3); } 3>&1 || return 1
+    rows="${size% *}"
+    columns="${size#* }"
+    # a scroll region needs two rows; below that the status line has no room
+    ((rows >= 3 && columns >= 20)) || return 1
+
+    _SVHS_STATUS_COLUMNS=$columns
+
+    # The index (ESC D) scrolls the screen when the cursor is on the bottom
+    # row, so that row is free, and keeps the column, as a resize can come in
+    # the middle of a line. Setting the region moves the cursor home, so it
+    # is saved around that, then put back on the line it was on. Nothing but
+    # a status line stranded by a resize can be below it, so that is erased.
+    printf '\033D%s\033[1;%dr%s\033[1A\033[J' \
+        "$_SVHS_SAVE_CURSOR" $((rows - 1)) "$_SVHS_RESTORE_CURSOR"
 }
 
 
@@ -3635,20 +3667,18 @@ _svhs_draw_status() {
     # Redraw the status line on the bottom row until the recording script
     # exits or this process gets TERM, then give the row back to the scroll
     # region and clear it. Runs in the background, so it reads the state the
-    # script writes from the status file instead of from variables.
+    # script writes from the status file instead of from variables. A resized
+    # terminal gets the row reserved again; one too small ends the status
+    # line.
     #
     # Parameters:
-    #   $1 - columns - terminal width; the line is cut to fit, as a wrapped
-    #        line would spill out of its row.
+    #   None.
     #
     # Example:
-    #   _svhs_draw_status 120 &
+    #   _svhs_draw_status &
     #
-    local columns="$1"
-    # one less than the width: a character in the last column can wrap the
-    # line on some terminals; # 3 is the spinner and a space
-    local width=$((columns - 4))
     local frame=0
+    local resized=0
     local status=''
     local line=''
     local text
@@ -3656,11 +3686,17 @@ _svhs_draw_status() {
     # A background process does not inherit the script's EXIT trap, so this
     # is its only one: it restores the terminal after the script was killed
     # without a chance to stop the status line
-    trap _svhs_release_status_row EXIT
+    trap 'printf "%s" "$_SVHS_STATUS_RELEASE"' EXIT
     trap 'exit 0' TERM
+    trap 'resized=1' WINCH
 
     # $$ stays the recording script's PID in a subshell
     while kill -0 "$$" 2> /dev/null; do
+        if [[ $resized == 1 ]]; then
+            resized=0
+            _svhs_reserve_status_row || exit 0
+        fi
+
         # the script truncates the file before it writes, so an empty read is
         # a write in progress and the last status stands
         IFS= read -r line 2> /dev/null < "$_SVHS_STATUS_FILE" || true
@@ -3668,33 +3704,19 @@ _svhs_draw_status() {
 
         text="$(_svhs_elapsed) $status"
 
-        # one write per redraw, so a line printed meanwhile cannot land
-        # between the jump to the bottom row and the return from it
-        printf '%s\033[%d;1H\033[K%s %s%s'                      \
-            "$_SVHS_SAVE_CURSOR" "$_SVHS_STATUS_ROWS"           \
-            "${_SVHS_STATUS_SPINNER[frame]}" "${text:0:width}"  \
+        # One write per redraw, so a line printed meanwhile cannot land
+        # between the jump to the bottom row and the return from it. Auto-wrap
+        # is off for the line, so the terminal clips what does not fit - wide
+        # characters make that more than a character count can tell; the cut
+        # only bounds what a long label writes.
+        printf '%s%s\033[?7l%s %s\033[?7h%s'                \
+            "$_SVHS_SAVE_CURSOR" "$_SVHS_STATUS_ROW"        \
+            "${_SVHS_STATUS_SPINNER[frame]}"                \
+            "${text:0:_SVHS_STATUS_COLUMNS}"                \
             "$_SVHS_RESTORE_CURSOR"
         frame=$(((frame + 1) % ${#_SVHS_STATUS_SPINNER[@]}))
         sleep "$_SVHS_STATUS_INTERVAL"
     done
-}
-
-
-_svhs_release_status_row() {
-    #
-    # Give the bottom row back to the scroll region and clear the status line
-    # left on it, keeping the cursor where the script's output stands.
-    # Releasing a row twice is harmless.
-    #
-    # Parameters:
-    #   None.
-    #
-    # Example:
-    #   trap _svhs_release_status_row EXIT
-    #
-    # resetting the region moves the cursor home, so it is saved around that
-    printf '%s\033[r\033[%d;1H\033[K%s' \
-        "$_SVHS_SAVE_CURSOR" "$_SVHS_STATUS_ROWS" "$_SVHS_RESTORE_CURSOR"
 }
 
 
@@ -3716,7 +3738,7 @@ _svhs_stop_status() {
 
         # the stopped process restores the terminal itself, unless it was
         # killed before it could install its trap
-        _svhs_release_status_row
+        printf '%s' "$_SVHS_STATUS_RELEASE"
     fi
     if [[ -n $_SVHS_STATUS_FILE ]]; then
         rm -f -- "$_SVHS_STATUS_FILE"
