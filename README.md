@@ -445,6 +445,11 @@ animated by CSS, sharp at any zoom:
 
 📌 [pi-context-view](https://github.com/dimk90/pi-context-view) - demo GIFs,
 such as [palettes.rec.sh](https://github.com/dimk90/pi-context-view/tree/develop/doc/images).  
+
+📌 [pi-tui-prompt-box](https://github.com/dimk90/pi-tui-prompt-box) - demo GIFs,
+such as [demo.rec.sh](https://github.com/dimk90/pi-tui-prompt-box/tree/develop/doc/images).  
+
+
 📌 [S-VHS logo](examples/logo.rec.sh) recording.
 
 
@@ -477,6 +482,10 @@ Keeping the `.cast` next to the rendered files leaves the recording replayable
 with `asciinema play` and re-renderable at any size later, while the `.txt` log
 makes the recorded output greppable - see
 [`examples/multi-output.rec.sh`](examples/multi-output.rec.sh).
+
+> [!TIP]
+> Not sure which format to ship? See [FORMATS.md](doc/FORMATS.md) for sizes,
+> video quality and where each format plays.
 
 
 ## Recording Template
@@ -536,6 +545,9 @@ Render
 - For color themes with GIF and SVG samples, see [THEMES.md](doc/THEMES.md).
 
 - For debugging a recording script, see [DEBUG.md](doc/DEBUG.md).
+
+- For choosing an output format - size, quality and where it plays, see
+  [FORMATS.md](doc/FORMATS.md).
 
 - For smaller output files and per-format optimization trade-offs, see
   [OPTIMIZATION.md](doc/OPTIMIZATION.md).
