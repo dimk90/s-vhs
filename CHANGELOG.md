@@ -1,6 +1,6 @@
 # Changelog
 
-## `[v0.7.1]` - Unreleased
+## `[v0.7.1]` - 15.11.2026
 
 ### New
 * Add `Catppuccin`, `Tokyo Night` and `s-vhs` color themes.
