@@ -208,6 +208,12 @@ _SVHS_ATTACH_TIMEOUT=5
 # character shows up as it lands
 _SVHS_WATCH_INTERVAL=0.1
 
+# The viewer paints a recording in its theme by setting its own terminal's
+# colors: OSC 4 the ANSI ones, OSC 10 and 11 the foreground and background.
+# RESET puts back the terminal's configured colors, sent only after the
+# viewer changed them, so it leaves a palette set at runtime alone.
+_SVHS_WATCH_THEME_RESET=$'\033]104\a\033]110\a\033]111\a'
+
 # Viewer escapes: ENTER switches to the alternate screen, hides the cursor
 # and disables line wrapping; RESTORE undoes all three
 _SVHS_WATCH_CLEAR=$'\033[2J\033[H'
@@ -218,6 +224,24 @@ _SVHS_WATCH_RESTORE=$'\033[0m\033[?7h\033[?25h\033[?1049l'
 # once; one that does not know the mode ignores them
 _SVHS_WATCH_UPDATE_BEGIN=$'\033[?2026h'
 _SVHS_WATCH_UPDATE_END=$'\033[?2026l'
+
+# Session colors the viewer paints with, as '<palette> <selection style>':
+# the theme palette Start publishes, or 'none' without one, and the style
+# tmux draws a selection in, which before tmux 3.6 is mode-style itself
+_SVHS_WATCH_COLORS_FORMAT='#{?@svhs-theme,#{@svhs-theme},none} #{?copy-mode-selection-style,#{E:copy-mode-selection-style},#{mode-style}}'
+
+# tmux 3.6+ theme colors as the recorder resolves them: a 256-color client
+# with an unknown background gets the dark set's X11 colors
+_SVHS_TMUX_THEME_COLORS='themeblack 0d0d0d
+themewhite e5e5e5
+themelightgrey b3b3b3
+themedarkgrey 262626
+themegreen 9acd32
+themeyellow b8860b
+themered cd5c5c
+themeblue 6ca6cd
+themecyan 5f9ea0
+thememagenta 9370db'
 
 # Copy-mode selection the viewer paints over a frame, as
 # 'start_x start_y end_x end_y history_size', or 'none'; never empty, as the
@@ -290,6 +314,9 @@ _SVHS_RECORDED=''
 
 # SECONDS value at Start, which the elapsed time counts from
 _SVHS_STARTED_AT=0
+
+# 1 while the viewer has its terminal in a recording's theme colors
+_SVHS_WATCH_THEMED=0
 
 # Status line: the background process drawing it, the file it reads the state
 # and the current command from, and the terminal width it is cut to
@@ -1506,7 +1533,9 @@ svhs_watch() {
     # the viewer takes the terminal over, so its restoring EXIT trap runs in a
     # subshell of its own rather than replacing the caller's svhs_cleanup
     (
-        trap 'printf "%s" "$_SVHS_WATCH_RESTORE"' EXIT
+        trap 'printf "%s" "$_SVHS_WATCH_RESTORE"
+              [[ $_SVHS_WATCH_THEMED == 0 ]] ||
+                  printf "%s" "$_SVHS_WATCH_THEME_RESET"' EXIT
         trap 'exit 130' INT TERM
 
         printf '%s' "$_SVHS_WATCH_ENTER"
@@ -2280,7 +2309,8 @@ _svhs_watch_target() {
 
 _svhs_watch_pane() {
     #
-    # Repaint one session's visible pane until it is gone.
+    # Repaint one session's visible pane until it is gone, in the session's
+    # theme and selection colors.
     #
     # Parameters:
     #   $1 - session - session name to capture.
@@ -2291,6 +2321,10 @@ _svhs_watch_pane() {
     local session="$1"
     local output
     local frame
+    local colors
+    local painted_colors=''
+    local theme
+    local selection_sgr
     local selection
     local picture
     local overlay
@@ -2298,15 +2332,34 @@ _svhs_watch_pane() {
     while :; do
         # -p writes the pane to stdout without creating a client, -e keeps its
         # ANSI attributes, 24-bit color included; a failing capture is the
-        # session ending, which returns the viewer to waiting. The selection
-        # comes from the same tmux call as its last line, so it matches the
-        # frame and costs no extra process.
+        # session ending, which returns the viewer to waiting. The colors and
+        # the selection come from the same tmux call as its last two lines, so
+        # they match the frame and cost no extra process.
         output=$(tmux -L "$_SVHS_TMUX_SOCKET"                    \
                       capture-pane -e -p -t "$session" \;      \
                       display -p -t "$session"                 \
+                      "$_SVHS_WATCH_COLORS_FORMAT" \;          \
+                      display -p -t "$session"                 \
                       "$_SVHS_WATCH_SELECTION_FORMAT" 2> /dev/null) || return 0
-        frame="${output%$'\n'*}"
         selection="${output##*$'\n'}"
+        output="${output%$'\n'*}"
+        colors="${output##*$'\n'}"
+        frame="${output%$'\n'*}"
+
+        # Start publishes the theme after creating the session, so the colors
+        # are followed per frame rather than read once; resent only on change
+        theme=''
+        if [[ $colors != "$painted_colors" ]]; then
+            if theme=$(_svhs_format_watch_theme "${colors%% *}"); then
+                _SVHS_WATCH_THEMED=1
+            elif [[ $_SVHS_WATCH_THEMED == 1 ]]; then
+                theme="$_SVHS_WATCH_THEME_RESET"
+                _SVHS_WATCH_THEMED=0
+            fi
+            selection_sgr=$(_svhs_style_sgr "${colors#* }") ||
+                selection_sgr=$'\033[7m'
+            painted_colors="$colors"
+        fi
 
         # each row is written at its own address and cleared to the end of the
         # line, and the rows below the last one are dropped, so the picture
@@ -2314,13 +2367,14 @@ _svhs_watch_pane() {
         picture=$(printf '%s\n' "$frame" | awk '
             { printf "\033[%d;1H%s\033[0m\033[K", NR, $0 }
             END { printf "\033[%d;1H\033[J", NR + 1 }')
-        overlay=$(_svhs_format_watch_selection "$session" "$selection")
+        overlay=$(_svhs_format_watch_selection "$session" "$selection" \
+            "$selection_sgr")
 
         # the selection is painted over its row, so both go out in a single
         # write, marked as one terminal update; printed apart, the row shows
         # unselected until the overlay lands, and the selection flickers
-        printf '%s%s%s%s' "$_SVHS_WATCH_UPDATE_BEGIN" "$picture" "$overlay" \
-            "$_SVHS_WATCH_UPDATE_END"
+        printf '%s%s%s%s%s' "$_SVHS_WATCH_UPDATE_BEGIN" "$theme" "$picture" \
+            "$overlay" "$_SVHS_WATCH_UPDATE_END"
 
         sleep "$_SVHS_WATCH_INTERVAL"
     done
@@ -2330,21 +2384,24 @@ _svhs_watch_pane() {
 _svhs_format_watch_selection() {
     #
     # Print the escapes painting a copy-mode selection, such as Highlight's,
-    # over a frame in reverse video; nothing without one. capture-pane returns only the pane's cells, and
-    # tmux draws the selection solely for attached clients, so the viewer has
-    # to draw it itself. Only the single-row forward selection Highlight
-    # makes is painted, assuming one-cell characters as Highlight does;
-    # anything else is left out.
+    # over a frame in the given style; nothing without one. capture-pane
+    # returns only the pane's cells, and tmux draws the selection solely for
+    # attached clients, so the viewer has to draw it itself. Only the
+    # single-row forward selection Highlight makes is painted, assuming
+    # one-cell characters as Highlight does; anything else is left out.
     #
     # Parameters:
     #   $1 - session - session name the selection belongs to.
     #   $2 - selection - selection as _SVHS_WATCH_SELECTION_FORMAT prints it.
+    #   $3 - sgr - escape sequence setting the selection's colors.
     #
     # Example:
-    #   overlay=$(_svhs_format_watch_selection 'demo' '6 20 11 20 16')
+    #   overlay=$(_svhs_format_watch_selection 'demo' '6 20 11 20 16' \
+    #       $'\033[7m')
     #
     local session="$1"
     local selection="$2"
+    local sgr="$3"
     local start_x start_y end_x end_y history_size
     local row width line cells
 
@@ -2365,7 +2422,143 @@ _svhs_format_watch_selection() {
     # trailing blanks, which the padding brings back
     width=$((end_x - start_x))
     printf -v cells '%-*s' "$width" "${line:start_x:width}"
-    printf '\033[%d;%dH\033[7m%s\033[0m' "$((row + 1))" "$((start_x + 1))" "$cells"
+    printf '\033[%d;%dH%s%s\033[0m' "$((row + 1))" "$((start_x + 1))" "$sgr" "$cells"
+}
+
+
+_svhs_format_watch_theme() {
+    #
+    # Print the escapes setting the viewer terminal's colors to a theme
+    # palette. Returns 1 and prints nothing for anything that is not one,
+    # such as a renderer-specific theme name.
+    #
+    # Parameters:
+    #   $1 - palette - background, foreground and ANSI 0..15 as comma-separated
+    #        hex, as Start publishes it, or 'none'.
+    #
+    # Example:
+    #   theme=$(_svhs_format_watch_theme "$palette") || theme=''
+    #
+    local palette="$1"
+    local palette_regex='^[0-9A-Fa-f]{6}(,[0-9A-Fa-f]{6}){17}$'
+    local colors
+    local index
+
+    [[ $palette =~ $palette_regex ]] || return 1
+
+    IFS=',' read -r -a colors <<< "$palette"
+    printf '\033]11;#%s\a\033]10;#%s\a' "${colors[0]}" "${colors[1]}"
+    for ((index = 0; index < 16; index++)); do
+        printf '\033]4;%d;#%s\a' "$index" "${colors[index + 2]}"
+    done
+}
+
+
+_svhs_style_sgr() {
+    #
+    # Translate a tmux style into the escape sequence drawing it. Attributes
+    # that change no color, such as noattr, are left out. Returns 1 for a
+    # color the viewer cannot name, such as an X11 color name.
+    #
+    # Parameters:
+    #   $1 - style - tmux style, such as 'bg=colour214,fg=black,bold'.
+    #
+    # Example:
+    #   sgr=$(_svhs_style_sgr 'bg=yellow,fg=black') || sgr=$'\033[7m'
+    #
+    local style="$1"
+    local tokens
+    local token
+    local code
+    local codes=''
+
+    IFS=', ' read -r -a tokens <<< "$style"
+
+    for token in ${tokens[@]+"${tokens[@]}"}; do
+        case "$token" in
+            fg=*)          code=$(_svhs_color_sgr "${token#fg=}" 38) || return 1 ;;
+            bg=*)          code=$(_svhs_color_sgr "${token#bg=}" 48) || return 1 ;;
+            bold)          code=1 ;;
+            dim)           code=2 ;;
+            italics)       code=3 ;;
+            underscore)    code=4 ;;
+            blink)         code=5 ;;
+            reverse)       code=7 ;;
+            hidden)        code=8 ;;
+            strikethrough) code=9 ;;
+            *)             continue ;;
+        esac
+        codes+=";$code"
+    done
+
+    printf '\033[0%sm' "$codes"
+}
+
+
+_svhs_color_sgr() {
+    #
+    # Translate a tmux color into SGR parameters. Returns 1 for a color the
+    # viewer cannot name, such as an X11 color name.
+    #
+    # Parameters:
+    #   $1 - color - tmux color: default, an ANSI name with an optional
+    #        bright prefix, colourN, #rrggbb or a tmux 3.6+ theme color.
+    #   $2 - layer - 38 for the foreground, 48 for the background.
+    #
+    # Example:
+    #   code=$(_svhs_color_sgr 'colour214' 48) || return 1
+    #
+    local color="$1"
+    local layer="$2"
+    local names=(black red green yellow blue magenta cyan white)
+    local name
+    local value
+    local index
+
+    case "$color" in
+        default)
+            printf '%d' "$((layer + 1))"
+            return 0
+            ;;
+        colour*|color*)
+            # base 10, as bash would read colour08 as an invalid octal number
+            index="${color#colo*r}"
+            [[ $index =~ ^[0-9]+$ ]] && (( 10#$index < 256 )) || return 1
+            index=$((10#$index))
+            printf '%d;5;%d' "$layer" "$index"
+            return 0
+            ;;
+        '#'*)
+            [[ $color =~ ^#[0-9A-Fa-f]{6}$ ]] || return 1
+            printf '%d;2;%d;%d;%d' "$layer" "$((16#${color:1:2}))" \
+                "$((16#${color:3:2}))" "$((16#${color:5:2}))"
+            return 0
+            ;;
+        theme*)
+            while read -r name value; do
+                if [[ $name == "$color" ]]; then
+                    _svhs_color_sgr "#$value" "$layer"
+                    return 0
+                fi
+            done <<< "$_SVHS_TMUX_THEME_COLORS"
+            return 1
+            ;;
+    esac
+
+    # an ANSI name maps to 30..37 or 40..47, a bright one to 90..97 or
+    # 100..107
+    for ((index = 0; index < ${#names[@]}; index++)); do
+        [[ ${names[index]} == "${color#bright}" ]] || continue
+
+        if [[ $color == bright* ]]; then
+            printf '%d' "$((layer + 52 + index))"
+        else
+            printf '%d' "$((layer - 8 + index))"
+        fi
+        return 0
+    done
+
+    return 1
 }
 
 
@@ -3911,7 +4104,8 @@ _svhs_apply_theme_colors() {
     # tmux also writes both colors into the recorded cells. The ANSI palette
     # (OSC 4) stays unanswered: tmux would record every ANSI color as 24-bit,
     # which SetBoldIsBright cannot brighten. A renderer-specific theme name
-    # has no known colors and changes nothing.
+    # has no known colors and changes nothing. The palette is also published
+    # as the session's @svhs-theme option, for the viewer to paint with.
     #
     # Parameters:
     #   None.
@@ -3924,7 +4118,9 @@ _svhs_apply_theme_colors() {
     [[ $_SVHS_THEME =~ $colors_regex ]] || return 0
 
     tmux -L "$_SVHS_TMUX_SOCKET" set -w -t "$_SVHS_SESSION" window-style \
-        "bg=#${BASH_REMATCH[1]},fg=#${BASH_REMATCH[2]}"
+        "bg=#${BASH_REMATCH[1]},fg=#${BASH_REMATCH[2]}" || return 1
+    tmux -L "$_SVHS_TMUX_SOCKET" set -t "$_SVHS_SESSION" @svhs-theme \
+        "$_SVHS_THEME"
 }
 
 

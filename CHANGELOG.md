@@ -6,6 +6,7 @@
 * Add `Catppuccin`, `Tokyo Night` and `s-vhs` color themes.
 * Report the theme's background and foreground to programs that ask the terminal for them.
 * Show a status line while recording: elapsed time, recorded or hidden state and the current command.
+* Paint `s-vhs.sh watch` in the recording's theme and highlight colors.
 
 ### Changed
 * Unify renderer theme palettes across renderers and add a theme gallery.
