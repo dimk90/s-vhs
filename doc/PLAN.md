@@ -38,6 +38,14 @@
 
 - [x] Show time or some spinner during recording.
 
+- [x] `Highlight` effect during recording is not visible in watch mode.
+  - What is the reason?
+  - Any way to fix?
+  - tmux draws the copy-mode selection only for attached clients, and
+    `capture-pane` (even `-M`) returns the bare cells.
+  - Fix: the viewer reads the selection with `display -p` in the same tmux
+    call and paints it over the frame in reverse video.
+
 - [ ] Add note recording output formats:
   - Demonstrate compression efficiency (GIF without optimization = 100%).
   - Use `stress.rec.sh` as example for compression efficiency.

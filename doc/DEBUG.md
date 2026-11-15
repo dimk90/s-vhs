@@ -47,6 +47,9 @@ Start the viewer whenever - it waits for a session to appear, keeps following
 across edit-and-rerun cycles, and stops on `Ctrl-C`. Make its terminal at
 least `SetCols` by `SetRows`, or every row is cut off at the right edge.
 
+A `Highlight` selection shows up in reverse video, not in the
+`SetHighlightColors` colors the recording uses.
+
 ## When `Start` Itself Times Out
 
 `Start` polls the new session until the shell's line editor starts reading,

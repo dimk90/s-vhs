@@ -214,6 +214,16 @@ _SVHS_WATCH_CLEAR=$'\033[2J\033[H'
 _SVHS_WATCH_ENTER=$'\033[?1049h\033[?25l\033[?7l'"$_SVHS_WATCH_CLEAR"
 _SVHS_WATCH_RESTORE=$'\033[0m\033[?7h\033[?25h\033[?1049l'
 
+# Synchronized output: the terminal shows what is written between the two at
+# once; one that does not know the mode ignores them
+_SVHS_WATCH_UPDATE_BEGIN=$'\033[?2026h'
+_SVHS_WATCH_UPDATE_END=$'\033[?2026l'
+
+# Copy-mode selection the viewer paints over a frame, as
+# 'start_x start_y end_x end_y history_size', or 'none'; never empty, as the
+# command substitution capturing it would strip an empty last line
+_SVHS_WATCH_SELECTION_FORMAT='#{?selection_present,#{selection_start_x} #{selection_start_y} #{selection_end_x} #{selection_end_y} #{history_size},none}'
+
 # Status line redraw interval, and its spinner frames as bytes to keep this
 # file ASCII: U+280B U+2819 U+2839 U+2838 U+283C U+2834 U+2826 U+2827 U+2807
 # U+280F
@@ -2279,24 +2289,83 @@ _svhs_watch_pane() {
     #   _svhs_watch_pane 'demo'
     #
     local session="$1"
+    local output
     local frame
+    local selection
+    local picture
+    local overlay
 
     while :; do
         # -p writes the pane to stdout without creating a client, -e keeps its
         # ANSI attributes, 24-bit color included; a failing capture is the
-        # session ending, which returns the viewer to waiting
-        frame=$(tmux -L "$_SVHS_TMUX_SOCKET" capture-pane \
-            -e -p -t "$session" 2> /dev/null) || return 0
+        # session ending, which returns the viewer to waiting. The selection
+        # comes from the same tmux call as its last line, so it matches the
+        # frame and costs no extra process.
+        output=$(tmux -L "$_SVHS_TMUX_SOCKET"                    \
+                      capture-pane -e -p -t "$session" \;      \
+                      display -p -t "$session"                 \
+                      "$_SVHS_WATCH_SELECTION_FORMAT" 2> /dev/null) || return 0
+        frame="${output%$'\n'*}"
+        selection="${output##*$'\n'}"
 
         # each row is written at its own address and cleared to the end of the
         # line, and the rows below the last one are dropped, so the picture
         # never blinks the way clearing the screen per frame would
-        printf '%s\n' "$frame" | awk '
+        picture=$(printf '%s\n' "$frame" | awk '
             { printf "\033[%d;1H%s\033[0m\033[K", NR, $0 }
-            END { printf "\033[%d;1H\033[J", NR + 1 }'
+            END { printf "\033[%d;1H\033[J", NR + 1 }')
+        overlay=$(_svhs_format_watch_selection "$session" "$selection")
+
+        # the selection is painted over its row, so both go out in a single
+        # write, marked as one terminal update; printed apart, the row shows
+        # unselected until the overlay lands, and the selection flickers
+        printf '%s%s%s%s' "$_SVHS_WATCH_UPDATE_BEGIN" "$picture" "$overlay" \
+            "$_SVHS_WATCH_UPDATE_END"
 
         sleep "$_SVHS_WATCH_INTERVAL"
     done
+}
+
+
+_svhs_format_watch_selection() {
+    #
+    # Print the escapes painting a copy-mode selection, such as Highlight's,
+    # over a frame in reverse video; nothing without one. capture-pane returns only the pane's cells, and
+    # tmux draws the selection solely for attached clients, so the viewer has
+    # to draw it itself. Only the single-row forward selection Highlight
+    # makes is painted, assuming one-cell characters as Highlight does;
+    # anything else is left out.
+    #
+    # Parameters:
+    #   $1 - session - session name the selection belongs to.
+    #   $2 - selection - selection as _SVHS_WATCH_SELECTION_FORMAT prints it.
+    #
+    # Example:
+    #   overlay=$(_svhs_format_watch_selection 'demo' '6 20 11 20 16')
+    #
+    local session="$1"
+    local selection="$2"
+    local start_x start_y end_x end_y history_size
+    local row width line cells
+
+    [[ $selection == 'none' ]] && return 0
+
+    read -r start_x start_y end_x end_y history_size <<< "$selection"
+    (( start_y == end_y && start_x < end_x )) || return 0
+
+    # the frame is the live screen, not copy mode's scrolled view, so a
+    # selection in the history above it has no row to be painted on
+    row=$((start_y - history_size))
+    (( row >= 0 )) || return 0
+
+    line=$(tmux -L "$_SVHS_TMUX_SOCKET" capture-pane \
+        -p -t "$session" -S "$row" -E "$row" 2> /dev/null) || return 0
+
+    # the end is the cursor, one cell past the selection; capture-pane drops
+    # trailing blanks, which the padding brings back
+    width=$((end_x - start_x))
+    printf -v cells '%-*s' "$width" "${line:start_x:width}"
+    printf '\033[%d;%dH\033[7m%s\033[0m' "$((row + 1))" "$((start_x + 1))" "$cells"
 }
 
 

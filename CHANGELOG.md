@@ -14,6 +14,7 @@
 
 ### Fixed
 * Keep 24-bit colors in recordings instead of reducing them to the nearest of 256.
+* Show the `Highlight` selection in `s-vhs.sh watch`.
 
 
 ## `[v0.7.0]` - 17.10.2026
