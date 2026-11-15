@@ -24,7 +24,7 @@ set -euo pipefail
 
 
 svhs_version() {
-    printf '%s\n' '0.7.0'
+    printf '%s\n' '0.7.1'
 }
 
 
@@ -103,8 +103,37 @@ _SVHS_CELL_ADVANCE=0.6
 _SVHS_WINDOW_BAR_WIDTH=40
 _SVHS_WINDOW_BAR_HEIGHT=60
 
-# Render theme; headless recording has no host theme to inherit
+# Render theme; headless recording has no host theme to inherit.
+# Named here, replaced by its palette once the functions are defined.
 _SVHS_THEME='dracula'
+
+# Background, foreground and ANSI 0..15, shared by both renderers.
+_SVHS_THEME_PALETTES='asciinema 121314,cccccc,000000,dd3c69,4ebf22,ddaf3c,26b0d7,b954e1,54e1b9,d9d9d9,4d4d4d,dd3c69,4ebf22,ddaf3c,26b0d7,b954e1,54e1b9,ffffff
+atom-one 282d35,b9c0cb,282d35,e88388,a8cc8c,dbab79,71bef2,d290e4,66c2cd,b9bfca,6f7783,e88388,a8cc8c,dbab79,73bef3,d290e3,66c2cd,ffffff
+catppuccin-frappe 303446,c6d0f5,51576d,e78284,a6d189,e5c890,8caaee,f4b8e4,81c8be,b5bfe2,626880,e78284,a6d189,e5c890,8caaee,f4b8e4,81c8be,a5adce
+catppuccin-latte eff1f5,4c4f69,5c5f77,d20f39,40a02b,df8e1d,1e66f5,ea76cb,179299,acb0be,6c6f85,d20f39,40a02b,df8e1d,1e66f5,ea76cb,179299,bcc0cc
+catppuccin-macchiato 24273a,cad3f5,494d64,ed8796,a6da95,eed49f,8aadf4,f5bde6,8bd5ca,b8c0e0,5b6078,ed8796,a6da95,eed49f,8aadf4,f5bde6,8bd5ca,a5adcb
+catppuccin-mocha 1e1e2e,cdd6f4,45475a,f38ba8,a6e3a1,f9e2af,89b4fa,f5c2e7,94e2d5,bac2de,585b70,f38ba8,a6e3a1,f9e2af,89b4fa,f5c2e7,94e2d5,a6adc8
+dracula 282a36,f8f8f2,21222c,ff5555,50fa7b,f1fa8c,bd93f9,ff79c6,8be9fd,f8f8f2,6272a4,ff6e6e,69ff94,ffffa5,d6acff,ff92df,a4ffff,ffffff
+github-dark 0d1117,e6edf3,484f58,ff7b72,3fb950,d29922,58a6ff,bc8cff,39c5cf,b1bac4,6e7681,ffa198,56d364,e3b341,79c0ff,d2a8ff,56d4dd,ffffff
+github-light ffffff,1f2328,24292f,cf222e,116329,4d2d00,0969da,8250df,1b7c83,6e7781,57606a,a40e26,1a7f37,633c01,218bff,a475f9,3192aa,8c959f
+gruvbox-dark 282828,ebdbb2,282828,cc241d,98971a,d79921,458588,b16286,689d6a,a89984,928374,fb4934,b8bb26,fabd2f,83a598,d3869b,8ec07c,ebdbb2
+gruvbox-light fbf1c7,3c3836,fbf1c7,cc241d,98971a,d79921,458588,b16286,689d6a,7c6f64,928374,9d0006,79740e,b57614,076678,8f3f71,427b58,3c3836
+kanagawa 1f1f28,dcd7ba,16161d,c34043,76946a,c0a36e,7e9cd8,957fb8,6a9589,c8c093,727169,e82424,98bb6c,e6c384,7fb4ca,938aa9,7aa89f,dcd7ba
+kanagawa-dragon 181616,c5c9c5,0d0c0c,c4746e,8a9a7b,c4b28a,8ba4b0,a292a3,8ea4a2,c8c093,a6a69c,e46876,87a987,e6c384,7fb4ca,938aa9,7aa89f,c5c9c5
+kanagawa-light f2ecbc,545464,1f1f28,c84053,6f894e,77713f,4d699b,b35b79,597b75,545464,8a8980,d7474b,6e915f,836f4a,6693bf,624c83,5e857a,43436c
+monokai 272822,f8f8f2,272822,f92672,a6e22e,f4bf75,66d9ef,ae81ff,a1efe4,f8f8f2,75715e,f92672,a6e22e,f4bf75,66d9ef,ae81ff,a1efe4,f9f8f5
+nord 2e3440,d8dee9,3b4252,bf616a,a3be8c,ebcb8b,81a1c1,b48ead,88c0d0,e5e9f0,4c566a,bf616a,a3be8c,ebcb8b,81a1c1,b48ead,8fbcbb,eceff4
+s-vhs 0c0c0c,cccccc,000000,f95d5b,62f592,f3f8a2,5dc8fd,db61aa,94deee,f1f1f0,606060,f95d5b,62f592,f3f8a2,5dc8fd,db61aa,94deee,f1f1f0
+solarized-dark 002b36,839496,073642,dc322f,859900,b58900,268bd2,d33682,2aa198,eee8d5,002b36,cb4b16,586e75,657b83,839496,6c71c4,93a1a1,fdf6e3
+solarized-light fdf6e3,657b83,073642,dc322f,859900,b58900,268bd2,d33682,2aa198,eee8d5,002b36,cb4b16,586e75,657b83,839496,6c71c4,93a1a1,fdf6e3
+tokyo-night 1a1b26,c0caf5,15161e,f7768e,9ece6a,e0af68,7aa2f7,bb9af7,7dcfff,a9b1d6,414868,ff899d,9fe044,faba4a,8db0ff,c7a9ff,a4daff,c0caf5
+tokyo-night-day e1e2e7,3760bf,b4b5b9,f52a65,587539,8c6c3e,2e7de9,9854f1,007197,6172b0,a1a6c5,ff4774,5c8524,a27629,358aff,a463ff,007ea8,3760bf
+tokyo-night-moon 222436,c8d3f5,1b1d2b,ff757f,c3e88d,ffc777,82aaff,c099ff,86e1fc,828bb8,444a73,ff8d94,c7fb6d,ffd8ab,9ab8ff,caabff,b2ebff,c8d3f5
+tokyo-night-storm 24283b,c0caf5,1d202f,f7768e,9ece6a,e0af68,7aa2f7,bb9af7,7dcfff,a9b1d6,414868,ff899d,9fe044,faba4a,8db0ff,c7a9ff,a4daff,c0caf5'
+
+# Custom palette with background, foreground and only ANSI 0..7
+_SVHS_EIGHT_COLOR_PALETTE_REGEX='^[0-9A-Fa-f]{6}(,[0-9A-Fa-f]{6}){9}$'
 
 # Bold text in the bright ANSI color, the way most terminals show it
 _SVHS_BOLD_IS_BRIGHT='off'
@@ -179,11 +208,68 @@ _SVHS_ATTACH_TIMEOUT=5
 # character shows up as it lands
 _SVHS_WATCH_INTERVAL=0.1
 
+# The viewer paints a recording in its theme by setting its own terminal's
+# colors: OSC 4 the ANSI ones, OSC 10 and 11 the foreground and background.
+# RESET puts back the terminal's configured colors, sent only after the
+# viewer changed them, so it leaves a palette set at runtime alone.
+_SVHS_WATCH_THEME_RESET=$'\033]104\a\033]110\a\033]111\a'
+
 # Viewer escapes: ENTER switches to the alternate screen, hides the cursor
 # and disables line wrapping; RESTORE undoes all three
 _SVHS_WATCH_CLEAR=$'\033[2J\033[H'
 _SVHS_WATCH_ENTER=$'\033[?1049h\033[?25l\033[?7l'"$_SVHS_WATCH_CLEAR"
 _SVHS_WATCH_RESTORE=$'\033[0m\033[?7h\033[?25h\033[?1049l'
+
+# Synchronized output: the terminal shows what is written between the two at
+# once; one that does not know the mode ignores them
+_SVHS_WATCH_UPDATE_BEGIN=$'\033[?2026h'
+_SVHS_WATCH_UPDATE_END=$'\033[?2026l'
+
+# Session colors the viewer paints with, as '<palette> <selection style>':
+# the theme palette Start publishes, or 'none' without one, and the style
+# tmux draws a selection in, which before tmux 3.6 is mode-style itself
+_SVHS_WATCH_COLORS_FORMAT='#{?@svhs-theme,#{@svhs-theme},none} #{?copy-mode-selection-style,#{E:copy-mode-selection-style},#{mode-style}}'
+
+# tmux 3.6+ theme colors as the recorder resolves them: a 256-color client
+# with an unknown background gets the dark set's X11 colors
+_SVHS_TMUX_THEME_COLORS='themeblack 0d0d0d
+themewhite e5e5e5
+themelightgrey b3b3b3
+themedarkgrey 262626
+themegreen 9acd32
+themeyellow b8860b
+themered cd5c5c
+themeblue 6ca6cd
+themecyan 5f9ea0
+thememagenta 9370db'
+
+# Copy-mode selection the viewer paints over a frame, as
+# 'start_x start_y end_x end_y history_size', or 'none'; never empty, as the
+# command substitution capturing it would strip an empty last line
+_SVHS_WATCH_SELECTION_FORMAT='#{?selection_present,#{selection_start_x} #{selection_start_y} #{selection_end_x} #{selection_end_y} #{history_size},none}'
+
+# Status line redraw interval, and its spinner frames as bytes to keep this
+# file ASCII: U+280B U+2819 U+2839 U+2838 U+283C U+2834 U+2826 U+2827 U+2807
+# U+280F
+_SVHS_STATUS_INTERVAL=0.1
+_SVHS_STATUS_SPINNER=($'\xe2\xa0\x8b' $'\xe2\xa0\x99' $'\xe2\xa0\xb9'
+                      $'\xe2\xa0\xb8' $'\xe2\xa0\xbc' $'\xe2\xa0\xb4'
+                      $'\xe2\xa0\xa6' $'\xe2\xa0\xa7' $'\xe2\xa0\x87'
+                      $'\xe2\xa0\x8f')
+
+# DECSC and DECRC: the status line jumps to the bottom row and back
+_SVHS_SAVE_CURSOR=$'\0337'
+_SVHS_RESTORE_CURSOR=$'\0338'
+
+# Jump to the status line's row and clear it. A row past the last one is
+# clamped to it, so this needs no terminal height and survives a resize.
+_SVHS_STATUS_ROW=$'\033[999;1H\033[K'
+
+# Give the bottom row back to the scroll region and clear the status line
+# left on it. Resetting the region moves the cursor home, so it is saved
+# around that. Sending it twice is harmless.
+_SVHS_STATUS_RELEASE="$_SVHS_SAVE_CURSOR"$'\033[r'"$_SVHS_STATUS_ROW"
+_SVHS_STATUS_RELEASE+="$_SVHS_RESTORE_CURSOR"
 
 # Shell readiness timeout; longer than ATTACH_TIMEOUT since a native
 # configuration may load plugins on startup
@@ -225,6 +311,23 @@ _SVHS_TEMP_CAST=''
 _SVHS_TEMP_GIF=''
 _SVHS_REC_PID=''
 _SVHS_RECORDED=''
+
+# SECONDS value at Start, which the elapsed time counts from
+_SVHS_STARTED_AT=0
+
+# 1 while the viewer has its terminal in a recording's theme colors
+_SVHS_WATCH_THEMED=0
+
+# Status line: the background process drawing it, the file it reads the state
+# and the current command from, and the terminal width it is cut to
+_SVHS_STATUS_PID=''
+_SVHS_STATUS_FILE=''
+_SVHS_STATUS_STATE='Hidden'
+_SVHS_STATUS_COMMAND=''
+_SVHS_STATUS_COLUMNS=0
+# Name a key command such as Backspace passes to Key for the length of its
+# call, shown on the status line instead of Key and the tmux key name
+_SVHS_STATUS_ALIAS=''
 
 
 ## Template
@@ -539,21 +642,35 @@ SetLineHeight() {
 
 SetTheme() {
     #
-    # Set a renderer theme name or custom palette value.
+    # Set a bundled color theme, renderer-specific name or custom palette.
     #
     # Parameters:
-    #   $1 - theme - non-empty value passed to the renderer's --theme.
+    #   $1 - theme - non-empty name or palette; bundled names resolve to the
+    #        same colors for every renderer, an 8-color palette gets its
+    #        colors repeated as the bright ones, other values pass through.
     #
     # Example:
     #   SetTheme 'kanagawa' || exit 1
     #
     local theme="${1-}"
+    local palette
 
     _svhs_require_configuration_phase 'SetTheme' || return 1
 
     if [[ -z $theme ]]; then
         printf 'SetTheme: theme must not be empty\n' >&2
         return 1
+    fi
+
+    if palette=$(_svhs_theme_palette "$theme"); then
+        theme="$palette"
+    elif [[ $theme =~ $_SVHS_EIGHT_COLOR_PALETTE_REGEX ]]; then
+        # asg requires all 16 colors; repeat 0..7 as 8..15, as agg does
+        theme="$theme,${theme#*,*,}"
+    elif [[ $theme != *,* ]]; then
+        # a mistyped name would otherwise fail only at Render, after the
+        # recording has run
+        _svhs_warn "SetTheme: $theme is not a bundled theme, passed to the renderer as is"
     fi
 
     _SVHS_THEME="$theme"
@@ -936,7 +1053,7 @@ SetTitle() {
 SetQuiet() {
     #
     # Suppress recorder, text converter, raster renderer and s-vhs informational
-    # messages while keeping errors visible.
+    # messages and the status line while keeping errors visible.
     #
     # Parameters:
     #   None.
@@ -1249,7 +1366,9 @@ Start() {
     #
     local wait_mode="${1-}"
     local variable
-    local env_args=()
+    # tmux sets COLORTERM itself only since 3.6; without it, programs like
+    # bat and delta fall back to 256 colors
+    local env_args=(-e 'COLORTERM=truecolor')
 
     case "$wait_mode" in
         ''|no-wait) ;;
@@ -1290,14 +1409,17 @@ Start() {
         env_args+=(-e "$variable")
     done
 
-    # bash 3.2 (stock macOS) rejects an empty array under set -u, so expand
-    # env_args only when Env was called
     tmux -L "$_SVHS_TMUX_SOCKET" -f /dev/null \
         new-session -d -s "$_SVHS_SESSION"    \
                     -x "$_SVHS_COLS"          \
                     -y "$_SVHS_ROWS"          \
-                    ${env_args[@]+"${env_args[@]}"} "${_SVHS_SHELL_COMMAND[@]}"
+                    "${env_args[@]}" "${_SVHS_SHELL_COMMAND[@]}"
     _SVHS_STARTED=1
+
+    # Keep 24-bit colors instead of reducing them to the nearest of 256: the
+    # recorder's client is not known to support them. A fixed index keeps
+    # the setting single on a server shared by concurrent recordings.
+    tmux -L "$_SVHS_TMUX_SOCKET" set -g 'terminal-features[99]' '*:RGB'
 
     # Report modified keys (C-Enter, S-Enter, C-S-<key>) instead of folding
     # them into their plain form, so a recording can drive TUIs that bind them
@@ -1308,6 +1430,7 @@ Start() {
     tmux -L "$_SVHS_TMUX_SOCKET" set-option -t "$_SVHS_SESSION" status off
 
     _svhs_apply_highlight_style || return 1
+    _svhs_apply_theme_colors || return 1
 
     if [[ $wait_mode != 'no-wait' ]]; then
         _svhs_wait_for_shell || return 1
@@ -1321,6 +1444,9 @@ Start() {
             "$_SVHS_SESSION" "$_SVHS_TMUX_SOCKET" "$_SVHS_SESSION"
         _svhs_report_geometry
     fi
+
+    _SVHS_STARTED_AT=$SECONDS
+    _svhs_start_status
 }
 
 
@@ -1341,6 +1467,8 @@ svhs_cleanup() {
     #   svhs_cleanup
     #
     local index
+
+    _svhs_stop_status
 
     # An exit before Start - a failed setter, a name collision, or merely
     # sourcing the library - must leave a session of that name alone: s-vhs
@@ -1405,7 +1533,9 @@ svhs_watch() {
     # the viewer takes the terminal over, so its restoring EXIT trap runs in a
     # subshell of its own rather than replacing the caller's svhs_cleanup
     (
-        trap 'printf "%s" "$_SVHS_WATCH_RESTORE"' EXIT
+        trap 'printf "%s" "$_SVHS_WATCH_RESTORE"
+              [[ $_SVHS_WATCH_THEMED == 0 ]] ||
+                  printf "%s" "$_SVHS_WATCH_THEME_RESET"' EXIT
         trap 'exit 130' INT TERM
 
         printf '%s' "$_SVHS_WATCH_ENTER"
@@ -1430,6 +1560,8 @@ Run() {
     #
     local command_line="$1"
     local settle="${2:-2}"
+
+    _svhs_set_status_command "'$command_line'"
 
     _svhs_send -l "$command_line"
     _svhs_send Enter
@@ -1481,6 +1613,8 @@ Key() {
     local delay="${3:-$_SVHS_KEY_DELAY}"
     local press
 
+    _svhs_set_status_command "$key_name"
+
     if ! _svhs_is_positive_integer "$count"; then
         printf 'Key: expected a positive integer count, got: %s\n' "$count" >&2
         return 1
@@ -1500,21 +1634,21 @@ Key() {
 # A modified key stays with Key and tmux notation (`Key C-r`), and three of
 # the names are spelled differently there: BSpace, IC and DC.
 #
-Enter()     { Key Enter ${@+"$@"};    }
-Tab()       { Key Tab ${@+"$@"};      }
-Space()     { Key Space ${@+"$@"};    }
-Backspace() { Key BSpace ${@+"$@"};   }
-Escape()    { Key Escape ${@+"$@"};   }
-Up()        { Key Up ${@+"$@"};       }
-Down()      { Key Down ${@+"$@"};     }
-Left()      { Key Left ${@+"$@"};     }
-Right()     { Key Right ${@+"$@"};    }
-PageUp()    { Key PageUp ${@+"$@"};   }
-PageDown()  { Key PageDown ${@+"$@"}; }
-Home()      { Key Home ${@+"$@"};     }
-End()       { Key End ${@+"$@"};      }
-Insert()    { Key IC ${@+"$@"};       }
-Delete()    { Key DC ${@+"$@"};       }
+Enter()     { _SVHS_STATUS_ALIAS='Enter'     Key Enter    ${@+"$@"}; }
+Tab()       { _SVHS_STATUS_ALIAS='Tab'       Key Tab      ${@+"$@"}; }
+Space()     { _SVHS_STATUS_ALIAS='Space'     Key Space    ${@+"$@"}; }
+Backspace() { _SVHS_STATUS_ALIAS='Backspace' Key BSpace   ${@+"$@"}; }
+Escape()    { _SVHS_STATUS_ALIAS='Escape'    Key Escape   ${@+"$@"}; }
+Up()        { _SVHS_STATUS_ALIAS='Up'        Key Up       ${@+"$@"}; }
+Down()      { _SVHS_STATUS_ALIAS='Down'      Key Down     ${@+"$@"}; }
+Left()      { _SVHS_STATUS_ALIAS='Left'      Key Left     ${@+"$@"}; }
+Right()     { _SVHS_STATUS_ALIAS='Right'     Key Right    ${@+"$@"}; }
+PageUp()    { _SVHS_STATUS_ALIAS='PageUp'    Key PageUp   ${@+"$@"}; }
+PageDown()  { _SVHS_STATUS_ALIAS='PageDown'  Key PageDown ${@+"$@"}; }
+Home()      { _SVHS_STATUS_ALIAS='Home'      Key Home     ${@+"$@"}; }
+End()       { _SVHS_STATUS_ALIAS='End'       Key End      ${@+"$@"}; }
+Insert()    { _SVHS_STATUS_ALIAS='Insert'    Key IC       ${@+"$@"}; }
+Delete()    { _SVHS_STATUS_ALIAS='Delete'    Key DC       ${@+"$@"}; }
 #
 # bash 3.2 (stock macOS) reports "$@" as unbound under set -u when the caller
 # passed nothing, so the arguments are guarded the same way an array is.
@@ -1534,6 +1668,8 @@ Type() {
     local text="$1"
     local delay="${2:-$_SVHS_TYPING_SPEED}"
     local idx
+
+    _svhs_set_status_command "'$text'"
 
     for ((idx = 0; idx < ${#text}; idx++)); do
         _svhs_send -l "${text:idx:1}"
@@ -1615,6 +1751,8 @@ Highlight() {
     local hold="${2:-1}"
     local delay="${3:-$_SVHS_HIGHLIGHT_SPEED}"
 
+    _svhs_set_status_command "'$text'"
+
     if [[ -z $text ]]; then
         printf 'Highlight: text must not be empty\n' >&2
         return 1
@@ -1656,6 +1794,8 @@ Sleep() {
     #
     local duration="${1-}"
 
+    _svhs_set_status_command "$duration"
+
     if ! _svhs_is_nonnegative_number "$duration"; then
         printf 'Sleep: expected a non-negative number, got: %s\n' "$duration" >&2
         return 1
@@ -1680,6 +1820,8 @@ Wait() {
     local pattern="$1"
     local timeout="${2:-15}"
 
+    _svhs_set_status_command "'$pattern'"
+
     _svhs_wait_for_pattern 'Wait' 'screen' "$pattern" "$timeout"
 }
 
@@ -1698,6 +1840,8 @@ WaitLine() {
     #
     local pattern="$1"
     local timeout="${2:-15}"
+
+    _svhs_set_status_command "'$pattern'"
 
     _svhs_wait_for_pattern 'WaitLine' 'line' "$pattern" "$timeout"
 }
@@ -1731,6 +1875,8 @@ Show() {
         recorder_args+=(-t "$_SVHS_TITLE")
     fi
     [[ $_SVHS_QUIET == 1 ]] && recorder_args+=(-q)
+
+    _svhs_set_status_state 'Recording'
 
     printf -v attach_command 'tmux -L %q attach -t %q' \
         "$_SVHS_TMUX_SOCKET" "$_SVHS_SESSION"
@@ -1772,6 +1918,8 @@ Hide() {
 
     _svhs_truncate "$_SVHS_CAST" "$clean_lines"
     _SVHS_REC_PID=''
+
+    _svhs_set_status_state 'Hidden'
 }
 
 
@@ -1811,6 +1959,12 @@ Render() {
         _svhs_truncate "$_SVHS_CAST" "$clean_lines"
     fi
     _SVHS_REC_PID=''
+
+    # the status line gives way to the render's own messages
+    _svhs_stop_status
+    if [[ $_SVHS_QUIET == 0 ]]; then
+        printf '::: Recorded in %s\n' "$(_svhs_elapsed)"
+    fi
 
     if [[ -n $_SVHS_FONT_FAMILY_EXACT ]]; then
         asg_font_args+=(--font-family "$_SVHS_FONT_FAMILY_EXACT")
@@ -1887,6 +2041,32 @@ Render() {
 # Bash cannot hide functions from a sourcing script, so the _svhs_ prefix
 # only marks them as implementation details and avoids name collisions with
 # the recording script.
+
+
+_svhs_theme_palette() {
+    #
+    # Print the palette of a bundled theme. Returns 1 and prints nothing for
+    # any other value: a custom palette or a renderer-specific name.
+    #
+    # Parameters:
+    #   $1 - theme - theme name or custom palette.
+    #
+    # Example:
+    #   palette=$(_svhs_theme_palette 'kanagawa') || palette='kanagawa'
+    #
+    local theme="$1"
+    local name
+    local palette
+
+    while read -r name palette; do
+        if [[ $name == "$theme" ]]; then
+            printf '%s\n' "$palette"
+            return 0
+        fi
+    done <<< "$_SVHS_THEME_PALETTES"
+
+    return 1
+}
 
 
 _svhs_require_configuration_phase() {
@@ -2129,7 +2309,8 @@ _svhs_watch_target() {
 
 _svhs_watch_pane() {
     #
-    # Repaint one session's visible pane until it is gone.
+    # Repaint one session's visible pane until it is gone, in the session's
+    # theme and selection colors.
     #
     # Parameters:
     #   $1 - session - session name to capture.
@@ -2138,24 +2319,246 @@ _svhs_watch_pane() {
     #   _svhs_watch_pane 'demo'
     #
     local session="$1"
+    local output
     local frame
+    local colors
+    local painted_colors=''
+    local theme
+    local selection_sgr
+    local selection
+    local picture
+    local overlay
 
     while :; do
         # -p writes the pane to stdout without creating a client, -e keeps its
         # ANSI attributes, 24-bit color included; a failing capture is the
-        # session ending, which returns the viewer to waiting
-        frame=$(tmux -L "$_SVHS_TMUX_SOCKET" capture-pane \
-            -e -p -t "$session" 2> /dev/null) || return 0
+        # session ending, which returns the viewer to waiting. The colors and
+        # the selection come from the same tmux call as its last two lines, so
+        # they match the frame and cost no extra process.
+        output=$(tmux -L "$_SVHS_TMUX_SOCKET"                    \
+                      capture-pane -e -p -t "$session" \;      \
+                      display -p -t "$session"                 \
+                      "$_SVHS_WATCH_COLORS_FORMAT" \;          \
+                      display -p -t "$session"                 \
+                      "$_SVHS_WATCH_SELECTION_FORMAT" 2> /dev/null) || return 0
+        selection="${output##*$'\n'}"
+        output="${output%$'\n'*}"
+        colors="${output##*$'\n'}"
+        frame="${output%$'\n'*}"
+
+        # Start publishes the theme after creating the session, so the colors
+        # are followed per frame rather than read once; resent only on change
+        theme=''
+        if [[ $colors != "$painted_colors" ]]; then
+            if theme=$(_svhs_format_watch_theme "${colors%% *}"); then
+                _SVHS_WATCH_THEMED=1
+            elif [[ $_SVHS_WATCH_THEMED == 1 ]]; then
+                theme="$_SVHS_WATCH_THEME_RESET"
+                _SVHS_WATCH_THEMED=0
+            fi
+            selection_sgr=$(_svhs_style_sgr "${colors#* }") ||
+                selection_sgr=$'\033[7m'
+            painted_colors="$colors"
+        fi
 
         # each row is written at its own address and cleared to the end of the
         # line, and the rows below the last one are dropped, so the picture
         # never blinks the way clearing the screen per frame would
-        printf '%s\n' "$frame" | awk '
+        picture=$(printf '%s\n' "$frame" | awk '
             { printf "\033[%d;1H%s\033[0m\033[K", NR, $0 }
-            END { printf "\033[%d;1H\033[J", NR + 1 }'
+            END { printf "\033[%d;1H\033[J", NR + 1 }')
+        overlay=$(_svhs_format_watch_selection "$session" "$selection" \
+            "$selection_sgr")
+
+        # the selection is painted over its row, so both go out in a single
+        # write, marked as one terminal update; printed apart, the row shows
+        # unselected until the overlay lands, and the selection flickers
+        printf '%s%s%s%s%s' "$_SVHS_WATCH_UPDATE_BEGIN" "$theme" "$picture" \
+            "$overlay" "$_SVHS_WATCH_UPDATE_END"
 
         sleep "$_SVHS_WATCH_INTERVAL"
     done
+}
+
+
+_svhs_format_watch_selection() {
+    #
+    # Print the escapes painting a copy-mode selection, such as Highlight's,
+    # over a frame in the given style; nothing without one. capture-pane
+    # returns only the pane's cells, and tmux draws the selection solely for
+    # attached clients, so the viewer has to draw it itself. Only the
+    # single-row forward selection Highlight makes is painted, assuming
+    # one-cell characters as Highlight does; anything else is left out.
+    #
+    # Parameters:
+    #   $1 - session - session name the selection belongs to.
+    #   $2 - selection - selection as _SVHS_WATCH_SELECTION_FORMAT prints it.
+    #   $3 - sgr - escape sequence setting the selection's colors.
+    #
+    # Example:
+    #   overlay=$(_svhs_format_watch_selection 'demo' '6 20 11 20 16' \
+    #       $'\033[7m')
+    #
+    local session="$1"
+    local selection="$2"
+    local sgr="$3"
+    local start_x start_y end_x end_y history_size
+    local row width line cells
+
+    [[ $selection == 'none' ]] && return 0
+
+    read -r start_x start_y end_x end_y history_size <<< "$selection"
+    (( start_y == end_y && start_x < end_x )) || return 0
+
+    # the frame is the live screen, not copy mode's scrolled view, so a
+    # selection in the history above it has no row to be painted on
+    row=$((start_y - history_size))
+    (( row >= 0 )) || return 0
+
+    line=$(tmux -L "$_SVHS_TMUX_SOCKET" capture-pane \
+        -p -t "$session" -S "$row" -E "$row" 2> /dev/null) || return 0
+
+    # the end is the cursor, one cell past the selection; capture-pane drops
+    # trailing blanks, which the padding brings back
+    width=$((end_x - start_x))
+    printf -v cells '%-*s' "$width" "${line:start_x:width}"
+    printf '\033[%d;%dH%s%s\033[0m' "$((row + 1))" "$((start_x + 1))" "$sgr" "$cells"
+}
+
+
+_svhs_format_watch_theme() {
+    #
+    # Print the escapes setting the viewer terminal's colors to a theme
+    # palette. Returns 1 and prints nothing for anything that is not one,
+    # such as a renderer-specific theme name.
+    #
+    # Parameters:
+    #   $1 - palette - background, foreground and ANSI 0..15 as comma-separated
+    #        hex, as Start publishes it, or 'none'.
+    #
+    # Example:
+    #   theme=$(_svhs_format_watch_theme "$palette") || theme=''
+    #
+    local palette="$1"
+    local palette_regex='^[0-9A-Fa-f]{6}(,[0-9A-Fa-f]{6}){17}$'
+    local colors
+    local index
+
+    [[ $palette =~ $palette_regex ]] || return 1
+
+    IFS=',' read -r -a colors <<< "$palette"
+    printf '\033]11;#%s\a\033]10;#%s\a' "${colors[0]}" "${colors[1]}"
+    for ((index = 0; index < 16; index++)); do
+        printf '\033]4;%d;#%s\a' "$index" "${colors[index + 2]}"
+    done
+}
+
+
+_svhs_style_sgr() {
+    #
+    # Translate a tmux style into the escape sequence drawing it. Attributes
+    # that change no color, such as noattr, are left out. Returns 1 for a
+    # color the viewer cannot name, such as an X11 color name.
+    #
+    # Parameters:
+    #   $1 - style - tmux style, such as 'bg=colour214,fg=black,bold'.
+    #
+    # Example:
+    #   sgr=$(_svhs_style_sgr 'bg=yellow,fg=black') || sgr=$'\033[7m'
+    #
+    local style="$1"
+    local tokens
+    local token
+    local code
+    local codes=''
+
+    IFS=', ' read -r -a tokens <<< "$style"
+
+    for token in ${tokens[@]+"${tokens[@]}"}; do
+        case "$token" in
+            fg=*)          code=$(_svhs_color_sgr "${token#fg=}" 38) || return 1 ;;
+            bg=*)          code=$(_svhs_color_sgr "${token#bg=}" 48) || return 1 ;;
+            bold)          code=1 ;;
+            dim)           code=2 ;;
+            italics)       code=3 ;;
+            underscore)    code=4 ;;
+            blink)         code=5 ;;
+            reverse)       code=7 ;;
+            hidden)        code=8 ;;
+            strikethrough) code=9 ;;
+            *)             continue ;;
+        esac
+        codes+=";$code"
+    done
+
+    printf '\033[0%sm' "$codes"
+}
+
+
+_svhs_color_sgr() {
+    #
+    # Translate a tmux color into SGR parameters. Returns 1 for a color the
+    # viewer cannot name, such as an X11 color name.
+    #
+    # Parameters:
+    #   $1 - color - tmux color: default, an ANSI name with an optional
+    #        bright prefix, colourN, #rrggbb or a tmux 3.6+ theme color.
+    #   $2 - layer - 38 for the foreground, 48 for the background.
+    #
+    # Example:
+    #   code=$(_svhs_color_sgr 'colour214' 48) || return 1
+    #
+    local color="$1"
+    local layer="$2"
+    local names=(black red green yellow blue magenta cyan white)
+    local name
+    local value
+    local index
+
+    case "$color" in
+        default)
+            printf '%d' "$((layer + 1))"
+            return 0
+            ;;
+        colour*|color*)
+            # base 10, as bash would read colour08 as an invalid octal number
+            index="${color#colo*r}"
+            [[ $index =~ ^[0-9]+$ ]] && (( 10#$index < 256 )) || return 1
+            index=$((10#$index))
+            printf '%d;5;%d' "$layer" "$index"
+            return 0
+            ;;
+        '#'*)
+            [[ $color =~ ^#[0-9A-Fa-f]{6}$ ]] || return 1
+            printf '%d;2;%d;%d;%d' "$layer" "$((16#${color:1:2}))" \
+                "$((16#${color:3:2}))" "$((16#${color:5:2}))"
+            return 0
+            ;;
+        theme*)
+            while read -r name value; do
+                if [[ $name == "$color" ]]; then
+                    _svhs_color_sgr "#$value" "$layer"
+                    return 0
+                fi
+            done <<< "$_SVHS_TMUX_THEME_COLORS"
+            return 1
+            ;;
+    esac
+
+    # an ANSI name maps to 30..37 or 40..47, a bright one to 90..97 or
+    # 100..107
+    for ((index = 0; index < ${#names[@]}; index++)); do
+        [[ ${names[index]} == "${color#bright}" ]] || continue
+
+        if [[ $color == bright* ]]; then
+            printf '%d' "$((layer + 52 + index))"
+        else
+            printf '%d' "$((layer - 8 + index))"
+        fi
+        return 0
+    done
+
+    return 1
 }
 
 
@@ -3434,6 +3837,236 @@ _svhs_report_encode_progress() {
 }
 
 
+_svhs_start_status() {
+    #
+    # Start the background process that keeps a status line at the bottom of
+    # the terminal while the recording runs: a spinner, the time since Start,
+    # whether the session is recorded or hidden, and the current command. The
+    # bottom row is cut off the scroll region, so lines printed by the
+    # script, the recorder and errors scroll above it and never mix with it.
+    # It runs only when stdout is a terminal and SetQuiet is off, so logs and
+    # pipes get no redraws. A failure to set it up only costs the status line.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_start_status
+    #
+    [[ $_SVHS_QUIET == 0 && -t 1 ]] || return 0
+
+    _SVHS_STATUS_FILE=$(mktemp) || {
+        _SVHS_STATUS_FILE=''
+        return 0
+    }
+    _svhs_reserve_status_row || {
+        _svhs_stop_status
+        return 0
+    }
+
+    _svhs_write_status
+
+    _svhs_draw_status &
+    _SVHS_STATUS_PID=$!
+}
+
+
+_svhs_reserve_status_row() {
+    #
+    # Cut the bottom row off the scroll region for the status line, and
+    # remember the terminal width the line is cut to. Called again after a
+    # resize, which leaves the region stale or reset. Fails, changing
+    # nothing, when the terminal size is unknown or leaves the line no room.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_reserve_status_row || return 0
+    #
+    local size
+    local rows
+    local columns
+
+    # stty prints the rows and columns of the terminal on its stdin; fd 3
+    # carries stdout into the substitution, where fd 1 is its pipe
+    { size=$(stty size 2> /dev/null <&3); } 3>&1 || return 1
+    rows="${size% *}"
+    columns="${size#* }"
+    # a scroll region needs two rows; below that the status line has no room
+    ((rows >= 3 && columns >= 20)) || return 1
+
+    _SVHS_STATUS_COLUMNS=$columns
+
+    # The index (ESC D) scrolls the screen when the cursor is on the bottom
+    # row, so that row is free, and keeps the column, as a resize can come in
+    # the middle of a line. Setting the region moves the cursor home, so it
+    # is saved around that, then put back on the line it was on. Nothing but
+    # a status line stranded by a resize can be below it, so that is erased.
+    printf '\033D%s\033[1;%dr%s\033[1A\033[J' \
+        "$_SVHS_SAVE_CURSOR" $((rows - 1)) "$_SVHS_RESTORE_CURSOR"
+}
+
+
+_svhs_elapsed() {
+    #
+    # Print the time since Start as minutes and seconds, e.g. 1:05.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   printf '::: Recorded in %s\n' "$(_svhs_elapsed)"
+    #
+    local elapsed=$((SECONDS - _SVHS_STARTED_AT))
+
+    printf '%d:%02d\n' $((elapsed / 60)) $((elapsed % 60))
+}
+
+
+_svhs_draw_status() {
+    #
+    # Redraw the status line on the bottom row until the recording script
+    # exits or this process gets TERM, then give the row back to the scroll
+    # region and clear it. Runs in the background, so it reads the state the
+    # script writes from the status file instead of from variables. A resized
+    # terminal gets the row reserved again; one too small ends the status
+    # line.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_draw_status &
+    #
+    local frame=0
+    local resized=0
+    local status=''
+    local line=''
+    local text
+
+    # A background process does not inherit the script's EXIT trap, so this
+    # is its only one: it restores the terminal after the script was killed
+    # without a chance to stop the status line
+    trap 'printf "%s" "$_SVHS_STATUS_RELEASE"' EXIT
+    trap 'exit 0' TERM
+    trap 'resized=1' WINCH
+
+    # $$ stays the recording script's PID in a subshell
+    while kill -0 "$$" 2> /dev/null; do
+        if [[ $resized == 1 ]]; then
+            resized=0
+            _svhs_reserve_status_row || exit 0
+        fi
+
+        # the script truncates the file before it writes, so an empty read is
+        # a write in progress and the last status stands
+        IFS= read -r line 2> /dev/null < "$_SVHS_STATUS_FILE" || true
+        [[ -n $line ]] && status="$line"
+
+        text="$(_svhs_elapsed) $status"
+
+        # One write per redraw, so a line printed meanwhile cannot land
+        # between the jump to the bottom row and the return from it. Auto-wrap
+        # is off for the line, so the terminal clips what does not fit - wide
+        # characters make that more than a character count can tell; the cut
+        # only bounds what a long label writes.
+        printf '%s%s\033[?7l%s %s\033[?7h%s'                \
+            "$_SVHS_SAVE_CURSOR" "$_SVHS_STATUS_ROW"        \
+            "${_SVHS_STATUS_SPINNER[frame]}"                \
+            "${text:0:_SVHS_STATUS_COLUMNS}"                \
+            "$_SVHS_RESTORE_CURSOR"
+        frame=$(((frame + 1) % ${#_SVHS_STATUS_SPINNER[@]}))
+        sleep "$_SVHS_STATUS_INTERVAL"
+    done
+}
+
+
+_svhs_stop_status() {
+    #
+    # Stop the status line, restore the scroll region and remove the status
+    # file. Safe to call when the status line never started.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_stop_status
+    #
+    if [[ -n $_SVHS_STATUS_PID ]]; then
+        kill "$_SVHS_STATUS_PID" 2> /dev/null || true
+        wait "$_SVHS_STATUS_PID" 2> /dev/null || true
+        _SVHS_STATUS_PID=''
+
+        # the stopped process restores the terminal itself, unless it was
+        # killed before it could install its trap
+        printf '%s' "$_SVHS_STATUS_RELEASE"
+    fi
+    if [[ -n $_SVHS_STATUS_FILE ]]; then
+        rm -f -- "$_SVHS_STATUS_FILE"
+        _SVHS_STATUS_FILE=''
+    fi
+}
+
+
+_svhs_set_status_state() {
+    #
+    # Report whether the session is recorded on the status line.
+    #
+    # Parameters:
+    #   $1 - state - 'Recording' or 'Hidden'.
+    #
+    # Example:
+    #   _svhs_set_status_state 'Recording'
+    #
+    local state="$1"
+
+    _SVHS_STATUS_STATE="$state"
+    _svhs_write_status
+}
+
+
+_svhs_set_status_command() {
+    #
+    # Report the running command on the status line, named after the calling
+    # function - or, for a key command such as Backspace, after that command
+    # alone, as Key would show the tmux name BSpace. Control characters, such as a newline typed with Type, become
+    # spaces, so the label stays on one line.
+    #
+    # Parameters:
+    #   $1 - argument - the command's first argument as the script would
+    #        spell it, e.g. 'ls' in quotes for Type.
+    #
+    # Example:
+    #   _svhs_set_status_command "'$pattern'"
+    #
+    local label="${_SVHS_STATUS_ALIAS:-${FUNCNAME[1]} $1}"
+
+    _SVHS_STATUS_COMMAND="${label//[[:cntrl:]]/ }"
+    _svhs_write_status
+}
+
+
+_svhs_write_status() {
+    #
+    # Write the state and the current command into the status file for the
+    # status line to read. A builtin redirection starts no process, so it
+    # stays cheap for a script calling Type or Key in a loop. Does nothing
+    # while the status line is off.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_write_status
+    #
+    [[ -n $_SVHS_STATUS_FILE ]] || return 0
+
+    printf '%s  %s\n' "$_SVHS_STATUS_STATE" "$_SVHS_STATUS_COMMAND" \
+        > "$_SVHS_STATUS_FILE"
+}
+
+
 _svhs_apply_highlight_style() {
     #
     # Apply the selection style Highlight sweeps with, and switch copy mode's
@@ -3460,6 +4093,34 @@ _svhs_apply_highlight_style() {
             "$_SVHS_HIGHLIGHT_STYLE" >&2
         return 1
     }
+}
+
+
+_svhs_apply_theme_colors() {
+    #
+    # Make the pane answer color queries (OSC 10 and 11) with the theme's
+    # foreground and background, so a program deriving its colors from them
+    # matches the rendered output; unanswered, such a program assumes black.
+    # tmux also writes both colors into the recorded cells. The ANSI palette
+    # (OSC 4) stays unanswered: tmux would record every ANSI color as 24-bit,
+    # which SetBoldIsBright cannot brighten. A renderer-specific theme name
+    # has no known colors and changes nothing. The palette is also published
+    # as the session's @svhs-theme option, for the viewer to paint with.
+    #
+    # Parameters:
+    #   None.
+    #
+    # Example:
+    #   _svhs_apply_theme_colors || return 1
+    #
+    local colors_regex='^([0-9A-Fa-f]{6}),([0-9A-Fa-f]{6}),'
+
+    [[ $_SVHS_THEME =~ $colors_regex ]] || return 0
+
+    tmux -L "$_SVHS_TMUX_SOCKET" set -w -t "$_SVHS_SESSION" window-style \
+        "bg=#${BASH_REMATCH[1]},fg=#${BASH_REMATCH[2]}" || return 1
+    tmux -L "$_SVHS_TMUX_SOCKET" set -t "$_SVHS_SESSION" @svhs-theme \
+        "$_SVHS_THEME"
 }
 
 
@@ -3585,3 +4246,5 @@ fi
 # tears down the tmux session and recorder, then runs the Finally commands.
 # A no-op before Start with nothing registered
 trap svhs_cleanup EXIT
+
+_SVHS_THEME=$(_svhs_theme_palette "$_SVHS_THEME")
