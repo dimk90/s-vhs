@@ -45,7 +45,7 @@ A recording is a plain shell script that sources `s-vhs.sh`:
 
 # Import s-vhs straight from GitHub - no local copy needed.
 # A local copy works too - use "source ./s-vhs.sh"
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.7.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.7.1) && wait "$!" || exit 1
 
 # Where should we write the GIF?
 SetOutput 'demo.gif'
@@ -272,13 +272,17 @@ Highlight 'VHS cannot' 1.5
 ### Color Theme
 
 ```bash
-# One of the renderer's named themes.
+# A bundled theme uses the same palette in GIF and SVG.
 # A comma-separated hex palette
 # (background, foreground, then 8 or 16 colors) also works.
 SetTheme 'kanagawa'
 ```
 
 <img src="examples/theme.gif" width="500px" alt="Red, green and blue text rendered in the kanagawa palette">
+
+See the [theme gallery](doc/THEMES.md) for all bundled themes, with GIF and SVG
+samples. Other names pass through to the renderer and may not work in
+both formats.
 
 ### Shell & Prompt
 
@@ -397,7 +401,7 @@ of keeping a local `s-vhs.sh` next to the recording script:
 
 ```bash
 # Remote import instead of "source ./s-vhs.sh"
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.7.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.7.1) && wait "$!" || exit 1
 
 SetOutput "remote-import.gif"
 
@@ -441,6 +445,11 @@ animated by CSS, sharp at any zoom:
 
 📌 [pi-context-view](https://github.com/dimk90/pi-context-view) - demo GIFs,
 such as [palettes.rec.sh](https://github.com/dimk90/pi-context-view/tree/develop/doc/images).  
+
+📌 [pi-tui-prompt-box](https://github.com/dimk90/pi-tui-prompt-box) - demo GIFs,
+such as [demo.rec.sh](https://github.com/dimk90/pi-tui-prompt-box/tree/develop/doc/images).  
+
+
 📌 [S-VHS logo](examples/logo.rec.sh) recording.
 
 
@@ -474,6 +483,10 @@ with `asciinema play` and re-renderable at any size later, while the `.txt` log
 makes the recorded output greppable - see
 [`examples/multi-output.rec.sh`](examples/multi-output.rec.sh).
 
+> [!TIP]
+> Not sure which format to ship? See [FORMATS.md](doc/FORMATS.md) for sizes,
+> video quality and where each format plays.
+
 
 ## Recording Template
 
@@ -493,7 +506,7 @@ It writes:
 ```bash
 #!/usr/bin/env bash
 
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.7.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.7.1) && wait "$!" || exit 1
 
 SetOutput 'demo.gif'
 
@@ -529,7 +542,12 @@ Render
 
 - For the full list of commands and settings, see [REFERENCE.md](doc/REFERENCE.md).
 
+- For color themes with GIF and SVG samples, see [THEMES.md](doc/THEMES.md).
+
 - For debugging a recording script, see [DEBUG.md](doc/DEBUG.md).
+
+- For choosing an output format - size, quality and where it plays, see
+  [FORMATS.md](doc/FORMATS.md).
 
 - For smaller output files and per-format optimization trade-offs, see
   [OPTIMIZATION.md](doc/OPTIMIZATION.md).

@@ -16,7 +16,7 @@ SetFontSize 40
 SetFontFamily "Iosevka Term"
 SetTypingSpeed 0.04
 
-# One of the renderer's named themes; a comma-separated hex palette
+# A bundled theme shared by GIF and SVG; a comma-separated hex palette
 # (background, foreground, then 8 or 16 colors) also works
 SetTheme 'kanagawa'
 

@@ -58,7 +58,7 @@ Name recordings `<topic>.rec.sh` and make them executable.
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
 # shellcheck disable=SC1090
-source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.7.0) && wait "$!" || exit 1
+source <(curl -fsSL https://dimk90.github.io/s-vhs/v0.7.1) && wait "$!" || exit 1
 
 # Every command the recorded shell drives, checked before anything starts
 Require 'git'
@@ -269,9 +269,10 @@ somewhere that may not (some Markdown viewers, chat previews, social cards).
   cells column by column.
 - SVG-only framing: `SetPadding` (plus `SetPaddingX`/`SetPaddingY`),
   `SetWindowBar 'on'` for macOS-style decorations, `SetCursor 'off'`.
-- Named themes are renderer-specific and an unknown name fails at `Render`,
-  after the recording has already run. Pass a custom hex palette to `SetTheme`
-  when one recording writes both a GIF and an SVG.
+- Use a bundled `SetTheme` name, such as `dracula`, `kanagawa` or `atom-one`,
+  for the same palette in GIF and SVG. Other names remain renderer-specific
+  and may fail at `Render`. A custom palette for both needs background,
+  foreground and 8 or 16 comma-separated six-digit hex colors without `#`.
 - Full list of pitfalls and workarounds:
   <https://github.com/dimk90/s-vhs/blob/develop/doc/SVG.md>.
 
@@ -333,8 +334,9 @@ it for timing and framing.
 | `Wait: timeout waiting for: <pattern>` | The pattern never appeared — check the anchor and raise the timeout |
 | `no faces matching font family options` | No `SetFontFamilyExact` family is installed, or no preferred or default agg text font is available |
 | `SetFontFamily: cannot be combined with SetFontFamilyExact` | agg rejects both flags; pick one |
-| Renderer rejects the theme name | Named themes differ between agg and asg; use a custom hex palette for both |
+| Renderer rejects the theme name | The name is not bundled and that renderer does not know it; use a bundled theme or a hex custom palette |
 | `::: SetOptimize: gifsicle is not installed` | Warning only — the GIF was written unoptimized; WebP, MP4 and WebM are unaffected |
+| `::: SetTheme: <name> is not a bundled theme, passed to the renderer as is` | Warning only — a mistyped or renderer-specific name; `Render` fails if a requested renderer does not know it |
 | `::: Highlight: not on screen, nothing selected` | Warning only — the text had not arrived, or it wraps across two rows; `Wait` for it, or highlight a shorter part of it |
 | `::: Set…: skipped for <output>` | Warning only — that renderer has no such option |
 | Variable is empty in the recording | It was expanded by the recording script — use single quotes in `Type` |

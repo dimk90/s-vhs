@@ -23,7 +23,7 @@ Settings for the recording session, its cast metadata and its outputs.
 | `SetKeyDelay <seconds>`                | `0.0`                 | Default pause after a key press sent by `Key`                                                                                                                                                                               |
 | `Env <name> <value>`                   | —                     | Export a variable into the recorded shell; repeatable                                                                                                                                                                       |
 | `SetTitle <text>`                      | —                     | Title stored in the cast metadata and shown by players                                                                                                                                                                      |
-| `SetQuiet`                             | `off`                 | Suppress recorder, text converter, raster renderer and s-vhs `:::` messages, keeping errors                                                                                                                                 |
+| `SetQuiet`                             | `off`                 | Suppress recorder, text converter, raster renderer and s-vhs `:::` messages and the status line, keeping errors                                                                                                             |
 | `Require <cmd>...`                     | —                     | Fail unless every command is available on `PATH`                                                                                                                                                                            |
 
 ### Render
@@ -48,7 +48,7 @@ and `Render` reports the rest.
 | `SetFontDir <dir>`               | GIF, WebP, MP4, WebM      | —            | Additional font directory searched by the renderer, which must exist; repeatable                                                                                                                                                                                                                                                                   |
 | `SetEngine <swash\|resvg>`       | GIF, WebP, MP4, WebM      | `swash`      | Frame rendering backend; `resvg` draws COLRv1 emoji in color                                                                                                                                                                                                                                                                                       |
 | `SetLineHeight <multiplier>`     | GIF, WebP, MP4, WebM, SVG | `1.2`        | Line-height multiplier passed to the renderer                                                                                                                                                                                                                                                                                                      |
-| `SetTheme <theme>`               | GIF, WebP, MP4, WebM, SVG | `dracula`    | Theme name[^themes] or custom palette passed to each requested renderer                                                                                                                                                                                                                                                                            |
+| `SetTheme <theme>`               | GIF, WebP, MP4, WebM, SVG | `dracula`    | [Bundled theme](THEMES.md) or a custom palette[^themes], drawn with the same colors by every renderer[^theme-colors]                                                                                                                                                                                                                               |
 | `SetBoldIsBright <on\|off>`      | GIF, WebP, MP4, WebM      | `off`        | Draw bold text in the bright ANSI color, as most terminals do                                                                                                                                                                                                                                                                                      |
 | `SetPadding <px>`                | SVG                       | `0`          | Padding around the terminal on both axes, in output pixels                                                                                                                                                                                                                                                                                         |
 | `SetPaddingX <px>`               | SVG                       | `SetPadding` | Padding left and right of the terminal, overriding `SetPadding` on that axis                                                                                                                                                                                                                                                                       |
@@ -70,13 +70,6 @@ and `Render` reports the rest.
     `0.6 em` advance - JetBrains Mono, Cascadia Mono, Liberation Mono - keeps
     text aligned with them; others drift further with every column.
 
-[^themes]: Named color themes are renderer-specific, and a name only one
-    renderer knows fails at `Render`, after the recording has run. `asg`
-    accepts `asciinema`, `dracula`, `github-dark`, `github-light`, `monokai`,
-    `solarized-dark` and `solarized-light`; `kanagawa`, `kanagawa-dragon`,
-    `kanagawa-light`, `nord`, `gruvbox-dark` and `custom` are `agg`-only. Use
-    a custom palette when one recording requests GIF or WebP alongside SVG.
-
 [^mp4]: MP4 is lossy: H.264 (High profile, `-crf 18 -preset
     medium`, or `veryslow` under `SetOptimize`) with 4:2:0 chroma, so coloured
     detail is not preserved exactly.
@@ -92,6 +85,16 @@ and `Render` reports the rest.
     builds. About half the MP4's bytes, but the encode is several times
     slower and can take longer than the recording. The measurements behind
     every encoder setting: [the WebM contract](ENCODING.md#the-webm-contract).
+
+[^themes]: A custom palette is 18 comma-separated six-digit hex colors
+    without `#`: background, foreground, then ANSI 0–15; with only ANSI 0–7,
+    they are repeated as 8–15. Any other value passes through to the renderer
+    unchanged - a name outside the bundled list with a warning - and fails at
+    `Render` if the renderer does not support it.
+
+[^theme-colors]: The theme's background and foreground are also reported to
+    programs that ask the terminal for them (OSC 10/11) and stored in the
+    `.cast`. More in [Session colors](THEMES.md#session-colors).
 
 [^prompts]: Bundled prompt themes: `arrow`, `plain`, `path` or `powerline`.
     A literal prompt in the shell's own syntax, or `native`. A theme and a

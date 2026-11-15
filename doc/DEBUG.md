@@ -47,6 +47,13 @@ Start the viewer whenever - it waits for a session to appear, keeps following
 across edit-and-rerun cycles, and stops on `Ctrl-C`. Make its terminal at
 least `SetCols` by `SetRows`, or every row is cut off at the right edge.
 
+The viewer switches its terminal to the recording's `SetTheme` colors and
+paints a `Highlight` selection in its `SetHighlightColors` colors, so the
+picture matches the output; it puts the terminal's own colors back on exit.
+A renderer-specific theme name has no colors known to s-vhs and keeps the
+terminal's own, and so does a terminal that ignores color-change escapes
+(OSC 4, 10 and 11).
+
 ## When `Start` Itself Times Out
 
 `Start` polls the new session until the shell's line editor starts reading,

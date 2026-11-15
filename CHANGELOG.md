@@ -1,5 +1,23 @@
 # Changelog
 
+## `[v0.7.1]` - 15.11.2026
+
+### New
+* Add `Catppuccin`, `Tokyo Night` and `s-vhs` color themes.
+* Report the theme's background and foreground to programs that ask the terminal for them.
+* Show a status line while recording: elapsed time, recorded or hidden state and the current command.
+* Paint `s-vhs.sh watch` in the recording's theme and highlight colors.
+
+### Changed
+* Unify renderer theme palettes across renderers and add a theme gallery.
+* Accept an 8-color custom `SetTheme` palette for SVG too.
+* Correct the `github-dark`, `github-light`, `nord` and `solarized-light` palettes to match their upstream themes.
+
+### Fixed
+* Keep 24-bit colors in recordings instead of reducing them to the nearest of 256.
+* Show the `Highlight` selection in `s-vhs.sh watch`.
+
+
 ## `[v0.7.0]` - 17.10.2026
 
 ### New
@@ -7,11 +25,6 @@
 * Add WebM output through `agg`+`ffmpeg` 6.1+: AV1 video, about half the MP4's size.
 * Add `SetOptimize` for MP4 output - the encoder's slowest preset.
 * Add `SetOptimize` for WebM output - a slower encoder speed, 25-40 % smaller.
-
-### Changed
-
-### Fixed
-
 
 ## `[v0.6.0]` - 11.09.2026
 
